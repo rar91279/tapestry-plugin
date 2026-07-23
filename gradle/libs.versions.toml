@@ -1,13 +1,16 @@
 [versions]
 junit = "4.13.2"
-testng = "7.10.2"
-easymock = "5.2.0"
 hamcrest = "2.2"
 xmlunit = "2.10.0"
+kotest = "6.2.2"
+mockk = "1.13.13"
+junit-platform = "1.11.4"
 
 [libraries]
 junit = { module = "junit:junit", version.ref = "junit" }
-testng = { module = "org.testng:testng", version.ref = "testng" }
-easymock = { module = "org.easymock:easymock", version.ref = "easymock" }
 hamcrest = { module = "org.hamcrest:hamcrest", version.ref = "hamcrest" }
 xmlunit-matchers = { module = "org.xmlunit:xmlunit-matchers", version.ref = "xmlunit" }
+kotest-runner = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+kotest-assertions = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+junit-vintage-engine = { module = "org.junit.vintage:junit-vintage-engine", version.ref = "junit-platform" }
