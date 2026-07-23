@@ -1,0 +1,322 @@
+:root {
+    --bg:        #ffffff;
+    --fg:        #1c1e21;
+    --muted:     #6b7280;
+    --desc:      #3a3f45;
+    --border:    #e3e6ea;
+    --border-sub:#eef0f3;
+    --header:    #f7f8fa;
+    --hover:     #f0f2f5;
+    --accent:    #3C99CC;
+    --link:      #2f6fd6;
+    --code-bg:   #f5f6f8;
+    --gradient:  linear-gradient(90deg, #3BEA62 0%, #3C99CC 50%, #6B57FF 100%);
+    --mono:      "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans:      -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Dark palette — applied via a class the plugin stamps on <body> from the IDE theme
+   (JCEF doesn't reliably map prefers-color-scheme to the IDE's dark/light mode),
+   with the media query kept as a standalone fallback. */
+body.dark, .dark {
+    --bg:        #1e1f22;
+    --fg:        #d6d9df;
+    --muted:     #8b8f99;
+    --desc:      #dde0e6;
+    --border:    #34363b;
+    --border-sub:#2a2c30;
+    --header:    #26282c;
+    --hover:     #2d2f34;
+    --accent:    #3C99CC;
+    --link:      #6ea1ff;
+    --code-bg:   #26282c;
+}
+
+@media (prefers-color-scheme: dark) {
+    body:not(.light) {
+        --bg:        #1e1f22;
+        --fg:        #d6d9df;
+        --muted:     #8b8f99;
+        --desc:      #dde0e6;
+        --border:    #34363b;
+        --border-sub:#2a2c30;
+        --header:    #26282c;
+        --hover:     #2d2f34;
+        --accent:    #3C99CC;
+        --link:      #6ea1ff;
+        --code-bg:   #26282c;
+    }
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+/* Anchor jumps clear the sticky breadcrumb + menubar bars. */
+html {
+    scroll-padding-top: 84px;
+    /* Reserve the scrollbar gutter on both edges so content doesn't shift and stays balanced. */
+    scrollbar-gutter: stable both-edges;
+}
+
+body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+.page {
+    width: 100%;
+    padding: 0 0 40px;
+}
+
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ---- Sticky breadcrumb navigation ---- */
+.crumbs {
+    position: sticky;
+    top: 0;
+    z-index: 11;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+    height: 37px;
+    padding: 0 20px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+}
+.crumbs a { color: var(--muted); text-decoration: none; }
+.crumbs a:hover { color: var(--fg); text-decoration: underline; }
+.crumbs .sep { color: var(--border); }
+.crumbs .current { color: var(--fg); font-weight: 600; }
+.crumb-logo { width: 18px; height: 18px; display: block; margin-right: 4px; }
+
+/* ---- Header (fixed dark backdrop for the light Tapestry logo, both themes) ---- */
+#header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px 14px;
+    background: #1a1b1e;
+    color: #f5f6f8;
+}
+#header img { width: 30px; height: 30px; display: block; }
+#header .title {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #f5f6f8;
+}
+.accent-bar {
+    height: 2px;
+    border: 0;
+    margin: 0;
+    background: var(--gradient);
+}
+
+/* ---- Nav ---- */
+#menubar {
+    position: sticky;
+    top: 37px;
+    z-index: 9;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    align-items: center;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--header);
+}
+#menubar .sep { display: none; }
+#menubar a {
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    padding-bottom: 2px;
+    border-bottom: 1px solid transparent;
+}
+#menubar a:hover {
+    color: var(--fg);
+    text-decoration: none;
+    border-bottom-color: var(--accent);
+}
+
+/* ---- Sections (full-width, flat) ---- */
+.box {
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+}
+.boxHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background: var(--header);
+    border-bottom: 1px solid var(--border-sub);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    color: var(--fg);
+}
+.boxHeader .anchor a {
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--muted);
+}
+.boxBody { padding: 0 20px; }
+
+/* ---- Definition rows ---- */
+.item {
+    display: flex;
+    gap: 16px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border-sub);
+}
+.item:last-child { border-bottom: 0; }
+.item .name {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--fg);
+    flex: 0 0 220px;
+    word-break: break-word;
+}
+.item .name a.doclink {
+    color: var(--link);
+    text-decoration: none;
+}
+.item .name a.doclink:hover { text-decoration: underline; }
+.item .desc {
+    color: var(--desc);
+    flex: 1;
+    max-width: 78ch;
+}
+
+/* Service rows carry a left accent — the gradient's quiet echo. */
+.item.service {
+    border-left: 2px solid var(--accent);
+    padding-left: 14px;
+}
+
+.tag {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-family: var(--sans);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    color: var(--muted);
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    vertical-align: middle;
+}
+.tag-on {
+    color: #1f7a3d;
+    border-color: #7bd39a;
+    background: rgba(59, 234, 98, 0.12);
+}
+
+.badge {
+    display: inline-block;
+    margin-right: 8px;
+    padding: 0 6px;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--muted);
+    background: var(--code-bg);
+    border: 1px solid var(--border-sub);
+}
+.subhead {
+    padding: 8px 20px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    background: var(--code-bg);
+    border-bottom: 1px solid var(--border-sub);
+    border-top: 1px solid var(--border-sub);
+}
+
+/* ---- Tables ---- */
+table.data {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+}
+table.data th {
+    text-align: left;
+    padding: 8px 20px;
+    background: var(--code-bg);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+}
+table.data td {
+    padding: 8px 20px;
+    border-bottom: 1px solid var(--border-sub);
+    vertical-align: top;
+}
+table.data tr:last-child td { border-bottom: 0; }
+table.data td.key {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--fg);
+    white-space: nowrap;
+    width: 1%;
+}
+
+.prose { padding: 14px 20px; max-width: 82ch; line-height: 1.6; }
+.empty { color: var(--muted); font-style: italic; }
+
+code, .source {
+    font-family: var(--mono);
+    font-size: 12px;
+}
+code {
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+}
+.source {
+    background: var(--code-bg);
+    border: 1px solid var(--border-sub);
+    border-radius: 4px;
+    padding: 12px;
+    margin: 8px 0;
+    overflow: auto;
+}
+.source pre { margin: 0; }
+
+.section {
+    margin: 16px 0 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+}
+
+.elementIcon {
+    float: right;
+    margin: 12px 20px 8px 12px;
+}

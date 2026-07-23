@@ -1,0 +1,7 @@
+[versions]
+junit = "4.13.2"
+commons-chain = "1.2"
+
+[libraries]
+junit = { module = "junit:junit", version.ref = "junit" }
+commonsChain = { module = "commons-chain:commons-chain", version.ref = "commons-chain" }

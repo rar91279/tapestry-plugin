@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="$style" type="text/css">
+</head>
+
+<body>
+<div class="page">
+<a name="top"></a>
+
+<div class="box">
+    <div class="boxHeader">
+        <span>Service</span>
+        <span class="anchor"><a href="#top">Top</a></span>
+    </div>
+    <table class="data">
+        <tr><td class="key">Id</td><td>$service.id</td></tr>
+        <tr>
+            <td class="key">Class</td>
+            <td>#if($service.className.length() > 0)<a class="doclink" href="#" onclick="tapestryNav('class/$service.className');return false;">$service.className</a>#else<span class="empty">unknown</span>#end</td>
+        </tr>
+        #if($service.scope.length() > 0)<tr><td class="key">Scope</td><td>$service.scope</td></tr>#end
+        <tr><td class="key">Eager load</td><td>$service.eagerLoad</td></tr>
+    </table>
+</div>
+
+<div class="box">
+    <div class="boxHeader">
+        <span>Documentation</span>
+        <span class="anchor"><a href="#top">Top</a></span>
+    </div>
+    <div class="prose">
+        #if($service.description.length() > 0)
+            $service.description
+        #else
+            <span class="empty">No documentation available for this service.</span>
+        #end
+    </div>
+</div>
+
+</div>
+</body>
+</html>

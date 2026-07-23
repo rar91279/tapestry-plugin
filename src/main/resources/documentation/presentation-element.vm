@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="$style" type="text/css">
+</head>
+
+<body>
+<div class="page">
+<a name="top"></a>
+
+<div id="menubar">
+    <a href="#desc">Description</a>
+    #if ($element.requiredParameters)<a href="#required">Required Parameters</a>#end
+    #if ($element.optionalParameters)<a href="#optional">Optional Parameters</a>#end
+    <a href="#artifacts">Artifacts</a>
+    <a href="#examples">Examples</a>
+    <a href="#notes">Notes</a>
+</div>
+
+<a name="desc"></a>
+<div class="box">
+    <div class="boxHeader">
+        <span>Description</span>
+        <span class="anchor"><a href="#top">Top</a></span>
+    </div>
+    #if ($icon)<img class="elementIcon" src="$icon" alt="">#end
+    <div class="prose">
+        #if ($documentation.description.length() != 0)
+            $documentation.description
+        #elseif ($element.description.length() != 0)
+            $element.description
+        #else
+            <span class="empty">No description</span>
+        #end
+    </div>
+</div>
+
+#if ($element.requiredParameters)
+<a name="required"></a>
+<div class="box">
+    <div class="boxHeader">
+        <span>Required Parameters</span>
+        <span class="anchor"><a href="#top">Top</a></span>
+    </div>
+    #if ($element.requiredParameters.size() == 0)
+        <div class="prose empty">There are no required parameters</div>
+    #else
+    <table class="data">
+        <tr><th>Name</th><th>Prefix</th><th>Default value</th><th>Description</th></tr>
+        #foreach ($parameter in $element.requiredParameters.values())
+        <tr>
+            <td class="key">$parameter.name</td>
+            <td>$parameter.defaultPrefix</td>
+            <td>$parameter.defaultValue</td>
+            <td>#if ($documentation.getParameterDescription($parameter.name).length() != 0) $documentation.getParameterDescription($parameter.name) #else $parameter.description #end</td>
+        </tr>
+        #end
+    </table>
+    #end
+</div>
+#end
+
+#if ($element.optionalParameters)
+<a name="optional"></a>
+<div class="box">
+    <div class="boxHeader">
+        <span>Optional Parameters</span>
+        <span class="anchor"><a href="#top">Top</a></span>
+    </div>
+    #if ($element.optionalParameters.size() == 0)
+        <div class="prose empty">This element doesn't have optional parameters</div>
+    #else
+    <table class="data">
+        <tr><th>Name</th><th>Prefix</th><th>Default value</th><th>Description</th></tr>
+        #foreach ($parameter in $element.optionalParameters.values())
+        <tr>
+            <td class="key">$parameter.name</td>
+            <td>$parameter.defaultPrefix</td>
+            <td>$parameter.defaultValue</td>
+            <td>#if ($documentation.getParameterDescription($parameter.name).length() != 0) $documentation.getParameterDescription($parameter.name) #else $parameter.description #end</td>
+        </tr>
+        #end
+    </table>
+    #end
+</div>
+#end
+
+<a name="artifacts"></a>
+<div class="box">
+    <div class="boxHeader">
+        <span>Artifacts</span>
+        <span class="anchor"><a href="#top">Top</a></span>
+    </div>
+    <table class="data">
+        <tr>
+            <td class="key">Class</td>
+            <td>$element.elementClass.fullyQualifiedName</td>
+        </tr>
+        <tr>
+            <td class="key">Templates</td>
+            <td>
+                #if ($element.template.length() == 0)<span class="empty">No templates</span>#end
+                #foreach($template in $element.template)$template.getName()#set ($countTemplates = $countTemplates + 1)#if ($countTemplates != $element.template.length()) | #end#end
+            </td>
+        </tr>
+        <tr>
+            <td class="key">Message Catalogs</td>
+            <td>
+                #if ($element.messageCatalog.length() == 0)<span class="empty">No message catalogs</span>#end
+                #foreach($catalog in $element.messageCatalog)$catalog.getName()#set ($countCatalogs = $countCatalogs + 1)#if ($countCatalogs != $element.messageCatalog.length()) | #end#end
+            </td>
+        </tr>
+        <tr>
+            <td class="key">Library</td>
+            <td>$element.library.id</td>
+        </tr>
+    </table>
+</div>
+
+<a name="examples"></a>
+<div class="box">
+    <div class="boxHeader">
+        <span>Examples</span>
+        <span class="anchor"><a href="#top">Top</a></span>
+    </div>
+    <div class="prose">
+        #if ($documentation.examples.length() != 0)
+            $documentation.examples
+        #else
+            <span class="empty">No examples available</span>
+        #end
+    </div>
+</div>
+
+<a name="notes"></a>
+<div class="box">
+    <div class="boxHeader">
+        <span>Notes</span>
+        <span class="anchor"><a href="#top">Top</a></span>
+    </div>
+    <div class="prose">
+        #if ($documentation.notes.length() != 0)
+            $documentation.notes
+        #else
+            <span class="empty">No notes available</span>
+        #end
+    </div>
+</div>
+
+</div>
+</body>
+</html>

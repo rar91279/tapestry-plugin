@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="$style" type="text/css">
+</head>
+
+<body>
+<div class="page">
+<a name="TOP"></a>
+
+<div id="header">
+    <img src="$logo" alt="Tapestry">
+    <span class="title">Tapestry Documentation</span>
+</div>
+<hr class="accent-bar">
+
+<div id="menubar">
+    <a href="#MODULES">Modules</a>
+    <a href="#LIB">Core Library</a>
+</div>
+
+<a name="MODULES"></a>
+<div class="box">
+    <div class="boxHeader">
+        <span>Modules</span>
+        <span class="anchor"><a href="#TOP">Top</a></span>
+    </div>
+
+    #foreach($module in $modules)
+    <div class="subhead">
+        $module.name
+        #if($module.tapestry)<span class="tag tag-on">Tapestry</span>#else<span class="tag">no Tapestry facet</span>#end
+    </div>
+    <div class="boxBody">
+        #if(!$module.tapestry)
+            <div class="item"><div class="desc empty">Not a Tapestry module — no services.</div></div>
+        #elseif($module.services.size() == 0)
+            <div class="item"><div class="desc empty">No services declared in this module.</div></div>
+        #else
+            #foreach($service in $module.services)
+            <div class="item service">
+                <div class="name">#if($service.className.length() > 0)<a class="doclink" href="#" onclick="tapestryClass('$service.className');return false;">$service.id</a>#else$service.id#end</div>
+                <div class="desc">
+                    #if($service.scope.length() > 0)<span class="badge">$service.scope</span>#end
+                    #if($service.eagerLoad)<span class="badge">eager</span>#end
+                    #if($service.description.length() > 0)$service.description#else<span class="empty">$service.className</span>#end
+                </div>
+            </div>
+            #end
+        #end
+    </div>
+    #end
+</div>
+
+<a name="LIB"></a>
+<div class="box">
+    <div class="boxHeader">
+        <span>Core Library</span>
+        <span class="anchor"><a href="#TOP">Top</a></span>
+    </div>
+
+    <div class="subhead">Pages</div>
+    <div class="boxBody">
+        #foreach($elementPage in $pages.keySet())
+        <div class="item">
+            <div class="name"><a class="doclink" href="#" onclick="tapestryOpen('pages','$elementPage');return false;">$elementPage</a></div>
+            <div class="desc">$pages.get($elementPage)</div>
+        </div>
+        #end
+    </div>
+
+    <div class="subhead">Components</div>
+    <div class="boxBody">
+        #foreach($comp in $components.keySet())
+        <div class="item">
+            <div class="name"><a class="doclink" href="#" onclick="tapestryOpen('components','$comp');return false;">$comp</a></div>
+            <div class="desc">$components.get($comp)</div>
+        </div>
+        #end
+    </div>
+
+    <div class="subhead">Mixins</div>
+    <div class="boxBody">
+        #foreach($elementMixin in $mixins.keySet())
+        <div class="item">
+            <div class="name"><a class="doclink" href="#" onclick="tapestryOpen('mixins','$elementMixin');return false;">$elementMixin</a></div>
+            <div class="desc">$mixins.get($elementMixin)</div>
+        </div>
+        #end
+    </div>
+</div>
+
+</div>
+</body>
+</html>

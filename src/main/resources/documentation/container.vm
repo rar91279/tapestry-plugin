@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="$style" type="text/css">
+</head>
+
+<body>
+<div class="page">
+<a name="TOP"></a>
+
+<div id="menubar">
+    #set($i = 0)
+    #foreach($section in $sections)
+    #set($i = $i + 1)
+    <a href="#s$i">$section.name</a>
+    #end
+</div>
+
+#set($i = 0)
+#foreach($section in $sections)
+#set($i = $i + 1)
+<a name="s$i"></a>
+<div class="box">
+    <div class="boxHeader">
+        <span>$section.name</span>
+        <span class="anchor"><a href="#TOP">Top</a></span>
+    </div>
+    <div class="boxBody">
+        #if($section.entries.size() == 0)
+        <div class="item"><div class="desc empty">None.</div></div>
+        #end
+        #foreach($entry in $section.entries)
+        <div class="item">
+            <div class="name">#if($entry.token.length() > 0)<a class="doclink" href="#" onclick="tapestryNav('$entry.token');return false;">$entry.label</a>#else$entry.label#end#if($entry.badge.length() > 0)<span class="tag tag-on">$entry.badge</span>#end</div>
+            #if($entry.description.length() > 0)<div class="desc">$entry.description</div>#end
+        </div>
+        #end
+    </div>
+</div>
+#end
+
+</div>
+</body>
+</html>
