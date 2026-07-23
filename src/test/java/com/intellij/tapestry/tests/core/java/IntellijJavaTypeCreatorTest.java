@@ -29,21 +29,21 @@ public class IntellijJavaTypeCreatorTest extends BaseTestCase {
 
         IJavaField psiField1 = intellijJavaTypeCreator.createField("field1",
                 new IntellijJavaClassType(fixture.getModule(), getJavaFacade(fixture).findClass("java.lang.String", getAllScope(fixture)).getContainingFile()), true, true);
-        assert psiField1.name.equals("field1");
-        assert ((IJavaClassType) psiField1.type).fullyQualifiedName.equals("java.lang.String");
-        assert psiField1.isPrivate;
+        assert psiField1.getName().equals("field1");
+        assert ((IJavaClassType) psiField1.getType()).getFullyQualifiedName().equals("java.lang.String");
+        assert psiField1.isPrivate();
 
         IJavaField psiField2 = intellijJavaTypeCreator.createField("Field1",
                 new IntellijJavaClassType(fixture.getModule(), getJavaFacade(fixture).findClass("java.lang.String", getAllScope(fixture)).getContainingFile()), true, true);
-        assert psiField2.name.equals("field1");
+        assert psiField2.getName().equals("field1");
 
         IJavaField psiField3 = intellijJavaTypeCreator.createField("Field1",
                 new IntellijJavaClassType(fixture.getModule(), getJavaFacade(fixture).findClass("java.lang.String", getAllScope(fixture)).getContainingFile()), true, false);
-        assert psiField3.name.equals("Field1");
+        assert psiField3.getName().equals("Field1");
 
         IJavaField psiField4 = intellijJavaTypeCreator.createField("field1",
                 new IntellijJavaClassType(fixture.getModule(), getJavaFacade(fixture).findClass("java.lang.String", getAllScope(fixture)).getContainingFile()), false, true);
-        assert !psiField4.isPrivate;
+        assert !psiField4.isPrivate();
     }
 
   @Test(dataProvider = JAVA_MODULE_FIXTURE_PROVIDER)
@@ -54,11 +54,11 @@ public class IntellijJavaTypeCreatorTest extends BaseTestCase {
                 new IntellijJavaClassType(fixture.getModule(), getJavaFacade(fixture).findClass("java.lang.String", getAllScope(fixture)).getContainingFile()), true, true);
         intellijJavaTypeCreator.createFieldAnnotation(psiField1, "java.lang.Deprecated", new HashMap<>());
 
-        assert psiField1.annotations.size() == 1;
+        assert psiField1.getAnnotations().size() == 1;
 
-        assert ((IJavaAnnotation) psiField1.annotations.values().toArray()[0]).fullyQualifiedName.equals("java.lang.Deprecated");
+        assert ((IJavaAnnotation) psiField1.getAnnotations().values().toArray()[0]).getFullyQualifiedName().equals("java.lang.Deprecated");
 
-        assert ((IJavaAnnotation) psiField1.annotations.values().toArray()[0]).parameters.size() == 0;
+        assert ((IJavaAnnotation) psiField1.getAnnotations().values().toArray()[0]).getParameters().size() == 0;
     }
 
     @Test(dataProvider = JAVA_MODULE_FIXTURE_PROVIDER)
@@ -74,14 +74,14 @@ public class IntellijJavaTypeCreatorTest extends BaseTestCase {
 
         intellijJavaTypeCreator.createFieldAnnotation(psiField1, "java.lang.Deprecated", parameters);
 
-        assert psiField1.annotations.size() == 1;
+        assert psiField1.getAnnotations().size() == 1;
 
-        IJavaAnnotation annotation = (IJavaAnnotation) psiField1.annotations.values().toArray()[0];
+        IJavaAnnotation annotation = (IJavaAnnotation) psiField1.getAnnotations().values().toArray()[0];
 
-        assert annotation.fullyQualifiedName.equals("java.lang.Deprecated");
-        assert annotation.parameters.size() == 2;
-        assert annotation.parameters.get("param1")[0].equals("param1value");
-        assert annotation.parameters.get("param2")[0].equals("param2value");
+        assert annotation.getFullyQualifiedName().equals("java.lang.Deprecated");
+        assert annotation.getParameters().size() == 2;
+        assert annotation.getParameters().get("param1")[0].equals("param1value");
+        assert annotation.getParameters().get("param2")[0].equals("param2value");
     }
 
     @Test(dataProvider = JAVA_MODULE_FIXTURE_PROVIDER)

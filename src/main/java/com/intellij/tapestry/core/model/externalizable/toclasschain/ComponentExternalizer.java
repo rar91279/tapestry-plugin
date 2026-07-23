@@ -5,7 +5,7 @@ import com.intellij.tapestry.core.TapestryConstants;
 import com.intellij.tapestry.core.java.IJavaField;
 import com.intellij.tapestry.core.model.presentation.TapestryComponent;
 import com.intellij.tapestry.core.model.presentation.TapestryParameter;
-import org.apache.commons.chain.Context;
+import com.intellij.tapestry.core.util.chain.Context;
 
 import java.util.ArrayList;
 import java.util.HashMap;

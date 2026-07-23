@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * Represents a Tapestry library.
  */
-public final class TapestryLibrary implements Comparable {
+public class TapestryLibrary implements Comparable {
   private final String _id;
   private final String _basePackage;
   private final TapestryProject _project;

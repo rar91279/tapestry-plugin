@@ -2,7 +2,7 @@ package com.intellij.tapestry.core.model.externalizable.toclasschain;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.tapestry.core.java.IJavaClassType;
-import org.apache.commons.chain.impl.ChainBase;
+import com.intellij.tapestry.core.util.chain.ChainBase;
 
 /**
  * The starting point of the externalize to class chain.

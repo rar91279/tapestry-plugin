@@ -1,7 +1,7 @@
 package com.intellij.tapestry.core.model.externalizable.documentation.generationchain;
 
 import com.intellij.openapi.diagnostic.Logger;
-import org.apache.commons.chain.impl.ChainBase;
+import com.intellij.tapestry.core.util.chain.ChainBase;
 
 /**
  * The starting point of the documentation generation chain.

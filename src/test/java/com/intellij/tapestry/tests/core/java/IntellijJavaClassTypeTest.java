@@ -39,7 +39,7 @@ public class IntellijJavaClassTypeTest extends BaseTestCase {
         PsiClass class1 = getJavaFacade(fixture).findClass("com.app.util.Class1", GlobalSearchScope.moduleRuntimeScope(fixture.getModule(), false));
         IntellijJavaClassType intellijJavaClassType = new IntellijJavaClassType(fixture.getModule(), class1.getContainingFile());
 
-        assert intellijJavaClassType.getFile().name.equals("Class1.java");
+        assert intellijJavaClassType.getFile().getName().equals("Class1.java");
     }
 
     @Test(dataProvider = JAVA_MODULE_FIXTURE_PROVIDER)

@@ -3,6 +3,7 @@ package com.intellij.tapestry.core.model.presentation;
 import com.intellij.tapestry.core.TapestryProject;
 import com.intellij.tapestry.core.exceptions.NotTapestryElementException;
 import com.intellij.tapestry.core.java.IJavaClassType;
+import com.intellij.tapestry.core.java.IJavaTypeFinder;
 import com.intellij.tapestry.core.mocks.JavaAnnotationMock;
 import com.intellij.tapestry.core.mocks.JavaClassTypeMock;
 import com.intellij.tapestry.core.mocks.JavaFieldMock;
@@ -46,7 +47,7 @@ public class PresentationLibraryElementTest {
         replay(builderClassFileMock);
 
         IResource builderClassResourceMock = createMock(IResource.class);
-        expect(builderClassResourceMock.file).andReturn(builderClassFileMock).anyTimes();
+        expect(builderClassResourceMock.getFile()).andReturn(builderClassFileMock).anyTimes();
         replay((builderClassResourceMock));
 
         _classInBasePackageMock = new JavaClassTypeMock("com.app.SomeClass").setPublic(true).setDefaultConstructor(true).setFile(builderClassResourceMock);
@@ -71,6 +72,12 @@ public class PresentationLibraryElementTest {
         _tapestryProjectMock = createMock(TapestryProject.class);
         expect(_tapestryProjectMock.getApplicationRootPackage()).andReturn("com.app").anyTimes();
         expect(_tapestryProjectMock.getResourceFinder()).andReturn(_resourceFinderMock).anyTimes();
+
+        // getParameters() always adds a builtin "mixins" parameter, whose creation resolves java.lang.String.
+        IJavaTypeFinder javaTypeFinderMock = createMock(IJavaTypeFinder.class);
+        expect(javaTypeFinderMock.findType("java.lang.String", true)).andReturn(null).anyTimes();
+        replay(javaTypeFinderMock);
+        expect(_tapestryProjectMock.getJavaTypeFinder()).andReturn(javaTypeFinderMock).anyTimes();
 
         _libraryMock = createMock(TapestryLibrary.class);
         expect(_libraryMock.getBasePackage()).andReturn("com.app").anyTimes();
@@ -156,7 +163,7 @@ public class PresentationLibraryElementTest {
     public void getParameters_no_parameters() {
         assertEquals(
           new TestableParameterReceiverElement(_libraryMock, _classInRootComponentsPackageMock, _tapestryProjectMock).getParameters()
-            .size(), 0);
+            .size(), 1);
 
         JavaFieldMock publicField = new JavaFieldMock("publicField", false).addAnnotation(new JavaAnnotationMock("org.apache.tapestry5.annotations.Parameter"));
         JavaFieldMock privateField = new JavaFieldMock("privateField", true);
@@ -165,7 +172,7 @@ public class PresentationLibraryElementTest {
 
         assertEquals(
           new TestableParameterReceiverElement(_libraryMock, _classInSubComponentsPackageMock, _tapestryProjectMock).getParameters().size(),
-          0);
+          1);
     }
 
     @Test
@@ -176,13 +183,13 @@ public class PresentationLibraryElementTest {
 
         assertEquals(
           new TestableParameterReceiverElement(_libraryMock, _classInSubComponentsPackageMock, _tapestryProjectMock).getParameters().size(),
-          1);
+          2);
     }
 
     @Test
     public void getElementClass() {
         assertEquals(
-                new TestableParameterReceiverElement(_libraryMock, _classInRootComponentsPackageMock, _tapestryProjectMock).getElementClass().fullyQualifiedName, "com.app.components.SomeClass");
+                new TestableParameterReceiverElement(_libraryMock, _classInRootComponentsPackageMock, _tapestryProjectMock).getElementClass().getFullyQualifiedName(), "com.app.components.SomeClass");
     }
 
     @Test

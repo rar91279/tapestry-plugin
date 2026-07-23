@@ -1,8 +1,8 @@
 package com.intellij.tapestry.core.model.externalizable.documentation.generationchain;
 
 import com.intellij.openapi.diagnostic.Logger;
-import org.apache.commons.chain.Command;
-import org.apache.commons.chain.Context;
+import com.intellij.tapestry.core.util.chain.Command;
+import com.intellij.tapestry.core.util.chain.Context;
 
 import java.io.InputStream;
 import java.net.URL;

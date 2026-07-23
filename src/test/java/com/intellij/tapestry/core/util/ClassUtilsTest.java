@@ -32,16 +32,16 @@ public class ClassUtilsTest {
 
         // a class with no getter methods.
         IJavaMethod notGetterMethodsMock = createMock(IJavaMethod.class);
-        expect(notGetterMethodsMock.name).andReturn("setProperty");
-        expect(notGetterMethodsMock.returnType).andReturn(null);
+        expect(notGetterMethodsMock.getName()).andReturn("setProperty");
+        expect(notGetterMethodsMock.getReturnType()).andReturn(null);
 
         IJavaMethod notGetterMethodsMock2 = createMock(IJavaMethod.class);
-        expect(notGetterMethodsMock2.name).andReturn("getProperty2");
-        expect(notGetterMethodsMock2.returnType).andReturn(null);
+        expect(notGetterMethodsMock2.getName()).andReturn("getProperty2");
+        expect(notGetterMethodsMock2.getReturnType()).andReturn(null);
 
         IJavaMethod notGetterMethodsMock3 = createMock(IJavaMethod.class);
-        expect(notGetterMethodsMock3.name).andReturn("get");
-        expect(notGetterMethodsMock3.returnType).andReturn(new JavaPrimitiveTypeMock("char")).anyTimes();
+        expect(notGetterMethodsMock3.getName()).andReturn("get");
+        expect(notGetterMethodsMock3.getReturnType()).andReturn(new JavaPrimitiveTypeMock("char")).anyTimes();
 
         replay(notGetterMethodsMock, notGetterMethodsMock2, notGetterMethodsMock3);
 
@@ -54,20 +54,20 @@ public class ClassUtilsTest {
     @Test
     public void getClassProperties_with_properties() {
         IJavaMethod getterMethodMock = createMock(IJavaMethod.class);
-        expect(getterMethodMock.name).andReturn("getProperty1").anyTimes();
-        expect(getterMethodMock.returnType).andReturn(new JavaPrimitiveTypeMock("boolean")).anyTimes();
+        expect(getterMethodMock.getName()).andReturn("getProperty1").anyTimes();
+        expect(getterMethodMock.getReturnType()).andReturn(new JavaPrimitiveTypeMock("boolean")).anyTimes();
 
         IJavaMethod getterMethod2Mock = createMock(IJavaMethod.class);
-        expect(getterMethod2Mock.name).andReturn("getPropertyProp2").anyTimes();
-        expect(getterMethod2Mock.returnType).andReturn(new JavaPrimitiveTypeMock("boolean")).anyTimes();
+        expect(getterMethod2Mock.getName()).andReturn("getPropertyProp2").anyTimes();
+        expect(getterMethod2Mock.getReturnType()).andReturn(new JavaPrimitiveTypeMock("boolean")).anyTimes();
 
         IJavaMethod isMethodMock = createMock(IJavaMethod.class);
-        expect(isMethodMock.name).andReturn("isProperty2").anyTimes();
-        expect(isMethodMock.returnType).andReturn(new JavaPrimitiveTypeMock("boolean")).anyTimes();
+        expect(isMethodMock.getName()).andReturn("isProperty2").anyTimes();
+        expect(isMethodMock.getReturnType()).andReturn(new JavaPrimitiveTypeMock("boolean")).anyTimes();
 
         IJavaMethod isMethodNotBooleanMock = createMock(IJavaMethod.class);
-        expect(isMethodNotBooleanMock.name).andReturn("isProperty3").anyTimes();
-        expect(isMethodNotBooleanMock.returnType).andReturn(new JavaPrimitiveTypeMock("short")).anyTimes();
+        expect(isMethodNotBooleanMock.getName()).andReturn("isProperty3").anyTimes();
+        expect(isMethodNotBooleanMock.getReturnType()).andReturn(new JavaPrimitiveTypeMock("short")).anyTimes();
 
         replay(getterMethodMock, getterMethod2Mock, isMethodMock, isMethodNotBooleanMock);
 

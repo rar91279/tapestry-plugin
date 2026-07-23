@@ -1,7 +1,7 @@
 package com.intellij.tapestry.core.model.externalizable.totemplatechain;
 
 import com.intellij.openapi.diagnostic.Logger;
-import org.apache.commons.chain.impl.ChainBase;
+import com.intellij.tapestry.core.util.chain.ChainBase;
 
 /**
  * The starting point of the externalize to template chain.

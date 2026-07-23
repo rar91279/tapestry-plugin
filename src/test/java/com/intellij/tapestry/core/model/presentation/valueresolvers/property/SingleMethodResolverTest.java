@@ -39,9 +39,9 @@ public class SingleMethodResolverTest extends AbstractSpecialCaseTest {
 
         assert _singleMethodResolver.execute(_valueResolverContext);
 
-        assert ((IJavaClassType) _valueResolverContext.getResultType()).fullyQualifiedName.equals("method1returntype");
+        assert ((IJavaClassType) _valueResolverContext.getResultType()).getFullyQualifiedName().equals("method1returntype");
 
-        assert ((IJavaMethod) _valueResolverContext.getResultCodeBind()).name.equals("method1");
+        assert ((IJavaMethod) _valueResolverContext.getResultCodeBind()).getName().equals("method1");
     }
 
     @Test

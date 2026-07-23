@@ -24,7 +24,7 @@ public class SpecialCaseNumericResolverTest extends AbstractSpecialCaseTest {
         replay();
 
         assert _specialCaseNumericResolver.execute(_valueResolverContext);
-        assert ((IJavaClassType) _valueResolverContext.getResultType()).fullyQualifiedName.equals("java.lang.Long");
+        assert ((IJavaClassType) _valueResolverContext.getResultType()).getFullyQualifiedName().equals("java.lang.Long");
 
         reset();
 
@@ -34,7 +34,7 @@ public class SpecialCaseNumericResolverTest extends AbstractSpecialCaseTest {
         replay();
 
         assert _specialCaseNumericResolver.execute(_valueResolverContext);
-        assert ((IJavaClassType) _valueResolverContext.getResultType()).fullyQualifiedName.equals("java.lang.Long");
+        assert ((IJavaClassType) _valueResolverContext.getResultType()).getFullyQualifiedName().equals("java.lang.Long");
     }
 
     @Test
@@ -45,7 +45,7 @@ public class SpecialCaseNumericResolverTest extends AbstractSpecialCaseTest {
         replay();
 
         assert _specialCaseNumericResolver.execute(_valueResolverContext);
-        assert ((IJavaClassType) _valueResolverContext.getResultType()).fullyQualifiedName.equals("java.lang.Double");
+        assert ((IJavaClassType) _valueResolverContext.getResultType()).getFullyQualifiedName().equals("java.lang.Double");
 
         reset();
 
@@ -55,7 +55,7 @@ public class SpecialCaseNumericResolverTest extends AbstractSpecialCaseTest {
         replay();
 
         assert _specialCaseNumericResolver.execute(_valueResolverContext);
-        assert ((IJavaClassType) _valueResolverContext.getResultType()).fullyQualifiedName.equals("java.lang.Double");
+        assert ((IJavaClassType) _valueResolverContext.getResultType()).getFullyQualifiedName().equals("java.lang.Double");
     }
 
     @Test

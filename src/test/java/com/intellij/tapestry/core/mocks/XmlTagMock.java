@@ -77,7 +77,7 @@ public class XmlTagMock implements XmlTag {
     }
 
     public XmlTagMock addAttribute(XmlAttribute attribute) {
-        _attributes.add(new XmlAttributeMock(attribute.localName, attribute.value));
+        _attributes.add(new XmlAttributeMock(attribute.getLocalName(), attribute.getValue()));
 
         return this;
     }

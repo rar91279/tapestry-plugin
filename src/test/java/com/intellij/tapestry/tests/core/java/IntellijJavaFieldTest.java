@@ -33,7 +33,7 @@ public class IntellijJavaFieldTest extends BaseTestCase {
 
         assertTrue(new IntellijJavaField(fixture.getModule(), psiField).getType() instanceof IJavaPrimitiveType);
 
-        assertEquals(new IntellijJavaField(fixture.getModule(), psiField).getType().name, "boolean");
+        assertEquals(new IntellijJavaField(fixture.getModule(), psiField).getType().getName(), "boolean");
     }
 
     @Test(dataProvider = JAVA_MODULE_FIXTURE_PROVIDER)

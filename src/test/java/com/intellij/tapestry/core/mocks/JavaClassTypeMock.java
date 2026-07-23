@@ -120,7 +120,7 @@ public class JavaClassTypeMock implements IJavaClassType {
 
     Collection<IJavaMethod> allMethods = getPublicMethods(true);
     for (IJavaMethod method : allMethods) {
-      if (pattern.matcher(method.name).matches()) {
+      if (pattern.matcher(method.getName()).matches()) {
         foundMethods.add(method);
       }
     }
@@ -139,7 +139,7 @@ public class JavaClassTypeMock implements IJavaClassType {
   }
 
   public JavaClassTypeMock addField(IJavaField field) {
-    _fields.put(field.name, field);
+    _fields.put(field.getName(), field);
 
     return this;
   }

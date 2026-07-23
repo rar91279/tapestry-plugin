@@ -5,7 +5,7 @@ import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.tapestry.core.TapestryProject;
 import com.intellij.tapestry.core.java.IJavaClassType;
 import com.intellij.tapestry.core.model.presentation.valueresolvers.property.PropResolver;
-import org.apache.commons.chain.impl.ChainBase;
+import com.intellij.tapestry.core.util.chain.ChainBase;
 import org.jetbrains.annotations.Nullable;
 
 /**

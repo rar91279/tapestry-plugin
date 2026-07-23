@@ -1,6 +1,6 @@
 package com.intellij.tapestry.core.model.presentation.valueresolvers;
 
-import org.apache.commons.chain.Command;
+import com.intellij.tapestry.core.util.chain.Command;
 import org.jetbrains.annotations.Nullable;
 
 /**

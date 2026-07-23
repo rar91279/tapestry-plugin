@@ -68,7 +68,7 @@ public class JavaFieldMock implements IJavaField {
     }
 
     public JavaFieldMock addAnnotation(IJavaAnnotation annotation) {
-        _annotations.put(annotation.fullyQualifiedName, annotation);
+        _annotations.put(annotation.getFullyQualifiedName(), annotation);
 
         return this;
     }

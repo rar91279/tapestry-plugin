@@ -1,6 +1,6 @@
 package com.intellij.tapestry.core.model.externalizable.documentation.generationchain;
 
-import org.apache.commons.chain.Context;
+import com.intellij.tapestry.core.util.chain.Context;
 
 import java.util.HashMap;
 

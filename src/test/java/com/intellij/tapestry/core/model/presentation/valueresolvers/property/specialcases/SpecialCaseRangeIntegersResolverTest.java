@@ -24,7 +24,7 @@ public class SpecialCaseRangeIntegersResolverTest extends AbstractSpecialCaseTes
         replay();
 
         assert _specialCaseRangeIntegersResolver.execute(_valueResolverContext);
-        assert ((IJavaClassType) _valueResolverContext.getResultType()).fullyQualifiedName.equals("java.lang.Iterable");
+        assert ((IJavaClassType) _valueResolverContext.getResultType()).getFullyQualifiedName().equals("java.lang.Iterable");
 
         reset();
 
@@ -34,7 +34,7 @@ public class SpecialCaseRangeIntegersResolverTest extends AbstractSpecialCaseTes
         replay();
 
         assert _specialCaseRangeIntegersResolver.execute(_valueResolverContext);
-        assert ((IJavaClassType) _valueResolverContext.getResultType()).fullyQualifiedName.equals("java.lang.Iterable");
+        assert ((IJavaClassType) _valueResolverContext.getResultType()).getFullyQualifiedName().equals("java.lang.Iterable");
     }
 
     @Test

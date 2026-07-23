@@ -1,7 +1,7 @@
 package com.intellij.tapestry.core.model.externalizable.totemplatechain;
 
-import org.apache.commons.chain.Command;
-import org.apache.commons.chain.Context;
+import com.intellij.tapestry.core.util.chain.Command;
+import com.intellij.tapestry.core.util.chain.Context;
 
 /**
  * Base class for all to template externalizers.

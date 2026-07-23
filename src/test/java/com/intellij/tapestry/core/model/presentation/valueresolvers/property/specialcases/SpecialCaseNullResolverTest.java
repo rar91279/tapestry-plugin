@@ -25,7 +25,7 @@ public class SpecialCaseNullResolverTest extends AbstractSpecialCaseTest {
         replay();
 
         assert _specialCaseNullResolver.execute(_valueResolverContext);
-        assert ((IJavaClassType) _valueResolverContext.getResultType()).fullyQualifiedName.equals(CommonClassNames.JAVA_LANG_OBJECT);
+        assert ((IJavaClassType) _valueResolverContext.getResultType()).getFullyQualifiedName().equals(CommonClassNames.JAVA_LANG_OBJECT);
 
         reset();
 
@@ -35,7 +35,7 @@ public class SpecialCaseNullResolverTest extends AbstractSpecialCaseTest {
         replay();
 
         assert _specialCaseNullResolver.execute(_valueResolverContext);
-        assert ((IJavaClassType) _valueResolverContext.getResultType()).fullyQualifiedName.equals(CommonClassNames.JAVA_LANG_OBJECT);
+        assert ((IJavaClassType) _valueResolverContext.getResultType()).getFullyQualifiedName().equals(CommonClassNames.JAVA_LANG_OBJECT);
     }
 
     @Test

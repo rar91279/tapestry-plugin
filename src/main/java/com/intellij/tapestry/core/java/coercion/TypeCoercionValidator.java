@@ -5,9 +5,9 @@ import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.tapestry.core.TapestryProject;
 import com.intellij.tapestry.core.java.AssignableToAll;
 import com.intellij.tapestry.core.java.IJavaType;
-import org.apache.commons.chain.Chain;
-import org.apache.commons.chain.Context;
-import org.apache.commons.chain.impl.ChainBase;
+import com.intellij.tapestry.core.util.chain.Chain;
+import com.intellij.tapestry.core.util.chain.Context;
+import com.intellij.tapestry.core.util.chain.ChainBase;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

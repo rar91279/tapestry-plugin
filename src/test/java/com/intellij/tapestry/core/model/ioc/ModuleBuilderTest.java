@@ -30,7 +30,7 @@ public class ModuleBuilderTest {
         org.easymock.EasyMock.replay(builderClassFileMock);
 
         IResource builderClassResourceMock = createMock(IResource.class);
-        expect(builderClassResourceMock.file).andReturn(builderClassFileMock);
+        expect(builderClassResourceMock.getFile()).andReturn(builderClassFileMock);
         replay((builderClassResourceMock));
 
         _builderClassWithBuildMethodsMock = new JavaClassTypeMock().setFile(builderClassResourceMock);
@@ -38,16 +38,16 @@ public class ModuleBuilderTest {
         _returnTypeMock = new JavaClassTypeMock("MyService");
 
         _buildMethodMock = createMock(IJavaMethod.class);
-        expect(_buildMethodMock.name).andReturn("build").anyTimes();
-        expect(_buildMethodMock.parameters).andReturn(new ArrayList<>()).anyTimes();
-        expect(_buildMethodMock.returnType).andReturn(_returnTypeMock).anyTimes();
-        expect(_buildMethodMock.containingClass).andReturn(_builderClassWithBuildMethodsMock).anyTimes();
+        expect(_buildMethodMock.getName()).andReturn("build").anyTimes();
+        expect(_buildMethodMock.getParameters()).andReturn(new ArrayList<>()).anyTimes();
+        expect(_buildMethodMock.getReturnType()).andReturn(_returnTypeMock).anyTimes();
+        expect(_buildMethodMock.getContainingClass()).andReturn(_builderClassWithBuildMethodsMock).anyTimes();
 
         _buildMethodWithSuffixMock = createMock(IJavaMethod.class);
-        expect(_buildMethodWithSuffixMock.name).andReturn("buildSomeService").anyTimes();
-        expect(_buildMethodWithSuffixMock.parameters).andReturn(new ArrayList<>()).anyTimes();
-        expect(_buildMethodWithSuffixMock.returnType).andReturn(_returnTypeMock).anyTimes();
-        expect(_buildMethodWithSuffixMock.containingClass).andReturn(_builderClassWithBuildMethodsMock).anyTimes();
+        expect(_buildMethodWithSuffixMock.getName()).andReturn("buildSomeService").anyTimes();
+        expect(_buildMethodWithSuffixMock.getParameters()).andReturn(new ArrayList<>()).anyTimes();
+        expect(_buildMethodWithSuffixMock.getReturnType()).andReturn(_returnTypeMock).anyTimes();
+        expect(_buildMethodWithSuffixMock.getContainingClass()).andReturn(_builderClassWithBuildMethodsMock).anyTimes();
     }
 
     @Test

@@ -58,7 +58,7 @@ public class PageTest {
         expect(_resourceFinderMock.findLocalizedContextResource("SomeClass.tml")).andReturn(new ArrayList<>()).anyTimes();
         replay(_resourceFinderMock);
 
-        assert new Page(_libraryMock, _classInRootPagesPackageMock, _tapestryProjectMock).getTemplate()[0].name.equals("SomeClass.tml");
+        assert new Page(_libraryMock, _classInRootPagesPackageMock, _tapestryProjectMock).getTemplate()[0].getName().equals("SomeClass.tml");
     }
 
     @Test
@@ -70,7 +70,7 @@ public class PageTest {
         expect(_resourceFinderMock.findLocalizedContextResource("SomeClass.tml")).andReturn(templates).anyTimes();
         replay(_resourceFinderMock);
 
-        assertEquals(new Page(_libraryMock, _classInRootPagesPackageMock, _tapestryProjectMock).getTemplate()[0].name,
+        assertEquals(new Page(_libraryMock, _classInRootPagesPackageMock, _tapestryProjectMock).getTemplate()[0].getName(),
                      "SomeClass.tml");
     }
 

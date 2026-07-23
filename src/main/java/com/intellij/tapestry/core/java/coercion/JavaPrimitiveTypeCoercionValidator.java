@@ -2,8 +2,8 @@ package com.intellij.tapestry.core.java.coercion;
 
 import com.intellij.tapestry.core.java.IJavaPrimitiveType;
 import com.intellij.tapestry.core.java.IJavaType;
-import org.apache.commons.chain.Command;
-import org.apache.commons.chain.Context;
+import com.intellij.tapestry.core.util.chain.Command;
+import com.intellij.tapestry.core.util.chain.Context;
 
 import java.util.HashMap;
 import java.util.Map;

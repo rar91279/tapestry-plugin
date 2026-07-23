@@ -4,7 +4,7 @@ import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.CommonClassNames;
 import com.intellij.tapestry.core.model.presentation.valueresolvers.AbstractValueResolver;
 import com.intellij.tapestry.core.model.presentation.valueresolvers.ValueResolverContext;
-import org.apache.commons.chain.Context;
+import com.intellij.tapestry.core.util.chain.Context;
 
 /**
  * Resolves the special case when a property value is given as a null literal.

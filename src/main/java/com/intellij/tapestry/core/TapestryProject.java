@@ -35,7 +35,7 @@ import java.util.*;
 /**
  * A Tapestry project. Every IDE implementation must hold a reference to an instance of this class for each project.
  */
-public final class TapestryProject {
+public class TapestryProject {
   public static final Object[] JAVA_STRUCTURE_DEPENDENCY = {PsiModificationTracker.MODIFICATION_COUNT};
   public static final Object[] OUT_OF_CODE_BLOCK_DEPENDENCY = {PsiModificationTracker.MODIFICATION_COUNT};
   /**

@@ -1,6 +1,6 @@
 package com.intellij.tapestry.core.model.presentation.valueresolvers;
 
-import org.apache.commons.chain.Context;
+import com.intellij.tapestry.core.util.chain.Context;
 
 /**
  * Resolves message values.

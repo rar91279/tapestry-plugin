@@ -1,7 +1,13 @@
 [versions]
 junit = "4.13.2"
-commons-chain = "1.2"
+testng = "7.10.2"
+easymock = "5.2.0"
+hamcrest = "2.2"
+xmlunit = "2.10.0"
 
 [libraries]
 junit = { module = "junit:junit", version.ref = "junit" }
-commonsChain = { module = "commons-chain:commons-chain", version.ref = "commons-chain" }
+testng = { module = "org.testng:testng", version.ref = "testng" }
+easymock = { module = "org.easymock:easymock", version.ref = "easymock" }
+hamcrest = { module = "org.hamcrest:hamcrest", version.ref = "hamcrest" }
+xmlunit-matchers = { module = "org.xmlunit:xmlunit-matchers", version.ref = "xmlunit" }

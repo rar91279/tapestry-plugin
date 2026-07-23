@@ -4,7 +4,7 @@ import com.intellij.tapestry.core.model.externalizable.documentation.Home;
 import com.intellij.tapestry.core.model.externalizable.documentation.wrapper.PresentationElementDocumentationWrapper;
 import com.intellij.tapestry.core.util.ClassLocator;
 import com.intellij.tapestry.core.util.VelocityProcessor;
-import org.apache.commons.chain.Context;
+import com.intellij.tapestry.core.util.chain.Context;
 
 import java.util.HashMap;
 import java.util.List;

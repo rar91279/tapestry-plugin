@@ -4,8 +4,8 @@ import com.intellij.psi.CommonClassNames;
 import com.intellij.tapestry.core.java.IJavaArrayType;
 import com.intellij.tapestry.core.java.IJavaClassType;
 import com.intellij.tapestry.core.java.IJavaType;
-import org.apache.commons.chain.Command;
-import org.apache.commons.chain.Context;
+import com.intellij.tapestry.core.util.chain.Command;
+import com.intellij.tapestry.core.util.chain.Context;
 
 public class JavaArrayTypeCoercionValidator implements Command {
 

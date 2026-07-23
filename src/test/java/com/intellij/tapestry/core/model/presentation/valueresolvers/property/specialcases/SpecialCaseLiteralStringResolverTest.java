@@ -24,7 +24,7 @@ public class SpecialCaseLiteralStringResolverTest extends AbstractSpecialCaseTes
         replay();
 
         assert _specialCaseLiteralStringResolver.execute(_valueResolverContext);
-        assert ((IJavaClassType) _valueResolverContext.getResultType()).fullyQualifiedName.equals("java.lang.String");
+        assert ((IJavaClassType) _valueResolverContext.getResultType()).getFullyQualifiedName().equals("java.lang.String");
 
         reset();
 
@@ -34,7 +34,7 @@ public class SpecialCaseLiteralStringResolverTest extends AbstractSpecialCaseTes
         replay();
 
         assert _specialCaseLiteralStringResolver.execute(_valueResolverContext);
-        assert ((IJavaClassType) _valueResolverContext.getResultType()).fullyQualifiedName.equals("java.lang.String");
+        assert ((IJavaClassType) _valueResolverContext.getResultType()).getFullyQualifiedName().equals("java.lang.String");
     }
 
     @Test

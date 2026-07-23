@@ -1,7 +1,7 @@
 package com.intellij.tapestry.core.model.externalizable.toclasschain;
 
 import com.intellij.tapestry.core.java.IJavaClassType;
-import org.apache.commons.chain.Context;
+import com.intellij.tapestry.core.util.chain.Context;
 
 import java.util.HashMap;
 

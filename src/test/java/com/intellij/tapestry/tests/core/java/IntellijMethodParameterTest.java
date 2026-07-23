@@ -26,7 +26,7 @@ public class IntellijMethodParameterTest extends BaseTestCase {
 
         assert methodParameter.getType() instanceof IJavaClassType;
 
-        assert ((IJavaClassType) methodParameter.getType()).fullyQualifiedName.equals("com.app.util.Class1");
+        assert ((IJavaClassType) methodParameter.getType()).getFullyQualifiedName().equals("com.app.util.Class1");
     }
 
     @Test(dataProvider = JAVA_MODULE_FIXTURE_PROVIDER)
@@ -41,7 +41,7 @@ public class IntellijMethodParameterTest extends BaseTestCase {
 
         assert methodParameter.getType() instanceof IJavaPrimitiveType;
 
-        assert methodParameter.getType().name.equals("int");
+        assert methodParameter.getType().getName().equals("int");
     }
 
     @Test(dataProvider = JAVA_MODULE_FIXTURE_PROVIDER)

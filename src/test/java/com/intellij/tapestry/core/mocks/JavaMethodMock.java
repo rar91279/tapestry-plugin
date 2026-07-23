@@ -64,7 +64,7 @@ public class JavaMethodMock implements IJavaMethod {
     @Override
     public IJavaAnnotation getAnnotation(String annotationQualifiedName) {
         for (IJavaAnnotation annotation : _annotations)
-            if (annotation.fullyQualifiedName.equals(annotationQualifiedName))
+            if (annotation.getFullyQualifiedName().equals(annotationQualifiedName))
                 return annotation;
 
         return null;

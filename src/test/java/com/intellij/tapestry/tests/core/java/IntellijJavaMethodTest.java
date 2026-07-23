@@ -23,7 +23,7 @@ public class IntellijJavaMethodTest extends BaseTestCase {
 
         assert method.getName().equals("method1");
 
-        assert ((IJavaClassType) method.getReturnType()).fullyQualifiedName.equals("com.app.util.Class1");
+        assert ((IJavaClassType) method.getReturnType()).getFullyQualifiedName().equals("com.app.util.Class1");
 
         assert method.getAnnotations().size() == 2;
 
@@ -60,7 +60,7 @@ public class IntellijJavaMethodTest extends BaseTestCase {
 
         assert method3.getName().equals("method3");
 
-        assert method3.getReturnType().name.equals("int");
+        assert method3.getReturnType().getName().equals("int");
 
         assert method3.getAnnotations().size() == 0;
 
@@ -71,7 +71,7 @@ public class IntellijJavaMethodTest extends BaseTestCase {
         // void return
         assert method4.getReturnType() instanceof IntellijJavaPrimitiveType;
 
-        assert method4.getReturnType().name.equals("void");
+        assert method4.getReturnType().getName().equals("void");
 
         // invalid class return
         assert method5.getReturnType() == null;
@@ -85,7 +85,7 @@ public class IntellijJavaMethodTest extends BaseTestCase {
 
         assert method1.getAnnotation(null) == null;
 
-        assert method1.getAnnotation("java.lang.SuppressWarnings").fullyQualifiedName.equals("java.lang.SuppressWarnings");
+        assert method1.getAnnotation("java.lang.SuppressWarnings").getFullyQualifiedName().equals("java.lang.SuppressWarnings");
     }
 
     @Test(dataProvider = JAVA_MODULE_FIXTURE_PROVIDER)

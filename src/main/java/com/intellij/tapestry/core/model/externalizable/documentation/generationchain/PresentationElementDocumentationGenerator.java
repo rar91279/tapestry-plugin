@@ -2,7 +2,7 @@ package com.intellij.tapestry.core.model.externalizable.documentation.generation
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.tapestry.core.model.presentation.PresentationLibraryElement;
-import org.apache.commons.chain.Context;
+import com.intellij.tapestry.core.util.chain.Context;
 
 /**
  * Base class for all presentation elements documentation generator commands.

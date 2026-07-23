@@ -13,10 +13,10 @@ public class IntellijResourceFinderTest extends BaseTestCase {
         IntellijResourceFinder resourceFinder = new IntellijResourceFinder(fixture.getModule());
 
         assert resourceFinder.findClasspathResource("/com/app/util/Home.tml", false).toArray(
-          IResource.EMPTY_ARRAY)[0].name.equals("Home.tml");
+          IResource.EMPTY_ARRAY)[0].getName().equals("Home.tml");
 
         assert resourceFinder.findClasspathResource("com/app/util/Home.tml", false).toArray(
-          IResource.EMPTY_ARRAY)[0].name.equals("Home.tml");
+          IResource.EMPTY_ARRAY)[0].getName().equals("Home.tml");
 
         assert resourceFinder.findClasspathResource("/com/app/dep/Home.tml", false).size() == 0;
 
@@ -30,16 +30,16 @@ public class IntellijResourceFinderTest extends BaseTestCase {
         IntellijResourceFinder resourceFinder = new IntellijResourceFinder(fixture.getModule());
 
         assert resourceFinder.findClasspathResource("/com/app/util/Home.tml", true).toArray(
-          IResource.EMPTY_ARRAY)[0].name.equals("Home.tml");
+          IResource.EMPTY_ARRAY)[0].getName().equals("Home.tml");
 
         assert resourceFinder.findClasspathResource("com/app/util/Home.tml", true).toArray(
-          IResource.EMPTY_ARRAY)[0].name.equals("Home.tml");
+          IResource.EMPTY_ARRAY)[0].getName().equals("Home.tml");
 
         assert resourceFinder.findClasspathResource("/com/app/dep/Home.tml", true).toArray(
-          IResource.EMPTY_ARRAY)[0].name.equals("Home.tml");
+          IResource.EMPTY_ARRAY)[0].getName().equals("Home.tml");
 
         assert resourceFinder.findClasspathResource("com/app/dep/Home.tml", true).toArray(
-          IResource.EMPTY_ARRAY)[0].name.equals("Home.tml");
+          IResource.EMPTY_ARRAY)[0].getName().equals("Home.tml");
 
         assert resourceFinder.findClasspathResource("com/app/dep/Home1.tml", true).size() == 0;
     }

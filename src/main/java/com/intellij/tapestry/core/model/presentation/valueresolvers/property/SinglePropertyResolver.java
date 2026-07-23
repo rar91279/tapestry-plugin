@@ -6,7 +6,7 @@ import com.intellij.tapestry.core.java.IJavaMethod;
 import com.intellij.tapestry.core.model.presentation.valueresolvers.AbstractValueResolver;
 import com.intellij.tapestry.core.model.presentation.valueresolvers.ValueResolverContext;
 import com.intellij.tapestry.core.util.ClassUtils;
-import org.apache.commons.chain.Context;
+import com.intellij.tapestry.core.util.chain.Context;
 
 import java.util.Map;
 import java.util.regex.Pattern;

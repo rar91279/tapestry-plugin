@@ -5,10 +5,10 @@ import com.intellij.tapestry.core.java.IJavaType;
 import com.intellij.tapestry.core.model.presentation.valueresolvers.AbstractValueResolver;
 import com.intellij.tapestry.core.model.presentation.valueresolvers.ValueResolverContext;
 import com.intellij.tapestry.core.model.presentation.valueresolvers.property.specialcases.*;
-import org.apache.commons.chain.Chain;
-import org.apache.commons.chain.Command;
-import org.apache.commons.chain.Context;
-import org.apache.commons.chain.impl.ChainBase;
+import com.intellij.tapestry.core.util.chain.Chain;
+import com.intellij.tapestry.core.util.chain.Command;
+import com.intellij.tapestry.core.util.chain.Context;
+import com.intellij.tapestry.core.util.chain.ChainBase;
 
 import java.util.StringTokenizer;
 

@@ -23,7 +23,7 @@ public class SpecialCaseThisResolverTest extends AbstractSpecialCaseTest {
         replay();
 
         assert _specialCaseThisResolver.execute(_valueResolverContext);
-        assert ((IJavaClassType) _valueResolverContext.getResultType()).fullyQualifiedName.equals("myComponentName");
+        assert ((IJavaClassType) _valueResolverContext.getResultType()).getFullyQualifiedName().equals("myComponentName");
 
         reset();
 
@@ -32,7 +32,7 @@ public class SpecialCaseThisResolverTest extends AbstractSpecialCaseTest {
         replay();
 
         assert _specialCaseThisResolver.execute(_valueResolverContext);
-        assert ((IJavaClassType) _valueResolverContext.getResultType()).fullyQualifiedName.equals("myComponentName");
+        assert ((IJavaClassType) _valueResolverContext.getResultType()).getFullyQualifiedName().equals("myComponentName");
     }
 
     @Test

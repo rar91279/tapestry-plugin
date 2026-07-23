@@ -1,7 +1,7 @@
 package com.intellij.tapestry.core.model.presentation.valueresolvers;
 
 import com.intellij.tapestry.core.java.AssignableToAll;
-import org.apache.commons.chain.Context;
+import com.intellij.tapestry.core.util.chain.Context;
 
 /**
  * Resolves component values.

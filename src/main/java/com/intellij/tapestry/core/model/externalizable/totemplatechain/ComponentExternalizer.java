@@ -4,7 +4,7 @@ import com.intellij.tapestry.core.TapestryProject;
 import com.intellij.tapestry.core.model.presentation.TapestryComponent;
 import com.intellij.tapestry.core.model.presentation.TapestryParameter;
 import com.intellij.tapestry.core.util.PathUtils;
-import org.apache.commons.chain.Context;
+import com.intellij.tapestry.core.util.chain.Context;
 
 import java.util.Locale;
 

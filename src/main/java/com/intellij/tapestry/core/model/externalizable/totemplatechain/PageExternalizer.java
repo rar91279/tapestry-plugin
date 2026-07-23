@@ -2,7 +2,7 @@ package com.intellij.tapestry.core.model.externalizable.totemplatechain;
 
 import com.intellij.tapestry.core.TapestryProject;
 import com.intellij.tapestry.core.model.presentation.Page;
-import org.apache.commons.chain.Context;
+import com.intellij.tapestry.core.util.chain.Context;
 
 /**
  * Externalizes a page to be included in a template.

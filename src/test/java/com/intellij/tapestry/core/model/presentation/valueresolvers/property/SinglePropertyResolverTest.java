@@ -31,9 +31,9 @@ public class SinglePropertyResolverTest extends AbstractSpecialCaseTest {
 
         assert _singlePropertyResolver.execute(_valueResolverContext);
 
-        assert ((IJavaClassType) _valueResolverContext.getResultType()).fullyQualifiedName.equals("prop1returntype");
+        assert ((IJavaClassType) _valueResolverContext.getResultType()).getFullyQualifiedName().equals("prop1returntype");
 
-        assert ((IJavaMethod) _valueResolverContext.getResultCodeBind()).name.equals("getProp1");
+        assert ((IJavaMethod) _valueResolverContext.getResultCodeBind()).getName().equals("getProp1");
 
         reset();
 
@@ -43,9 +43,9 @@ public class SinglePropertyResolverTest extends AbstractSpecialCaseTest {
 
         assert _singlePropertyResolver.execute(_valueResolverContext);
 
-        assert ((IJavaClassType) _valueResolverContext.getResultType()).fullyQualifiedName.equals("prop1returntype");
+        assert ((IJavaClassType) _valueResolverContext.getResultType()).getFullyQualifiedName().equals("prop1returntype");
 
-        assert ((IJavaMethod) _valueResolverContext.getResultCodeBind()).name.equals("getProp1");
+        assert ((IJavaMethod) _valueResolverContext.getResultCodeBind()).getName().equals("getProp1");
     }
 
     @Test

@@ -3,7 +3,7 @@ package com.intellij.tapestry.core.model.presentation.valueresolvers.property.sp
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.tapestry.core.model.presentation.valueresolvers.AbstractValueResolver;
 import com.intellij.tapestry.core.model.presentation.valueresolvers.ValueResolverContext;
-import org.apache.commons.chain.Context;
+import com.intellij.tapestry.core.util.chain.Context;
 
 import java.util.regex.Pattern;
 

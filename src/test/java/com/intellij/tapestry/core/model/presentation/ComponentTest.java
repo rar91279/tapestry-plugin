@@ -34,7 +34,7 @@ public class ComponentTest {
         replay(builderClassFileMock);
 
         IResource builderClassResourceMock = createMock(IResource.class);
-        expect(builderClassResourceMock.file).andReturn(builderClassFileMock).anyTimes();
+        expect(builderClassResourceMock.getFile()).andReturn(builderClassFileMock).anyTimes();
         replay((builderClassResourceMock));
 
         _classInRootComponentsPackageMock = new JavaClassTypeMock("com.app.components.SomeClass").setPublic(true).setDefaultConstructor(true).setFile(builderClassResourceMock);
@@ -79,7 +79,7 @@ public class ComponentTest {
         replay(_resourceFinderMock);
 
         assertEquals(
-                new TapestryComponent(_libraryMock, _classInRootComponentsPackageMock, _tapestryProjectMock).getTemplate()[0].name,
+                new TapestryComponent(_libraryMock, _classInRootComponentsPackageMock, _tapestryProjectMock).getTemplate()[0].getName(),
           "SomeClass.tml");
     }
 

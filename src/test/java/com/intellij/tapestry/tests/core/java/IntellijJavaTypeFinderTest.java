@@ -12,16 +12,16 @@ public class IntellijJavaTypeFinderTest extends BaseTestCase {
 
     @Test(dataProvider = JAVA_MODULE_FIXTURE_PROVIDER)
     public void findType_no_dependencies(IdeaProjectTestFixture fixture) {
-        assert new IntellijJavaTypeFinder(fixture.getModule()).findType("com.app.util.Class1", false).fullyQualifiedName.equals("com.app.util.Class1");
+        assert new IntellijJavaTypeFinder(fixture.getModule()).findType("com.app.util.Class1", false).getFullyQualifiedName().equals("com.app.util.Class1");
 
         assert new IntellijJavaTypeFinder(fixture.getModule()).findType("com.app.dep.Dep1", false) == null;
     }
 
     @Test(dataProvider = JAVA_MODULE_FIXTURE_PROVIDER)
     public void findType_with_dependencies(IdeaProjectTestFixture fixture) {
-        assert new IntellijJavaTypeFinder(fixture.getModule()).findType("com.app.util.Class1", true).fullyQualifiedName.equals("com.app.util.Class1");
+        assert new IntellijJavaTypeFinder(fixture.getModule()).findType("com.app.util.Class1", true).getFullyQualifiedName().equals("com.app.util.Class1");
 
-        assert new IntellijJavaTypeFinder(fixture.getModule()).findType("com.app.dep.Dep1", true).fullyQualifiedName.equals("com.app.dep.Dep1");
+        assert new IntellijJavaTypeFinder(fixture.getModule()).findType("com.app.dep.Dep1", true).getFullyQualifiedName().equals("com.app.dep.Dep1");
     }
 
     @Test(dataProvider = JAVA_MODULE_FIXTURE_PROVIDER)

@@ -24,7 +24,7 @@ public class SpecialCaseBooleanResolverTest extends AbstractSpecialCaseTest {
         replay();
 
         assert _specialCaseBooleanResolver.execute(_valueResolverContext);
-        assert ((IJavaClassType) _valueResolverContext.getResultType()).fullyQualifiedName.equals("java.lang.Boolean");
+        assert ((IJavaClassType) _valueResolverContext.getResultType()).getFullyQualifiedName().equals("java.lang.Boolean");
 
         reset();
 
@@ -34,7 +34,7 @@ public class SpecialCaseBooleanResolverTest extends AbstractSpecialCaseTest {
         replay();
 
         assert _specialCaseBooleanResolver.execute(_valueResolverContext);
-        assert ((IJavaClassType) _valueResolverContext.getResultType()).fullyQualifiedName.equals("java.lang.Boolean");
+        assert ((IJavaClassType) _valueResolverContext.getResultType()).getFullyQualifiedName().equals("java.lang.Boolean");
 
         reset();
 
@@ -44,7 +44,7 @@ public class SpecialCaseBooleanResolverTest extends AbstractSpecialCaseTest {
         replay();
 
         assert _specialCaseBooleanResolver.execute(_valueResolverContext);
-        assert ((IJavaClassType) _valueResolverContext.getResultType()).fullyQualifiedName.equals("java.lang.Boolean");
+        assert ((IJavaClassType) _valueResolverContext.getResultType()).getFullyQualifiedName().equals("java.lang.Boolean");
     }
 
     @Test
