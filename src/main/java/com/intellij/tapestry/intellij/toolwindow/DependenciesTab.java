@@ -105,6 +105,11 @@ public class DependenciesTab {
               navigate(((IntellijJavaClassType) ((InjectedElement) selectedObject).getElement().getElementClass()).getPsiClass());
             }
 
+            // "Used By" leaves navigate to the referencing element's class.
+            if (selectedObject instanceof PresentationLibraryElement) {
+              navigate(((IntellijJavaClassType) ((PresentationLibraryElement) selectedObject).getElementClass()).getPsiClass());
+            }
+
             // Template / message-catalog resource leaves navigate to their file.
             if (selectedObject instanceof IntellijResource) {
               navigate(((IntellijResource) selectedObject).getPsiFile());

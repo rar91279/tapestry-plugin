@@ -17,6 +17,7 @@ public class DependenciesRootNode extends DefaultMutableTreeNode {
         insert(new InjectedPagesNode(userObject), 0);
         add(new TemplatesNode(userObject));
         add(new MessageCatalogNode(userObject));
+        add(new UsagesNode(userObject));
 
         // Precompute the label here (read action); toString() runs on the EDT during rendering.
         _label = ((PresentationLibraryElement) userObject).getName();

@@ -1,6 +1,7 @@
 package com.intellij.tapestry.core;
 
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.java.stubs.index.JavaAnnotationIndex;
@@ -14,8 +15,10 @@ import com.intellij.tapestry.core.java.IJavaTypeFinder;
 import com.intellij.tapestry.core.model.TapestryLibrary;
 import com.intellij.tapestry.core.model.presentation.Mixin;
 import com.intellij.tapestry.core.model.presentation.Page;
+import com.intellij.tapestry.core.model.presentation.InjectedElement;
 import com.intellij.tapestry.core.model.presentation.PresentationLibraryElement;
 import com.intellij.tapestry.core.model.presentation.TapestryComponent;
+import com.intellij.tapestry.core.model.presentation.TemplateElement;
 import com.intellij.tapestry.core.model.presentation.components.BlockComponent;
 import com.intellij.tapestry.core.model.presentation.components.BodyComponent;
 import com.intellij.tapestry.core.model.presentation.components.ContainerComponent;
@@ -23,7 +26,9 @@ import com.intellij.tapestry.core.model.presentation.components.ParameterCompone
 import com.intellij.tapestry.core.resource.IResource;
 import com.intellij.tapestry.core.resource.IResourceFinder;
 import com.intellij.tapestry.core.util.LocalizationUtils;
+import com.intellij.tapestry.intellij.TapestryModuleSupportLoader;
 import com.intellij.tapestry.intellij.facet.TapestryFacet;
+import com.intellij.tapestry.intellij.util.CachedUserDataCache;
 import com.intellij.tapestry.intellij.util.TapestryUtils;
 import com.intellij.tapestry.intellij.facet.TapestryFacetConfiguration;
 import com.intellij.util.ArrayUtilRt;
@@ -365,6 +370,68 @@ public class TapestryProject {
   @NotNull
   public Collection<PresentationLibraryElement> getAvailableElements() {
     return ourFqnToComponentMap.get(myModule).values();
+  }
+
+  /**
+   * Finds the project elements (pages/components) that embed or inject the given element.
+   *
+   * @param element the element to find the users of.
+   * @return the elements that reference {@code element}, or an empty list if none.
+   */
+  @NotNull
+  public List<PresentationLibraryElement> findUsages(@NotNull PresentationLibraryElement element) {
+    return ourUsagesMap.get(myModule).getOrDefault(element.getElementClass().getFullyQualifiedName(), Collections.emptyList());
+  }
+
+  // Reverse-dependency map: target class FQN -> project elements that embed/inject it.
+  // Cached per module and invalidated on any PSI change (same dependency as the forward maps).
+  // ponytail: full application-library scan on (re)compute; narrow the dependency or index
+  // incrementally if it gets slow on very large projects.
+  private static final CachedUserDataCache<Map<String, List<PresentationLibraryElement>>, Module> ourUsagesMap =
+    new CachedUserDataCache<>("ourUsagesMap") {
+      @Override
+      protected Map<String, List<PresentationLibraryElement>> computeValue(Module module) {
+        Map<String, List<PresentationLibraryElement>> usages = new HashMap<>();
+        TapestryProject project = TapestryModuleSupportLoader.getTapestryProject(module);
+        if (project == null) return usages;
+        TapestryLibrary application = project.getApplicationLibrary();
+        if (application == null) return usages;
+
+        List<PresentationLibraryElement> candidates = new ArrayList<>(application.getComponents().values());
+        candidates.addAll(application.getPages().values());
+
+        for (PresentationLibraryElement user : candidates) {
+          if (user == null || user.getElementClass().getFile() == null) continue;
+
+          for (TemplateElement embedded : user.getEmbeddedComponents()) {
+            addUsage(usages, embedded.getElement().getElement(), user);
+          }
+          for (TemplateElement embedded : user.getEmbeddedComponentsTemplate()) {
+            addUsage(usages, embedded.getElement().getElement(), user);
+          }
+          for (InjectedElement injected : user.getInjectedPages()) {
+            addUsage(usages, injected.getElement(), user);
+          }
+        }
+        return usages;
+      }
+
+      @Override
+      protected Object[] getDependencies(Module module) {
+        return JAVA_STRUCTURE_DEPENDENCY;
+      }
+
+      @Override
+      protected Project getProject(Module module) {
+        return module.getProject();
+      }
+    };
+
+  private static void addUsage(Map<String, List<PresentationLibraryElement>> usages,
+                               @Nullable PresentationLibraryElement target,
+                               PresentationLibraryElement user) {
+    if (target == null || target.getElementClass() == null) return;
+    usages.computeIfAbsent(target.getElementClass().getFullyQualifiedName(), k -> new ArrayList<>()).add(user);
   }
 
   @NotNull

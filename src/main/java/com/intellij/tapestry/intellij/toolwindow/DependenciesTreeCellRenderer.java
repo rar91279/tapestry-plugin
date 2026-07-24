@@ -68,6 +68,25 @@ public class DependenciesTreeCellRenderer extends DefaultTreeCellRenderer {
             return this;
         }
 
+        if (value instanceof UsagesNode) {
+            setIcon(AllIcons.Hierarchy.Subtypes);
+            return this;
+        }
+
+        if (value instanceof UsageNode) {
+            switch (((PresentationLibraryElement) ((DefaultMutableTreeNode) value).getUserObject()).getElementType()) {
+                case PAGE:
+                    setIcon(TapestryIcons.Page);
+                    return this;
+                case COMPONENT:
+                    setIcon(TapestryIcons.Component);
+                    return this;
+                case MIXIN:
+                    setIcon(TapestryIcons.Mixin);
+                    return this;
+            }
+        }
+
         return this;
     }
 }
