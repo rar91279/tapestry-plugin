@@ -7,14 +7,20 @@ import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.VfsUtilCore;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiClass;
+import com.intellij.psi.search.FilenameIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.tapestry.core.TapestryProject;
 import com.intellij.tapestry.core.java.IJavaClassType;
@@ -39,14 +45,19 @@ import icons.TapestryIcons;
 
 import javax.swing.*;
 import java.awt.Dimension;
+import java.io.IOException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * The "Live Documentation" tool-window tab: a three-level browser rendered in an embedded Chromium
@@ -70,6 +81,8 @@ public class DocumentationTab {
     private final Project _project;
     /** The presentation element currently shown, for the GoTo Class action ({@code null} otherwise). */
     private Object _element;
+    /** GoTo Class target for pages without a presentation element (e.g. service pages); {@code null} otherwise. */
+    private String _classFqn;
     /** Re-renders whatever is currently shown (theme change, index-ready). */
     private Runnable _reload;
     /** Previously shown views, for back navigation. */
@@ -175,13 +188,16 @@ public class DocumentationTab {
             _elementListener.accept(element);
     }
 
-    /** Navigate to the class of the shown presentation element. */
+    /** Navigate to the class of the shown presentation element, or the stored target class. */
     protected void navigateToClass() {
         if (_element != null) {
             PresentationLibraryElement elementType = (PresentationLibraryElement) _element;
             FileEditorManager.getInstance(_project).openFile(
                     ((IntellijJavaClassType) elementType.getElementClass()).getPsiClass().getContainingFile().getVirtualFile(),
                     true);
+        }
+        else if (_classFqn != null) {
+            openClass(_classFqn);
         }
     }
 
@@ -235,6 +251,10 @@ public class DocumentationTab {
             }
             case "el" -> showProjectElement(parts[1], parts[2], parts[3]);
             case "svc" -> showService(parts[1], parts[2]);
+            case "library" -> showLibrary(parts[1], parts[2]);
+            case "libsvc" -> showLibraryService(parts[1], parts[2], parts[3]);
+            case "pom" -> openPom(parts[1], parts[2]);
+            case "file" -> openFile(token.substring("file/".length()));
             case "class" -> openClass(parts[1]);
             default -> showHome();
         }
@@ -324,10 +344,72 @@ public class DocumentationTab {
         setCrumbs(seg("Home", "home"), seg(moduleName, "module/" + moduleName),
                 seg(id, "svc/" + moduleName + "/" + id));
         notifyElement(null);
-        renderAsync(() -> {
-            Home.ServiceDoc service = findService(moduleName, id);
-            return service == null ? null : ServiceDocumentation.render(service);
+        renderServiceDoc(() -> findService(moduleName, id));
+    }
+
+    /**
+     * Resolves a service off the EDT, then renders its doc and points the GoTo Class button at the
+     * service implementation class (enabled only when the class is known).
+     */
+    private void renderServiceDoc(Callable<Home.ServiceDoc> resolver) {
+        notifyElement(null);
+        ReadAction.nonBlocking((Callable<Object[]>) () -> {
+                    try {
+                        Home.ServiceDoc service = resolver.call();
+                        return new Object[]{
+                                service == null ? null : ServiceDocumentation.render(service),
+                                service == null ? null : StringUtil.nullize(service.getClassName())};
+                    } catch (ProcessCanceledException canceled) {
+                        throw canceled;
+                    } catch (Exception ex) {
+                        _logger.warn("Failed to render service documentation", ex);
+                        return new Object[]{null, null};
+                    }
+                })
+                .expireWith(_htmlPanel)
+                .finishOnUiThread(ModalityState.any(), result -> {
+                    _classFqn = (String) result[1];
+                    _classButton.setEnabled(_classFqn != null);
+                    render((String) result[0]);
+                })
+                .submit(AppExecutorUtil.getAppExecutorService());
+    }
+
+    private void showLibrary(String moduleName, String moduleClass) {
+        _element = null;
+        _classButton.setEnabled(false);
+        _text.setText("ldp://Lib : " + moduleClass);
+        _reload = () -> showLibrary(moduleName, moduleClass);
+        setCrumbs(seg("Home", "home"),
+                seg(StringUtil.getShortName(moduleClass), "library/" + moduleName + "/" + moduleClass));
+        notifyElement(null);
+        renderAsync(() -> buildLibraryHtml(moduleName, moduleClass));
+    }
+
+    private void showLibraryService(String moduleName, String moduleClass, String id) {
+        _element = null;
+        _classButton.setEnabled(false);
+        _text.setText("ldp://Lib : " + moduleClass + " : " + id);
+        _reload = () -> showLibraryService(moduleName, moduleClass, id);
+        setCrumbs(seg("Home", "home"),
+                seg(StringUtil.getShortName(moduleClass), "library/" + moduleName + "/" + moduleClass),
+                seg(id, "libsvc/" + moduleName + "/" + moduleClass + "/" + id));
+        renderServiceDoc(() -> {
+            TapestryProject tapestryProject = tapestryProjectFor(moduleName);
+            if (tapestryProject == null)
+                return null;
+            for (Home.ServiceDoc service : discoverLibraryServices(tapestryProject, moduleClass))
+                if (service.getId().equals(id))
+                    return service;
+            return null;
         });
+    }
+
+    /** Opens a local file by path (template / message-catalog links). */
+    private void openFile(String path) {
+        VirtualFile file = LocalFileSystem.getInstance().findFileByPath(path);
+        if (file != null)
+            new OpenFileDescriptor(_project, file).navigate(true);
     }
 
     /** Opens a class by fully-qualified name (service class links). */
@@ -338,6 +420,38 @@ public class DocumentationTab {
                 .finishOnUiThread(ModalityState.any(), psiClass -> {
                     if (psiClass != null && psiClass.isValid())
                         psiClass.navigate(true);
+                })
+                .submit(AppExecutorUtil.getAppExecutorService());
+    }
+
+    /**
+     * Opens the project pom.xml declaring the given dependency, positioned at its
+     * {@code <groupId>/<artifactId>} declaration. Matches the groupId+artifactId pair so it lands on
+     * the real dependency rather than a same-named module, plugin, or the pom's own artifactId.
+     */
+    private void openPom(String groupId, String artifactId) {
+        Pattern dependency = Pattern.compile(
+                "<groupId>\\s*" + Pattern.quote(groupId) + "\\s*</groupId>\\s*"
+                        + "<artifactId>\\s*" + Pattern.quote(artifactId) + "\\s*</artifactId>");
+        ReadAction.nonBlocking((Callable<Object[]>) () -> {
+                    for (VirtualFile pom : FilenameIndex.getVirtualFilesByName("pom.xml", GlobalSearchScope.projectScope(_project))) {
+                        String text;
+                        try {
+                            text = VfsUtilCore.loadText(pom);
+                        } catch (IOException e) {
+                            continue;
+                        }
+                        Matcher m = dependency.matcher(text);
+                        if (m.find())
+                            // Navigate by line (separator-independent) rather than char offset.
+                            return new Object[]{pom, StringUtil.offsetToLineNumber(text, m.start())};
+                    }
+                    return null;
+                })
+                .expireWith(_htmlPanel)
+                .finishOnUiThread(ModalityState.any(), target -> {
+                    if (target != null)
+                        new OpenFileDescriptor(_project, (VirtualFile) target[0], (Integer) target[1], 0).navigate(true);
                 })
                 .submit(AppExecutorUtil.getAppExecutorService());
     }
@@ -360,6 +474,30 @@ public class DocumentationTab {
 
         List<NavPageDocumentation.Section> sections = new ArrayList<>();
         sections.add(new NavPageDocumentation.Section("Tapestry Modules", modules));
+
+        // Tapestry modules contributed by classpath library jars (Tapestry-Module-Classes manifest).
+        Map<String, String[]> libs = new LinkedHashMap<>(); // moduleClass -> [ownerModuleName, mavenInfo]
+        for (Module module : ModuleManager.getInstance(_project).getModules()) {
+            for (TapestryUtils.LibraryModule lib : TapestryUtils.getClasspathLibraryModules(module)) {
+                libs.putIfAbsent(lib.moduleClass(), new String[]{module.getName(), lib.mavenInfo()});
+            }
+        }
+        if (!libs.isEmpty()) {
+            List<NavPageDocumentation.Entry> libraryEntries = new ArrayList<>();
+            for (Map.Entry<String, String[]> e : libs.entrySet()) {
+                String moduleClass = e.getKey();
+                String owner = e.getValue()[0];
+                String mavenInfo = e.getValue()[1];
+                String[] gav = mavenInfo.split(":");
+                String pomToken = gav.length >= 2 ? "pom/" + gav[0] + "/" + gav[1] : "";
+                libraryEntries.add(new NavPageDocumentation.Entry(
+                        libraryDisplayName(moduleClass),
+                        "library/" + owner + "/" + moduleClass,
+                        mavenInfo, "", pomToken));
+            }
+            sections.add(new NavPageDocumentation.Section("Tapestry Libraries", libraryEntries));
+        }
+
         sections.add(new NavPageDocumentation.Section("Tapestry Core", List.of(
                 new NavPageDocumentation.Entry("Core Library", "core",
                         "Built-in Tapestry pages, components and mixins."))));
@@ -391,6 +529,61 @@ public class DocumentationTab {
         sections.add(new NavPageDocumentation.Section("Services", services));
 
         return NavPageDocumentation.render(moduleName, sections);
+    }
+
+    private String buildLibraryHtml(String moduleName, String moduleClass) {
+        TapestryProject tapestryProject = tapestryProjectFor(moduleName);
+        if (tapestryProject == null)
+            return null;
+
+        List<NavPageDocumentation.Section> sections = new ArrayList<>();
+
+        List<NavPageDocumentation.Entry> services = new ArrayList<>();
+        for (Home.ServiceDoc service : discoverLibraryServices(tapestryProject, moduleClass)) {
+            services.add(new NavPageDocumentation.Entry(service.getId(),
+                    "libsvc/" + moduleName + "/" + moduleClass + "/" + service.getId(),
+                    NavPageDocumentation.summary(service.getDescription())));
+        }
+        sections.add(new NavPageDocumentation.Section("Services", services));
+
+        // Components/pages/mixins the library contributes, if any (listed, not yet drillable).
+        String base = TapestryUtils.rootPackageForModuleClass(moduleClass);
+        if (base != null) {
+            TapestryLibrary library = new TapestryLibrary(TapestryProject.APPLICATION_LIBRARY_ID, base, tapestryProject);
+            sections.add(nameSection("Pages", library.getPages().keySet()));
+            sections.add(nameSection("Components", library.getComponents().keySet()));
+            sections.add(nameSection("Mixins", library.getMixins().keySet()));
+        }
+
+        String maven = mavenInfoFor(moduleName, moduleClass);
+        String[] gav = maven.split(":");
+        String pomToken = gav.length >= 2 ? "pom/" + gav[0] + "/" + gav[1] : "";
+        return NavPageDocumentation.render(libraryDisplayName(moduleClass), maven, pomToken, sections);
+    }
+
+    /** Library module class &rarr; display name: strip the {@code Module} suffix and split camel-case
+     * (e.g. {@code TapestryConfigModule} &rarr; {@code Tapestry Config}). */
+    private static String libraryDisplayName(String moduleClass) {
+        String name = StringUtil.trimEnd(StringUtil.getShortName(moduleClass), "Module");
+        String spaced = name.replaceAll("(?<=[a-z0-9])(?=[A-Z])", " ").trim();
+        return spaced.isEmpty() ? StringUtil.getShortName(moduleClass) : spaced;
+    }
+
+    private String mavenInfoFor(String moduleName, String moduleClass) {
+        Module module = findModule(moduleName);
+        if (module != null)
+            for (TapestryUtils.LibraryModule lib : TapestryUtils.getClasspathLibraryModules(module))
+                if (lib.moduleClass().equals(moduleClass))
+                    return lib.mavenInfo();
+        return "";
+    }
+
+    /** A section of plain (non-clickable) element names. */
+    private NavPageDocumentation.Section nameSection(String title, Iterable<String> names) {
+        List<NavPageDocumentation.Entry> entries = new ArrayList<>();
+        for (String name : new TreeSet<>(toList(names)))
+            entries.add(new NavPageDocumentation.Entry(name, "", ""));
+        return new NavPageDocumentation.Section(title, entries);
     }
 
     private NavPageDocumentation.Section elementSection(String title, String moduleName, String kind,
@@ -434,6 +627,11 @@ public class DocumentationTab {
         return null;
     }
 
+    private TapestryProject tapestryProjectFor(String moduleName) {
+        Module module = findModule(moduleName);
+        return module == null ? null : TapestryModuleSupportLoader.getTapestryProject(module);
+    }
+
     /**
      * Discovers the services declared by a module's {@code <appPackage>.services.*Module} builders.
      * Runs inside the caller's (background) read action.
@@ -453,16 +651,7 @@ public class DocumentationTab {
                     .findTypesInPackageRecursively(root + ".services", true)) {
                 if (!builder.getFullyQualifiedName().endsWith("Module"))
                     continue;
-
-                for (Service service : new ModuleBuilder(builder, tapestryProject).getServices()) {
-                    IJavaClassType serviceClass = service.getServiceClass();
-                    services.add(new Home.ServiceDoc(
-                            service.getId(),
-                            serviceClass == null ? "" : serviceClass.getFullyQualifiedName(),
-                            service.getScope(),
-                            service.isEagerLoad(),
-                            serviceClass == null ? "" : serviceClass.getDocumentation()));
-                }
+                addServiceDocs(builder, tapestryProject, services);
             }
         } catch (ProcessCanceledException canceled) {
             throw canceled;
@@ -471,6 +660,41 @@ public class DocumentationTab {
         }
         services.sort((a, b) -> String.CASE_INSENSITIVE_ORDER.compare(a.getId(), b.getId()));
         return services;
+    }
+
+    /**
+     * Discovers the services declared by a single library module class (from a classpath jar).
+     * Runs inside the caller's (background) read action.
+     */
+    private List<Home.ServiceDoc> discoverLibraryServices(TapestryProject tapestryProject, String moduleClass) {
+        if (DumbService.isDumb(_project))
+            return List.of();
+
+        List<Home.ServiceDoc> services = new ArrayList<>();
+        try {
+            IJavaClassType builder = tapestryProject.getJavaTypeFinder().findType(moduleClass, true);
+            if (builder != null)
+                addServiceDocs(builder, tapestryProject, services);
+        } catch (ProcessCanceledException canceled) {
+            throw canceled;
+        } catch (Exception ex) {
+            _logger.warn("Failed to discover services for library module " + moduleClass, ex);
+        }
+        services.sort((a, b) -> String.CASE_INSENSITIVE_ORDER.compare(a.getId(), b.getId()));
+        return services;
+    }
+
+    private static void addServiceDocs(IJavaClassType builder, TapestryProject tapestryProject,
+                                       List<Home.ServiceDoc> out) {
+        for (Service service : new ModuleBuilder(builder, tapestryProject).getServices()) {
+            IJavaClassType serviceClass = service.getServiceClass();
+            out.add(new Home.ServiceDoc(
+                    service.getId(),
+                    serviceClass == null ? "" : serviceClass.getFullyQualifiedName(),
+                    service.getScope(),
+                    service.isEagerLoad(),
+                    serviceClass == null ? "" : serviceClass.getDocumentation()));
+        }
     }
 
     // ---- Rendering ----------------------------------------------------------

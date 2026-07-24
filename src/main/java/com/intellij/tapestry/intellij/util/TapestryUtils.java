@@ -8,6 +8,8 @@ import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
+import com.intellij.openapi.roots.OrderEnumerator;
+import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VfsUtilCore;
@@ -36,9 +38,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.jar.Manifest;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Utility methods related to Tapestry.
@@ -51,6 +57,10 @@ public final class TapestryUtils {
    * Manifest attribute a Tapestry module declares to advertise its IoC module classes.
    */
   private static final String TAPESTRY_MODULE_CLASSES = "Tapestry-Module-Classes";
+
+  /** Matches the pom.xml {@code <Tapestry-Module-Classes>...</Tapestry-Module-Classes>} manifest entry. */
+  private static final Pattern POM_MODULE_CLASSES =
+    Pattern.compile("<" + TAPESTRY_MODULE_CLASSES + ">(.*?)</" + TAPESTRY_MODULE_CLASSES + ">", Pattern.DOTALL);
 
   /**
    * Checks if a module is a Tapestry module.
@@ -71,40 +81,116 @@ public final class TapestryUtils {
     if (!FacetManager.getInstance(module).<com.intellij.tapestry.intellij.facet.TapestryFacet>getFacetsByType(TapestryFacetType.ID).isEmpty()) {
       return true;
     }
-    return declaresTapestryModuleClasses(module);
+    return !getDeclaredModuleClasses(module).isEmpty();
   }
 
   /**
-   * Scans the module's own {@code pom.xml} and {@code META-INF/MANIFEST.MF} for the
-   * {@code Tapestry-Module-Classes} declaration. Cached per module.
+   * Application root package derived from a facet-less module's declared {@code Tapestry-Module-Classes},
+   * e.g. {@code de.betterbits.comp.security.services.SecurityModule} &rarr; {@code de.betterbits.comp.security}.
+   * By convention the module class lives in {@code <root>.services}, so the trailing {@code .services}
+   * segment is dropped. Returns {@code null} if the module declares no module class.
    */
-  private static boolean declaresTapestryModuleClasses(final Module module) {
-    return CachedValuesManager.getManager(module.getProject()).getCachedValue(module, () -> {
-      ModuleRootManager roots = ModuleRootManager.getInstance(module);
-      List<VirtualFile> candidates = new ArrayList<>();
-      for (VirtualFile content : roots.getContentRoots()) {
-        ContainerUtil.addIfNotNull(candidates, content.findChild("pom.xml"));
+  @Nullable
+  public static String getModuleClassesRootPackage(Module module) {
+    for (String moduleClass : getDeclaredModuleClasses(module)) {
+      String pkg = rootPackageForModuleClass(moduleClass);
+      if (pkg != null) {
+        return pkg;
       }
-      for (VirtualFile source : roots.getSourceRoots()) {
-        ContainerUtil.addIfNotNull(candidates, source.findFileByRelativePath("META-INF/MANIFEST.MF"));
-      }
+    }
+    return null;
+  }
 
-      boolean found = false;
-      for (VirtualFile file : candidates) {
-        try {
-          if (VfsUtilCore.loadText(file).contains(TAPESTRY_MODULE_CLASSES)) {
-            found = true;
-            break;
+  /**
+   * The application root package a Tapestry module class implies, e.g.
+   * {@code de.betterbits.comp.security.services.SecurityModule} &rarr; {@code de.betterbits.comp.security}.
+   * By convention the module class lives in {@code <root>.services}, so a trailing {@code .services}
+   * segment is dropped. Returns {@code null} for a module class with no usable package.
+   */
+  @Nullable
+  public static String rootPackageForModuleClass(String moduleClassFqn) {
+    String pkg = StringUtil.trimEnd(StringUtil.getPackageName(moduleClassFqn), ".services");
+    return pkg.isEmpty() ? null : pkg;
+  }
+
+  /** A Tapestry module contributed by a classpath library jar. {@code mavenInfo} is the library's coordinates. */
+  public record LibraryModule(String mavenInfo, String moduleClass) {}
+
+  /**
+   * Tapestry modules contributed by the module's library-classpath jars &mdash; libraries whose
+   * {@code META-INF/MANIFEST.MF} declares {@code Tapestry-Module-Classes}. Unlike
+   * {@link #getDeclaredModuleClasses}, this looks only at dependency libraries. Cached per module.
+   */
+  @NotNull
+  public static List<LibraryModule> getClasspathLibraryModules(final Module module) {
+    return CachedValuesManager.getManager(module.getProject()).getCachedValue(module, () -> {
+      List<LibraryModule> result = new ArrayList<>();
+      // ponytail: mounts + reads MANIFEST.MF of every library jar on first call; cached thereafter.
+      OrderEnumerator.orderEntries(module).librariesOnly().forEachLibrary(library -> {
+        String mavenInfo = StringUtil.trimStart(StringUtil.notNullize(library.getName()), "Maven: ");
+        for (VirtualFile root : library.getFiles(OrderRootType.CLASSES)) {
+          List<String> classes = new ArrayList<>();
+          readModuleClasses(root.findFileByRelativePath("META-INF/MANIFEST.MF"), true, classes);
+          for (String moduleClass : classes) {
+            result.add(new LibraryModule(mavenInfo, moduleClass));
           }
         }
-        catch (IOException e) {
-          _logger.debug("Failed to read " + file.getPath(), e);
-        }
+        return true;
+      });
+      return CachedValueProvider.Result.create(result, ProjectRootManager.getInstance(module.getProject()));
+    });
+  }
+
+  /**
+   * The fully-qualified {@code Tapestry-Module-Classes} declared by the module itself &mdash; in its own
+   * {@code pom.xml} (maven-jar-plugin {@code manifestEntries}) or its own {@code META-INF/MANIFEST.MF}.
+   * Dependency jars are deliberately not scanned. Cached per module.
+   */
+  @NotNull
+  public static List<String> getDeclaredModuleClasses(final Module module) {
+    return CachedValuesManager.getManager(module.getProject()).getCachedValue(module, () -> {
+      ModuleRootManager roots = ModuleRootManager.getInstance(module);
+      List<String> classes = new ArrayList<>();
+      for (VirtualFile content : roots.getContentRoots()) {
+        readModuleClasses(content.findChild("pom.xml"), false, classes);
+      }
+      for (VirtualFile source : roots.getSourceRoots()) {
+        readModuleClasses(source.findFileByRelativePath("META-INF/MANIFEST.MF"), true, classes);
       }
       // ponytail: cache keyed on project roots only; a pom.xml/manifest content edit that adds
       // the attribute refreshes on next reimport/root change, not on the keystroke.
-      return CachedValueProvider.Result.create(found, ProjectRootManager.getInstance(module.getProject()));
+      return CachedValueProvider.Result.create(classes, ProjectRootManager.getInstance(module.getProject()));
     });
+  }
+
+  private static void readModuleClasses(@Nullable VirtualFile file, boolean manifest, List<String> out) {
+    if (file == null) {
+      return;
+    }
+    try {
+      String raw;
+      if (manifest) {
+        try (InputStream in = file.getInputStream()) {
+          raw = new Manifest(in).getMainAttributes().getValue(TAPESTRY_MODULE_CLASSES);
+        }
+      }
+      else {
+        Matcher m = POM_MODULE_CLASSES.matcher(VfsUtilCore.loadText(file));
+        raw = m.find() ? m.group(1) : null;
+      }
+      if (raw == null) {
+        return;
+      }
+      for (String fqn : raw.split(",")) {
+        fqn = fqn.trim();
+        if (!fqn.isEmpty()) {
+          out.add(fqn);
+        }
+      }
+    }
+    catch (IOException e) {
+      _logger.debug("Failed to read " + file.getPath(), e);
+    }
   }
 
   /**

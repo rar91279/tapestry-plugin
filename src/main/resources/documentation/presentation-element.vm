@@ -95,20 +95,20 @@
     <table class="data">
         <tr>
             <td class="key">Class</td>
-            <td>$element.elementClass.fullyQualifiedName</td>
+            <td><a class="doclink" href="#" onclick="tapestryNav('class/$element.elementClass.fullyQualifiedName');return false;">$element.elementClass.fullyQualifiedName</a></td>
         </tr>
         <tr>
             <td class="key">Templates</td>
             <td>
                 #if ($element.template.length() == 0)<span class="empty">No templates</span>#end
-                #foreach($template in $element.template)$template.getName()#set ($countTemplates = $countTemplates + 1)#if ($countTemplates != $element.template.length()) | #end#end
+                #foreach($template in $element.template)#set($t = $nav.fileToken($template))#if($t.length() > 0)<a class="doclink" href="#" onclick="tapestryNav('$t');return false;">$template.getName()</a>#else$template.getName()#end#if($foreach.hasNext) | #end#end
             </td>
         </tr>
         <tr>
             <td class="key">Message Catalogs</td>
             <td>
                 #if ($element.messageCatalog.length() == 0)<span class="empty">No message catalogs</span>#end
-                #foreach($catalog in $element.messageCatalog)$catalog.getName()#set ($countCatalogs = $countCatalogs + 1)#if ($countCatalogs != $element.messageCatalog.length()) | #end#end
+                #foreach($catalog in $element.messageCatalog)#set($c = $nav.fileToken($catalog))#if($c.length() > 0)<a class="doclink" href="#" onclick="tapestryNav('$c');return false;">$catalog.getName()</a>#else$catalog.getName()#end#if($foreach.hasNext) | #end#end
             </td>
         </tr>
         <tr>

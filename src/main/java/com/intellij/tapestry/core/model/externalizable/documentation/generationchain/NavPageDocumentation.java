@@ -17,8 +17,22 @@ public final class NavPageDocumentation {
     }
 
     public static String render(String title, List<Section> sections) {
+        return render(title, "", "", sections);
+    }
+
+    public static String render(String title, String subtitle, List<Section> sections) {
+        return render(title, subtitle, "", sections);
+    }
+
+    /**
+     * {@code subtitle} is shown right-aligned in the page header (e.g. Maven coordinates). If
+     * {@code subtitleToken} is non-empty the subtitle is a clickable navigation link.
+     */
+    public static String render(String title, String subtitle, String subtitleToken, List<Section> sections) {
         Map<String, Object> context = AbstractDocumentationGenerator.baseContext();
-        context.put("title", title);
+        context.put("title", title == null ? "" : title);
+        context.put("subtitle", subtitle == null ? "" : subtitle);
+        context.put("subtitleToken", subtitleToken == null ? "" : subtitleToken);
         context.put("sections", sections);
         return VelocityProcessor.processClasspathTemplate(TEMPLATE, context);
     }
@@ -64,16 +78,27 @@ public final class NavPageDocumentation {
         private final String _token;
         private final String _description;
         private final String _badge;
+        private final String _descriptionToken;
 
         public Entry(String label, String token, String description) {
-            this(label, token, description, "");
+            this(label, token, description, "", "");
         }
 
         public Entry(String label, String token, String description, String badge) {
+            this(label, token, description, badge, "");
+        }
+
+        /** {@code descriptionToken}, if non-empty, makes the description a clickable navigation link. */
+        public Entry(String label, String token, String description, String badge, String descriptionToken) {
             _label = label;
             _token = token;
             _description = description;
             _badge = badge;
+            _descriptionToken = descriptionToken;
+        }
+
+        public String getDescriptionToken() {
+            return _descriptionToken;
         }
 
         public String getLabel() {

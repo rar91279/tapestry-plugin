@@ -24,6 +24,7 @@ import com.intellij.tapestry.core.resource.IResource;
 import com.intellij.tapestry.core.resource.IResourceFinder;
 import com.intellij.tapestry.core.util.LocalizationUtils;
 import com.intellij.tapestry.intellij.facet.TapestryFacet;
+import com.intellij.tapestry.intellij.util.TapestryUtils;
 import com.intellij.tapestry.intellij.facet.TapestryFacetConfiguration;
 import com.intellij.util.ArrayUtilRt;
 import org.jetbrains.annotations.NotNull;
@@ -79,7 +80,12 @@ public class TapestryProject {
   @Nullable
   public String getApplicationRootPackage() {
     TapestryFacetConfiguration myConfiguration = TapestryFacet.findFacetConfiguration(myModule);
-    return myConfiguration == null ? null : myConfiguration.getApplicationPackage();
+    String facetPackage = myConfiguration == null ? null : myConfiguration.getApplicationPackage();
+    if (StringUtil.isNotEmpty(facetPackage)) {
+      return facetPackage;
+    }
+    // No facet (or empty package): fall back to the root package declared via Tapestry-Module-Classes.
+    return TapestryUtils.getModuleClassesRootPackage(myModule);
   }
 
   /**
