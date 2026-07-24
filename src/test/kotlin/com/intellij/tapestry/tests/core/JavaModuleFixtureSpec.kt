@@ -23,6 +23,11 @@ abstract class JavaModuleFixtureSpec(body: JavaModuleFixtureSpec.() -> Unit) : F
     fun javaFacade(): JavaPsiFacade = JavaPsiFacade.getInstance(fixture.project)
     fun allScope(): GlobalSearchScope = GlobalSearchScope.allScope(fixture.project)
 
+    // A JDK is only added when -Djdk.home is set (see beforeSpec). Tests that resolve java.lang.*
+    // FQNs must gate on this, else they fail headless. Run from the IDE (or with -Djdk.home) to
+    // exercise them. Usage: `"name".config(enabled = jdkAvailable) { ... }`.
+    val jdkAvailable: Boolean = System.getProperty("jdk.home") != null
+
     init {
         beforeSpec {
             val builder = JavaTestFixtureFactory.createFixtureBuilder(javaClass.simpleName)

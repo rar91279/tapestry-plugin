@@ -65,7 +65,9 @@ class AddNewComponentActionTest : EmptyFixtureSpec({
             every { psiPackageMock.qualifiedName } returns "com.app"
 
             val psiDirectoryMock = mockk<PsiDirectory>(relaxed = true)
-            every { IdeaUtils.getPackage(psiDirectoryMock) } returns psiPackageMock
+            // getData(PSI_ELEMENT) no longer hands back the raw mock directory on 2026.2, so match
+            // any element: this test exercises update()'s package-prefix branch, not data plumbing.
+            every { IdeaUtils.getPackage(any()) } returns psiPackageMock
 
             val tapestryProjectMock = mockk<TapestryProject>(relaxed = true)
             every { TapestryModuleSupportLoader.getTapestryProject(moduleMock) } returns tapestryProjectMock
@@ -103,7 +105,9 @@ class AddNewComponentActionTest : EmptyFixtureSpec({
             every { psiPackageMock.qualifiedName } returns "com.app.components.test"
 
             val psiDirectoryMock = mockk<PsiDirectory>(relaxed = true)
-            every { IdeaUtils.getPackage(psiDirectoryMock) } returns psiPackageMock
+            // getData(PSI_ELEMENT) no longer hands back the raw mock directory on 2026.2, so match
+            // any element: this test exercises update()'s package-prefix branch, not data plumbing.
+            every { IdeaUtils.getPackage(any()) } returns psiPackageMock
 
             val tapestryProjectMock = mockk<TapestryProject>(relaxed = true)
             every { TapestryModuleSupportLoader.getTapestryProject(moduleMock) } returns tapestryProjectMock

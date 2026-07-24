@@ -57,7 +57,7 @@ class IntellijJavaMethodTest : JavaModuleFixtureSpec({
         }
     }
 
-    "getAnnotation" {
+    "getAnnotation".config(enabled = jdkAvailable) {
         runReadAction {
             val method1 = method("method1")
             method1.getAnnotation(null) shouldBe null

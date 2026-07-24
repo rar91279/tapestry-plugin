@@ -13,7 +13,7 @@ class IntellijJavaAnnotationTest : JavaModuleFixtureSpec({
 
     fun class1() = javaFacade().findClass("com.app.util.Class1", GlobalSearchScope.moduleRuntimeScope(module, false))!!
 
-    "getFullyQualifiedName" {
+    "getFullyQualifiedName".config(enabled = jdkAvailable) {
         runReadAction {
             val annotation = IntellijJavaAnnotation(class1().modifierList!!.annotations[0])
             annotation.fullyQualifiedName shouldBe "java.lang.Deprecated"
@@ -45,7 +45,7 @@ class IntellijJavaAnnotationTest : JavaModuleFixtureSpec({
         }
     }
 
-    "getPsiAnnotation" {
+    "getPsiAnnotation".config(enabled = jdkAvailable) {
         runReadAction {
             val annotation = IntellijJavaAnnotation(class1().modifierList!!.annotations[0])
             annotation.psiAnnotation.qualifiedName shouldBe "java.lang.Deprecated"

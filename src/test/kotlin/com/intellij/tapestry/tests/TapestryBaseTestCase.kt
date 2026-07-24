@@ -6,6 +6,7 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.util.Computable
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReference
 import com.intellij.tapestry.intellij.TapestryModuleSupportLoader
@@ -55,6 +56,9 @@ abstract class TapestryBaseTestCase : UsefulTestCase() {
         val moduleBuilder = projectBuilder.addModule(getModuleFixtureBuilderClass())
         myFixture = IdeaTestFixtureFactory.getFixtureFactory().createCodeInsightFixture(projectBuilder.fixture)
         myFixture.testDataPath = getTestDataPath()
+        // Allow the whole project dir: covers src/test/testData/libs jars and the
+        // .intellijPlatform sandbox (kotlin-stdlib etc.) pulled in when resolving .kt pages.
+        VfsRootAccess.allowRootAccess(testRootDisposable, File("").absoluteFile.path)
         configureModule(moduleBuilder)
 
         myFixture.setUp()

@@ -305,11 +305,13 @@ public class IntellijJavaClassType extends IntellijJavaType implements IJavaClas
         _psiClassType = JavaPsiFacade.getInstance(_module.getProject()).getElementFactory().createType(aClass);
       }
       else {
-        throw new AssertionError("no classes found: " + _classFilePath);
+        _psiClassType = null;
       }
     }
     else {
-      throw new AssertionError(psiFile + ": " + _classFilePath);
+      // Not a class-bearing file (e.g. a .tml resource). getPsiClass() is @Nullable and all
+      // callers guard for null, so degrade gracefully instead of throwing.
+      _psiClassType = null;
     }
 
   }

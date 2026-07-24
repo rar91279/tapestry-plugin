@@ -17,7 +17,7 @@ class IntellijJavaTypeCreatorTest : JavaModuleFixtureSpec({
     fun stringType() =
         IntellijJavaClassType(module, javaFacade().findClass("java.lang.String", allScope())!!.containingFile)
 
-    "createField" {
+    "createField".config(enabled = jdkAvailable) {
         runReadAction {
             val creator = IntellijJavaTypeCreator(module)
 
@@ -37,7 +37,7 @@ class IntellijJavaTypeCreatorTest : JavaModuleFixtureSpec({
         }
     }
 
-    "createFieldAnnotation_no_parameters" {
+    "createFieldAnnotation_no_parameters".config(enabled = jdkAvailable) {
         runReadAction {
             val creator = IntellijJavaTypeCreator(module)
 
@@ -50,7 +50,7 @@ class IntellijJavaTypeCreatorTest : JavaModuleFixtureSpec({
         }
     }
 
-    "createFieldAnnotation_with_parameters" {
+    "createFieldAnnotation_with_parameters".config(enabled = jdkAvailable) {
         runReadAction {
             val creator = IntellijJavaTypeCreator(module)
 
@@ -71,7 +71,7 @@ class IntellijJavaTypeCreatorTest : JavaModuleFixtureSpec({
         }
     }
 
-    "ensureClassImport_already_imported" {
+    "ensureClassImport_already_imported".config(enabled = jdkAvailable) {
         runReadAction {
             val testedClass = IntellijJavaClassType(
                 module, javaFacade().findClass("com.app.ModuleBuilder", allScope())!!.containingFile
@@ -85,7 +85,7 @@ class IntellijJavaTypeCreatorTest : JavaModuleFixtureSpec({
         }
     }
 
-    "ensureClassImport_not_imported" {
+    "ensureClassImport_not_imported".config(enabled = jdkAvailable) {
         runReadAction {
             val controlMock = mockk<IntellijJavaTypeCreator>(relaxed = true)
 

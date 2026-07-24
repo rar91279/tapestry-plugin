@@ -31,7 +31,7 @@ public final class MavenUtils {
         model.setGroupId(mavenConfiguration.getGroupId());
         model.setArtifactId(mavenConfiguration.getArtifactId());
 
-        if (mavenConfiguration.getVersion() != null && mavenConfiguration.getVersion().length() > 0) {
+        if (mavenConfiguration.getVersion() != null && !mavenConfiguration.getVersion().isEmpty()) {
             model.setVersion(mavenConfiguration.getVersion());
         } else {
             model.setVersion("1.0-SNAPSHOT");

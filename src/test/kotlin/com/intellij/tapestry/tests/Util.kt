@@ -12,6 +12,7 @@ object Util {
     val DOT_TML: String = "." + TapestryConstants.TEMPLATE_FILE_EXTENSION
     const val DOT_JAVA: String = ".java"
     const val DOT_GROOVY: String = ".groovy"
+    const val DOT_KOTLIN: String = ".kt"
     const val AFTER: String = "_after"
     const val DOT_EXPECTED: String = ".expected"
 

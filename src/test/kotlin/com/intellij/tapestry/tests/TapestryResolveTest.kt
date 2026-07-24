@@ -266,6 +266,14 @@ class TapestryResolveTest : TapestryBaseTestCase() {
         Assert.assertEquals("StartPage2.tml", ref.name)
     }
 
+    fun testPageAttrValue3() {
+        addElementToProject(PAGES_PACKAGE_PATH, "StartPage3", Util.DOT_KOTLIN)
+        addElementToProject(PAGES_PACKAGE_PATH, "StartPage3", getTemplateExtension())
+        initByComponent()
+        val ref = resolveReferenceAtCaretPosition(TmlFile::class.java)
+        Assert.assertEquals("StartPage3.tml", ref.name)
+    }
+
     fun testPageAttrValueOfPagelinkTag() {
         addPageToProject("StartPage")
         initByComponent()
