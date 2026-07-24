@@ -233,7 +233,8 @@ public class TapestryProject {
    */
   @Nullable
   public TapestryComponent findComponent(@NotNull String componentName) {
-    return (TapestryComponent)ourNameToComponentMap.get(myModule).get(StringUtil.toLowerCase(componentName));
+    // Templates separate subpackages with '.', but element names are stored with '/'.
+    return (TapestryComponent)ourNameToComponentMap.get(myModule).get(StringUtil.toLowerCase(componentName).replace('.', '/'));
   }
 
   /**
@@ -244,7 +245,7 @@ public class TapestryProject {
    */
   @Nullable
   public Mixin findMixin(String mixinName) {
-    return (Mixin)ourNameToMixinMap.get(myModule).get(StringUtil.toLowerCase(mixinName));
+    return (Mixin)ourNameToMixinMap.get(myModule).get(StringUtil.toLowerCase(mixinName).replace('.', '/'));
   }
 
   @NotNull

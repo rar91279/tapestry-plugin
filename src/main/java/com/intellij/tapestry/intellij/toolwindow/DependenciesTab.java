@@ -4,8 +4,10 @@ import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.actionSystem.impl.ActionButton;
 import com.intellij.openapi.actionSystem.impl.PresentationFactory;
+import com.intellij.ide.util.EditSourceUtil;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.application.ReadAction;
+import com.intellij.psi.PsiElement;
 import com.intellij.openapi.module.Module;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiField;
@@ -98,10 +100,14 @@ public class DependenciesTab {
             DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) _dependenciesTree.getSelectionPath().getLastPathComponent();
             Object selectedObject = selectedNode.getUserObject();
 
-            if (selectedNode.getParent() instanceof InjectedPagesNode || selectedNode.getParent() instanceof EmbeddedComponentsNode) {
-              if (selectedObject instanceof InjectedElement) {
-                ((IntellijJavaField) ((InjectedElement) selectedObject).getField()).getPsiField().navigate(true);
-              }
+            // Embedded component / injected page leaves navigate to the element class.
+            if (selectedObject instanceof InjectedElement) {
+              navigate(((IntellijJavaClassType) ((InjectedElement) selectedObject).getElement().getElementClass()).getPsiClass());
+            }
+
+            // Template / message-catalog resource leaves navigate to their file.
+            if (selectedObject instanceof IntellijResource) {
+              navigate(((IntellijResource) selectedObject).getPsiFile());
             }
             return true;
           }
@@ -217,25 +223,13 @@ public class DependenciesTab {
             Object selectedObject = selectedNode.getUserObject();
 
             if (selectedObject instanceof PresentationLibraryElement) {
-                PsiClass psiClass = ((IntellijJavaClassType) ((PresentationLibraryElement) selectedObject).getElementClass()).getPsiClass();
-
-                if (psiClass != null) {
-                    psiClass.navigate(true);
-                }
+                navigate(((IntellijJavaClassType) ((PresentationLibraryElement) selectedObject).getElementClass()).getPsiClass());
             }
             if (selectedObject instanceof InjectedElement) {
-                PsiClass psiClass = ((IntellijJavaClassType) ((InjectedElement) selectedObject).getElement().getElementClass()).getPsiClass();
-
-                if (psiClass != null) {
-                    psiClass.navigate(true);
-                }
+                navigate(((IntellijJavaClassType) ((InjectedElement) selectedObject).getElement().getElementClass()).getPsiClass());
             }
             if (selectedObject instanceof IntellijResource) {
-                PsiFile file = ((IntellijResource) selectedObject).getPsiFile();
-
-                if (file != null) {
-                    file.navigate(true);
-                }
+                navigate(((IntellijResource) selectedObject).getPsiFile());
             }
         }
     }
@@ -278,14 +272,27 @@ public class DependenciesTab {
                         file = ((IntellijResource) ((EmbeddedTemplateNode) selectedNode.getParent()).getUserObject()).getPsiFile();
                 }
 
-                if (field != null) {
-                    field.navigate(true);
-                }
-
-                if (file != null) {
-                    file.navigate(true);
-                }
+                navigate(field);
+                navigate(file);
             }
         }
+    }
+
+    /**
+     * Navigates to a PSI target. Resolving the navigation descriptor of a compiled (library)
+     * class touches the file index — a slow operation forbidden on the EDT — so compute it in a
+     * background read action, then open it on the UI thread.
+     */
+    private static void navigate(PsiElement target) {
+        if (target == null) {
+            return;
+        }
+        ReadAction.nonBlocking(() -> EditSourceUtil.getDescriptor(target))
+                .finishOnUiThread(ModalityState.any(), descriptor -> {
+                    if (descriptor != null && descriptor.canNavigate()) {
+                        descriptor.navigate(true);
+                    }
+                })
+                .submit(AppExecutorUtil.getAppExecutorService());
     }
 }

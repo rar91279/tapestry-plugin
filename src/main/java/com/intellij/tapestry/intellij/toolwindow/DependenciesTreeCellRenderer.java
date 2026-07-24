@@ -1,5 +1,6 @@
 package com.intellij.tapestry.intellij.toolwindow;
 
+import com.intellij.icons.AllIcons;
 import com.intellij.tapestry.core.model.presentation.PresentationLibraryElement;
 import com.intellij.tapestry.intellij.toolwindow.nodes.*;
 import icons.TapestryIcons;
@@ -49,6 +50,21 @@ public class DependenciesTreeCellRenderer extends DefaultTreeCellRenderer {
 
         if (value instanceof InjectedPageNode) {
             setIcon(TapestryIcons.Page);
+            return this;
+        }
+
+        if (value instanceof TemplatesNode) {
+            setIcon(AllIcons.FileTypes.Html);
+            return this;
+        }
+
+        if (value instanceof MessageCatalogNode) {
+            setIcon(AllIcons.FileTypes.Properties);
+            return this;
+        }
+
+        if (value instanceof ResourceLeafNode) {
+            setIcon(AllIcons.FileTypes.Any_type);
             return this;
         }
 
