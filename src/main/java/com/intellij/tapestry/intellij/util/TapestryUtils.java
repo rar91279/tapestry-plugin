@@ -78,7 +78,7 @@ public final class TapestryUtils {
     if (module == null) {
       return false;
     }
-    if (!FacetManager.getInstance(module).<com.intellij.tapestry.intellij.facet.TapestryFacet>getFacetsByType(TapestryFacetType.ID).isEmpty()) {
+    if (!FacetManager.getInstance(module).getFacetsByType(TapestryFacetType.ID).isEmpty()) {
       return true;
     }
     return !getDeclaredModuleClasses(module).isEmpty();
@@ -209,7 +209,7 @@ public final class TapestryUtils {
       }
     }
 
-    return result.<Module>toArray(Module.EMPTY_ARRAY);
+    return result.toArray(Module.EMPTY_ARRAY);
   }
 
   /**
@@ -269,7 +269,7 @@ public final class TapestryUtils {
     final IJavaAnnotation annotation = field.getAnnotations().get(TapestryConstants.COMPONENT_ANNOTATION);
     if (annotation == null) return null;
     String[] fieldIds = annotation.getParameters().get("id");
-    return fieldIds != null && fieldIds.length > 0 && fieldIds[0] != null && fieldIds[0].length() > 0 ? fieldIds[0] : field.getName();
+    return fieldIds != null && fieldIds.length > 0 && fieldIds[0] != null && !fieldIds[0].isEmpty() ? fieldIds[0] : field.getName();
   }
 
   @Nullable
@@ -283,12 +283,12 @@ public final class TapestryUtils {
   @NotNull
   public static List<String> getEmbeddedComponentIds(XmlTag tag) {
     final TapestryProject tapestryProject = getTapestryProject(tag);
-    if (tapestryProject == null) return Collections.<String>emptyList();
+    if (tapestryProject == null) return Collections.emptyList();
     PresentationLibraryElement element = tapestryProject.findElementByTemplate(tag.getContainingFile());
-    if (element == null) return Collections.<String>emptyList();
+    if (element == null) return Collections.emptyList();
     List<String> embeddedIds = new ArrayList<>();
     for (TemplateElement injectedElement : element.getEmbeddedComponents()) {
-      ContainerUtil.<@Nullable String>addIfNotNull(embeddedIds, injectedElement.getElement().getElementId());
+      ContainerUtil.addIfNotNull(embeddedIds, injectedElement.getElement().getElementId());
     }
     return embeddedIds;
   }
@@ -350,7 +350,7 @@ public final class TapestryUtils {
       errorMsg = "Some component file already exists, the existing version was kept!\n\n";
     }
 
-    if (errorMsg.length() > 0) {
+    if (!errorMsg.isEmpty()) {
       throw new IllegalStateException(errorMsg);
     }
   }
@@ -390,7 +390,7 @@ public final class TapestryUtils {
     }
 
 
-    if (errorMsg.length() > 0) {
+    if (!errorMsg.isEmpty()) {
       throw new IllegalStateException(errorMsg);
     }
   }
@@ -420,7 +420,7 @@ public final class TapestryUtils {
       errorMsg = "Some mixin file already exists, the existing version was kept!\n\n";
     }
 
-    if (errorMsg.length() > 0) {
+    if (!errorMsg.isEmpty()) {
       throw new IllegalStateException(errorMsg);
     }
   }
@@ -433,7 +433,7 @@ public final class TapestryUtils {
    */
   @Nullable
   public static TapestryComponent getTypeOfTag(XmlTag tag) {
-    return CachedValuesManager.<XmlTag, @Nullable TapestryComponent>getProjectPsiDependentCache(tag, t -> {
+    return CachedValuesManager.<XmlTag, @Nullable TapestryComponent>getProjectPsiDependentCache(tag, _ -> {
       Module module = ModuleUtilCore.findModuleForPsiElement(tag);
       return module == null ? null : getTypeOfTag(module, tag);
     });

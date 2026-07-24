@@ -19,7 +19,6 @@ import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.JavaPsiFacade;
-import com.intellij.psi.PsiClass;
 import com.intellij.psi.search.FilenameIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.tapestry.core.TapestryProject;
@@ -35,26 +34,18 @@ import com.intellij.tapestry.core.model.presentation.PresentationLibraryElement;
 import com.intellij.tapestry.intellij.TapestryModuleSupportLoader;
 import com.intellij.tapestry.intellij.core.java.IntellijJavaClassType;
 import com.intellij.tapestry.intellij.util.TapestryUtils;
-import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.jcef.JBCefBrowserBase;
 import com.intellij.ui.jcef.JBCefJSQuery;
 import com.intellij.ui.jcef.JCEFHtmlPanel;
+import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.util.concurrency.AppExecutorUtil;
-import icons.TapestryIcons;
 
 import javax.swing.*;
-import java.awt.Dimension;
+import java.awt.*;
 import java.io.IOException;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.LinkedHashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -76,7 +67,7 @@ public class DocumentationTab {
 
     private static final Logger _logger = Logger.getInstance(DocumentationTab.class);
 
-    private final JCEFHtmlPanel _htmlPanel = new JCEFHtmlPanel((String) null);
+    private final JCEFHtmlPanel _htmlPanel = new JCEFHtmlPanel(null);
     private JButton _classButton;
     private final Project _project;
     /** The presentation element currently shown, for the GoTo Class action ({@code null} otherwise). */
@@ -141,7 +132,7 @@ public class DocumentationTab {
         // Re-render on IDE theme change so the docs track dark/light.
         ApplicationManager.getApplication().getMessageBus().connect(_htmlPanel)
                 .subscribe(LafManagerListener.TOPIC,
-                        (LafManagerListener) source -> { if (_reload != null) _reload.run(); });
+                        (LafManagerListener) _ -> { if (_reload != null) _reload.run(); });
 
         showHome();
 
@@ -151,27 +142,14 @@ public class DocumentationTab {
                 _reload.run();
         });
 
-        _homeButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                _history.clear();
-                showHome();
-            }
+        _homeButton.addActionListener(e -> {
+            _history.clear();
+            showHome();
         });
 
-        _backButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                back();
-            }
-        });
+        _backButton.addActionListener(e -> back());
 
-        _classButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                navigateToClass();
-            }
-        });
+        _classButton.addActionListener(e -> navigateToClass());
     }
 
     public JComponent getMainPanel() {
@@ -209,7 +187,7 @@ public class DocumentationTab {
      * External entry point (project view / editor navigation): show a live element's documentation,
      * or the Home page when {@code element} is {@code null}.
      */
-    protected void showDocumentation(Object element, Project project) {
+    protected void showDocumentation(Object element) {
         if (element == null) {
             _history.clear();
             showHome();
@@ -217,7 +195,7 @@ public class DocumentationTab {
         }
 
         PresentationLibraryElement elementType = (PresentationLibraryElement) element;
-        _reload = () -> showDocumentation(element, project);
+        _reload = () -> showDocumentation(element);
         _element = element;
         _classButton.setEnabled(true);
 
@@ -312,7 +290,7 @@ public class DocumentationTab {
         setCrumbs(seg("Home", "home"), seg(moduleName, "module/" + moduleName),
                 seg(name, "el/" + moduleName + "/" + kind + "/" + name));
 
-        ReadAction.nonBlocking((Callable<Object[]>) () -> {
+        ReadAction.nonBlocking(() -> {
                     PresentationLibraryElement element = resolveElement(moduleName, kind, name);
                     String html = null;
                     if (element != null) {
@@ -353,7 +331,7 @@ public class DocumentationTab {
      */
     private void renderServiceDoc(Callable<Home.ServiceDoc> resolver) {
         notifyElement(null);
-        ReadAction.nonBlocking((Callable<Object[]>) () -> {
+        ReadAction.nonBlocking(() -> {
                     try {
                         Home.ServiceDoc service = resolver.call();
                         return new Object[]{
@@ -433,7 +411,7 @@ public class DocumentationTab {
         Pattern dependency = Pattern.compile(
                 "<groupId>\\s*" + Pattern.quote(groupId) + "\\s*</groupId>\\s*"
                         + "<artifactId>\\s*" + Pattern.quote(artifactId) + "\\s*</artifactId>");
-        ReadAction.nonBlocking((Callable<Object[]>) () -> {
+        ReadAction.nonBlocking(() -> {
                     for (VirtualFile pom : FilenameIndex.getVirtualFilesByName("pom.xml", GlobalSearchScope.projectScope(_project))) {
                         String text;
                         try {

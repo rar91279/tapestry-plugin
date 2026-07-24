@@ -154,7 +154,7 @@ public class TapestryToolWindow extends FileSystemListenerAdapter {
             return;
         }
 
-        _documentationTab.showDocumentation(_element, _project);
+        _documentationTab.showDocumentation(_element);
         _documentationTab.setElement(_element);
     }
 
@@ -172,7 +172,7 @@ public class TapestryToolWindow extends FileSystemListenerAdapter {
             }
 
             if (resource.getFile() != null && resource.getFile().getAbsolutePath().endsWith(changedFile.getFile().getAbsolutePath())) {
-                _documentationTab.showDocumentation(_element, _project);
+                _documentationTab.showDocumentation(_element);
                 _documentationTab.setElement(_element);
             }
         }
@@ -189,7 +189,7 @@ public class TapestryToolWindow extends FileSystemListenerAdapter {
         _module = module;
         _element = element;
 
-        _documentationTab.showDocumentation(element, _project);
+        _documentationTab.showDocumentation(element);
         _documentationTab.setElement(_element);
 
         if (element != null) {

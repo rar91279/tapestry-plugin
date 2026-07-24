@@ -138,7 +138,7 @@ public class TapestryProject {
 
     String applicationRootPackage = getApplicationRootPackage();
     String applicationFilterName = getApplicationFilterName();
-    if (applicationRootPackage == null) return Collections.<TapestryLibrary>emptyList();
+    if (applicationRootPackage == null) return Collections.emptyList();
     final Map<String, List<String>> libraryMapping = findLibraryMapping();
     // volatile read
     if (StringUtil.isNotEmpty(myLastApplicationPackage) && StringUtil.isNotEmpty(myLastApplicationFilterName) && myCachedLibraries != null) {
@@ -180,7 +180,7 @@ public class TapestryProject {
   @Nullable
   public TapestryLibrary getApplicationLibrary() {
     Collection<TapestryLibrary> libraries = getLibraries();
-    return libraries.size() == 0 ? null : libraries.iterator().next();
+    return libraries.isEmpty() ? null : libraries.iterator().next();
   }
 
   /**
@@ -276,9 +276,8 @@ public class TapestryProject {
 
   private static void addFromMappingData(Map<String, List<String>> result, Map<String, String> computedMap) {
     for (String key : computedMap.keySet()) {
-      List<String> strings = result.get(key);
-      if (strings == null) result.put(key, strings = new ArrayList<>(2));
-      strings.add(computedMap.get(key));
+        List<String> strings = result.computeIfAbsent(key, k -> new ArrayList<>(2));
+        strings.add(computedMap.get(key));
     }
   }
 
@@ -302,13 +301,13 @@ public class TapestryProject {
   };
 
   public Collection<PresentationLibraryElement> getBuiltinComponents() {
-    return Arrays.<PresentationLibraryElement>asList(BodyComponent.getInstance(this), BlockComponent.getInstance(this),
+    return Arrays.asList(BodyComponent.getInstance(this), BlockComponent.getInstance(this),
                          ParameterComponent.getInstance(this),
                          ContainerComponent.getInstance(this));
   }
 
   public Collection<PresentationLibraryElement> getBuiltinPages() {
-    return Collections.<PresentationLibraryElement>emptyList();
+    return Collections.emptyList();
   }
 
   /**
