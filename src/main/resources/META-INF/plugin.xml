@@ -6,6 +6,7 @@
 
   <depends>com.intellij.javaee</depends>
   <depends>com.intellij.properties</depends>
+  <depends>com.intellij.modules.jcef</depends>
   <depends optional="true" config-file="tapestry-css-support-plugin.xml">com.intellij.css</depends>
   <category>JVM Frameworks</category>
 
