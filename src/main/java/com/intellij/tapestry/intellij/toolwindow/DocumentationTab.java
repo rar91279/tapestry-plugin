@@ -347,18 +347,20 @@ public class DocumentationTab {
     private String buildHomeHtml() {
         List<NavPageDocumentation.Entry> modules = new ArrayList<>();
         for (Module module : ModuleManager.getInstance(_project).getModules()) {
-            boolean tapestry = TapestryUtils.isTapestryModule(module);
-            // Every project module is listed; only Tapestry-recognized ones are clickable and badged.
+            // Only Tapestry-recognized modules are listed; non-Tapestry project dirs are skipped.
+            if (!TapestryUtils.isTapestryModule(module)) {
+                continue;
+            }
             modules.add(new NavPageDocumentation.Entry(
                     module.getName(),
-                    tapestry ? "module/" + module.getName() : "",
+                    "module/" + module.getName(),
                     "",
-                    tapestry ? "Tapestry" : ""));
+                    "Tapestry"));
         }
 
         List<NavPageDocumentation.Section> sections = new ArrayList<>();
-        sections.add(new NavPageDocumentation.Section("Modules", modules));
-        sections.add(new NavPageDocumentation.Section("Reference", List.of(
+        sections.add(new NavPageDocumentation.Section("Tapestry Modules", modules));
+        sections.add(new NavPageDocumentation.Section("Tapestry Core", List.of(
                 new NavPageDocumentation.Entry("Core Library", "core",
                         "Built-in Tapestry pages, components and mixins."))));
         return NavPageDocumentation.render("Tapestry Documentation", sections);

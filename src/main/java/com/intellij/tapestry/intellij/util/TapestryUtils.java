@@ -7,8 +7,13 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.ModuleRootManager;
+import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.openapi.vfs.VfsUtilCore;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
+import com.intellij.psi.util.CachedValueProvider;
 import com.intellij.psi.util.CachedValuesManager;
 import com.intellij.psi.xml.*;
 import com.intellij.tapestry.core.TapestryConstants;
@@ -30,6 +35,7 @@ import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -42,13 +48,63 @@ public final class TapestryUtils {
   private static final Logger _logger = Logger.getInstance(TapestryUtils.class.getName());
 
   /**
+   * Manifest attribute a Tapestry module declares to advertise its IoC module classes.
+   */
+  private static final String TAPESTRY_MODULE_CLASSES = "Tapestry-Module-Classes";
+
+  /**
    * Checks if a module is a Tapestry module.
+   * <p>
+   * A module counts as Tapestry if it has an explicit Tapestry facet, or if it declares
+   * {@code Tapestry-Module-Classes} itself &mdash; in its own {@code pom.xml}
+   * (maven-jar-plugin {@code manifestEntries}) or its own {@code META-INF/MANIFEST.MF}.
+   * Dependency jars are deliberately not scanned, so merely depending on Tapestry
+   * (whose own jars carry that attribute) does not flag a module.
    *
    * @param module the module to check.
    * @return {@code true} if the module is a Tapestry module, {@code false} otherwise.
    */
   public static boolean isTapestryModule(Module module) {
-    return module != null && FacetManager.getInstance(module).<com.intellij.tapestry.intellij.facet.TapestryFacet>getFacetsByType(TapestryFacetType.ID).size() > 0;
+    if (module == null) {
+      return false;
+    }
+    if (!FacetManager.getInstance(module).<com.intellij.tapestry.intellij.facet.TapestryFacet>getFacetsByType(TapestryFacetType.ID).isEmpty()) {
+      return true;
+    }
+    return declaresTapestryModuleClasses(module);
+  }
+
+  /**
+   * Scans the module's own {@code pom.xml} and {@code META-INF/MANIFEST.MF} for the
+   * {@code Tapestry-Module-Classes} declaration. Cached per module.
+   */
+  private static boolean declaresTapestryModuleClasses(final Module module) {
+    return CachedValuesManager.getManager(module.getProject()).getCachedValue(module, () -> {
+      ModuleRootManager roots = ModuleRootManager.getInstance(module);
+      List<VirtualFile> candidates = new ArrayList<>();
+      for (VirtualFile content : roots.getContentRoots()) {
+        ContainerUtil.addIfNotNull(candidates, content.findChild("pom.xml"));
+      }
+      for (VirtualFile source : roots.getSourceRoots()) {
+        ContainerUtil.addIfNotNull(candidates, source.findFileByRelativePath("META-INF/MANIFEST.MF"));
+      }
+
+      boolean found = false;
+      for (VirtualFile file : candidates) {
+        try {
+          if (VfsUtilCore.loadText(file).contains(TAPESTRY_MODULE_CLASSES)) {
+            found = true;
+            break;
+          }
+        }
+        catch (IOException e) {
+          _logger.debug("Failed to read " + file.getPath(), e);
+        }
+      }
+      // ponytail: cache keyed on project roots only; a pom.xml/manifest content edit that adds
+      // the attribute refreshes on next reimport/root change, not on the keystroke.
+      return CachedValueProvider.Result.create(found, ProjectRootManager.getInstance(module.getProject()));
+    });
   }
 
   /**
