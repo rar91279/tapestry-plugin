@@ -7,10 +7,8 @@ package com.intellij.tapestry.intellij.inspections;
 import com.intellij.codeInspection.ProblemsHolder;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.ResolveResult;
-import com.intellij.tapestry.TapestryBundle;
 import com.intellij.tapestry.psi.TelQualifiedReference;
 import com.intellij.tapestry.psi.TelReferenceExpression;
-import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
