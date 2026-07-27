@@ -175,4 +175,6 @@ public interface TapestryConstants {
    * The prefix of the default parameter methods.
    */
   String DEFAULT_PARAMETER_METHOD_PREFIX = "default";
+
+  String EL_LANGUAGE = "TML";
 }

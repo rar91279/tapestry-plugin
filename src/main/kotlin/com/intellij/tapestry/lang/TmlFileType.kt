@@ -1,43 +1,46 @@
-package com.intellij.tapestry.lang;
+package com.intellij.tapestry.lang
 
-import com.intellij.ide.highlighter.XmlLikeFileType;
-import com.intellij.tapestry.core.TapestryConstants;
-import icons.TapestryIcons;
-import org.jetbrains.annotations.NotNull;
-
-import javax.swing.*;
+import com.intellij.ide.highlighter.XmlLikeFileType
+import com.intellij.tapestry.core.TapestryConstants
+import icons.TapestryIcons
 
 /**
- * @author Alexey Chmutov
+ * File type implementation for Tapestry Markup Language (TML) files.
+ *
+ * This file type represents template files used in the Apache Tapestry web framework.
+ * TML files are XML-like templates that define the structure and layout of Tapestry
+ * components and pages. This implementation provides IDE integration for TML files,
+ * including syntax highlighting, file recognition, and visual representation.
+ *
+ * The file type is associated with the [TmlLanguage] language instance and extends
+ * [XmlLikeFileType] to inherit XML-related functionality while providing Tapestry-specific
+ * features.
+ *
+ * ## File Characteristics
+ * - **File Extension**: `.tml` (defined in [TapestryConstants.TEMPLATE_FILE_EXTENSION])
+ * - **Language Name**: "TML" (defined in [TapestryConstants.EL_LANGUAGE])
+ * - **Description**: "Tapestry template"
+ * - **Icon**: Tapestry logo (16x18 pixels)
+ *
+ * ## Usage
+ * This file type is automatically registered with the IntelliJ Platform and is used
+ * to identify and process TML files throughout the IDE. It provides:
+ * - File type detection based on extension
+ * - Visual identification through the Tapestry icon
+ * - Language-specific features through [TmlLanguage]
+ * - XML-like syntax support through parent class
+ *
+ * @see TmlLanguage
+ * @see XmlLikeFileType
+ * @see TapestryConstants
  */
-public final class TmlFileType extends XmlLikeFileType {
+object TmlFileType: XmlLikeFileType(TmlLanguage) {
 
-  public static final TmlFileType INSTANCE = new TmlFileType();
+    override fun getName() = TapestryConstants.EL_LANGUAGE
 
-  private TmlFileType() {
-    super(TmlLanguage.INSTANCE);
-  }
+    override fun getDescription() = "Tapestry template"
 
-  @Override
-  @NotNull
-  public String getName() {
-    return "TML";
-  }
+    override fun getDefaultExtension() =  TapestryConstants.TEMPLATE_FILE_EXTENSION
 
-  @Override
-  @NotNull
-  public String getDescription() {
-    return "Tapestry template";
-  }
-
-  @Override
-  @NotNull
-  public String getDefaultExtension() {
-    return TapestryConstants.TEMPLATE_FILE_EXTENSION;
-  }
-
-  @Override
-  public Icon getIcon() {
-    return TapestryIcons.Tapestry_logo_small;
-  }
+    override fun getIcon() = TapestryIcons.Tapestry_logo_small
 }

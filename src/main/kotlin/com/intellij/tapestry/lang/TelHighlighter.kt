@@ -1,49 +1,56 @@
-package com.intellij.tapestry.lang;
+package com.intellij.tapestry.lang
 
-import com.intellij.lexer.Lexer;
-import com.intellij.openapi.editor.colors.TextAttributesKey;
-import com.intellij.openapi.fileTypes.SyntaxHighlighterBase;
-import com.intellij.psi.tree.IElementType;
-import com.intellij.tapestry.psi.TelLexer;
-import org.jetbrains.annotations.NotNull;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import static com.intellij.tapestry.intellij.lang.TemplateColorSettingsPage.*;
-import static com.intellij.tapestry.psi.TelTokenTypes.*;
+import com.intellij.lexer.Lexer
+import com.intellij.openapi.editor.colors.TextAttributesKey
+import com.intellij.openapi.fileTypes.SyntaxHighlighterBase
+import com.intellij.psi.tree.IElementType
+import com.intellij.tapestry.intellij.lang.TemplateColorSettingsPage
+import com.intellij.tapestry.psi.TelLexer
+import com.intellij.tapestry.psi.TelTokenTypes
+import kotlin.collections.get
 
 /**
+ * Syntax highlighter for Tapestry Expression Language (TEL).
+ * 
+ * Provides syntax highlighting for TEL expressions used in Tapestry templates,
+ * mapping token types from the TEL lexer to text attribute keys defined in
+ * [TemplateColorSettingsPage].
+ * 
  * @author Alexey Chmutov
  */
-public final class TelHighlighter extends SyntaxHighlighterBase {
-  @Override
-  @NotNull
-  public Lexer getHighlightingLexer() {
-    return new TelLexer();
-  }
+class TelHighlighter : SyntaxHighlighterBase() {
 
-  @Override
-  public TextAttributesKey @NotNull [] getTokenHighlights(IElementType tokenType) {
-    return getTokenHighlightsStatic(tokenType);
-  }
+    /**
+     * Lazy-initialized map that associates TEL token types with their corresponding
+     * text attribute keys for syntax highlighting.
+     */
+    private val ourMap: MutableMap<IElementType, TextAttributesKey> by lazy {
+        val map = mutableMapOf<IElementType, TextAttributesKey>()
+        fillMap(map, TemplateColorSettingsPage.TEL_BOUNDS, TelTokenTypes.TAP5_EL_START, TelTokenTypes.TAP5_EL_END)
+        fillMap(map, TemplateColorSettingsPage.TEL_IDENT, TelTokenTypes.TAP5_EL_IDENTIFIER)
+        fillMap(map, TemplateColorSettingsPage.TEL_NUMBER, TelTokenTypes.TAP5_EL_INTEGER, TelTokenTypes.TAP5_EL_DECIMAL)
+        fillMap(map, TemplateColorSettingsPage.TEL_DOT, TelTokenTypes.TAP5_EL_DOT, TelTokenTypes.TAP5_EL_COLON, TelTokenTypes.TAP5_EL_COMMA, TelTokenTypes.TAP5_EL_QUESTION_DOT, TelTokenTypes.TAP5_EL_RANGE, TelTokenTypes.TAP5_EL_EXCLAMATION)
+        fillMap(map, TemplateColorSettingsPage.TEL_PARENTHS, TelTokenTypes.TAP5_EL_LEFT_PARENTH, TelTokenTypes.TAP5_EL_RIGHT_PARENTH)
+        fillMap(map, TemplateColorSettingsPage.TEL_BRACKETS, TelTokenTypes.TAP5_EL_LEFT_BRACKET, TelTokenTypes.TAP5_EL_RIGHT_BRACKET)
+        fillMap(map, TemplateColorSettingsPage.TEL_STRING, TelTokenTypes.TAP5_EL_STRING)
+        fillMap(map, TemplateColorSettingsPage.TEL_BAD_CHAR, TelTokenTypes.TAP5_EL_BAD_CHAR)
+        return@lazy map
+    }
 
-  public static TextAttributesKey[] getTokenHighlightsStatic(IElementType tokenType) {
-    return SyntaxHighlighterBase.pack(ourMap.get(tokenType), TEL_BACKGROUND);
-  }
+    /**
+     * Returns the lexer used for highlighting TEL expressions.
+     *
+     * @return a new instance of [TelLexer]
+     */
+    override fun getHighlightingLexer(): Lexer = TelLexer()
 
-  private static final Map<IElementType, TextAttributesKey> ourMap;
-
-  static {
-    ourMap = new HashMap<>();
-    SyntaxHighlighterBase.fillMap(ourMap, TEL_BOUNDS, TAP5_EL_START, TAP5_EL_END);
-    SyntaxHighlighterBase.fillMap(ourMap, TEL_IDENT, TAP5_EL_IDENTIFIER);
-    SyntaxHighlighterBase.fillMap(ourMap, TEL_DOT, TAP5_EL_DOT, TAP5_EL_COLON, TAP5_EL_COMMA, TAP5_EL_QUESTION_DOT, TAP5_EL_RANGE, TAP5_EL_EXCLAMATION);
-    SyntaxHighlighterBase.fillMap(ourMap, TEL_NUMBER, TAP5_EL_INTEGER, TAP5_EL_DECIMAL);
-    SyntaxHighlighterBase.fillMap(ourMap, TEL_PARENTHS, TAP5_EL_LEFT_PARENTH, TAP5_EL_RIGHT_PARENTH);
-    SyntaxHighlighterBase.fillMap(ourMap, TEL_BRACKETS, TAP5_EL_LEFT_BRACKET, TAP5_EL_RIGHT_BRACKET);
-    SyntaxHighlighterBase.fillMap(ourMap, TEL_STRING, TAP5_EL_STRING);
-    SyntaxHighlighterBase.fillMap(ourMap, TEL_BAD_CHAR, TAP5_EL_BAD_CHAR);
-  }
-
+    /**
+     * Returns the text attributes to apply to the given token type.
+     *
+     * @param tokenType the token type to get highlighting attributes for
+     * @return an array of text attribute keys, including the token-specific attribute
+     *         and the TEL background attribute
+     */
+    override fun getTokenHighlights(tokenType: IElementType?): Array<out TextAttributesKey>
+        = pack(ourMap[tokenType], TemplateColorSettingsPage.TEL_BACKGROUND)
 }

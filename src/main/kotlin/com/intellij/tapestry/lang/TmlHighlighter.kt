@@ -1,31 +1,49 @@
-package com.intellij.tapestry.lang;
+package com.intellij.tapestry.lang
 
-import com.intellij.ide.highlighter.HtmlFileHighlighter;
-import com.intellij.ide.highlighter.XmlFileHighlighter;
-import com.intellij.lexer.Lexer;
-import com.intellij.openapi.editor.colors.TextAttributesKey;
-import com.intellij.psi.tree.IElementType;
-import com.intellij.tapestry.psi.TelTokenType;
-import com.intellij.tapestry.psi.TmlHighlightingLexer;
-import org.jetbrains.annotations.NotNull;
+import com.intellij.ide.highlighter.XmlFileHighlighter
+import com.intellij.lexer.Lexer
+import com.intellij.psi.tree.IElementType
+import com.intellij.tapestry.psi.TelTokenType
+import com.intellij.tapestry.psi.TmlHighlightingLexer
 
 /**
+ * Syntax highlighter for Tapestry Template Language (TML) files.
+ *
+ * TML files are XML-based templates that can contain Tapestry Expression Language (TEL) expressions.
+ * This highlighter extends [XmlFileHighlighter] to provide XML syntax highlighting and delegates
+ * TEL token highlighting to [TelHighlighter].
+ *
  * @author Alexey Chmutov
  */
-public class TmlHighlighter extends XmlFileHighlighter {
+class TmlHighlighter : XmlFileHighlighter() {
+    /**
+     * Lazy-initialized highlighter for Tapestry Expression Language (TEL) tokens.
+     */
+    val highlighter by lazy {
+        TelHighlighter()
+    }
 
-  @NotNull
-  @Override
-  public Lexer getHighlightingLexer() {
-    return new TmlHighlightingLexer();
-  }
+    /**
+     * Returns the lexer used for syntax highlighting of TML files.
+     *
+     * @return a [TmlHighlightingLexer] instance that can tokenize both XML and TEL syntax
+     */
+    override fun getHighlightingLexer(): Lexer {
+        return TmlHighlightingLexer()
+    }
 
-  @Override
-  public TextAttributesKey @NotNull [] getTokenHighlights(IElementType tokenType) {
-    return tokenType instanceof TelTokenType
-           ? TelHighlighter.getTokenHighlightsStatic(tokenType)
-           : super.getTokenHighlights(tokenType);
-  }
-
+    /**
+     * Returns the text attributes for the specified token type.
+     *
+     * Delegates TEL token highlighting to [TelHighlighter] and XML token highlighting to the parent
+     * [XmlFileHighlighter].
+     *
+     * @param tokenType the token type to get highlighting attributes for
+     * @return an array of [com.intellij.openapi.editor.colors.TextAttributesKey] for the token type
+     */
+    override fun getTokenHighlights(tokenType: IElementType) =
+        if (tokenType is TelTokenType)
+            highlighter.getTokenHighlights(tokenType)
+        else
+            super.getTokenHighlights(tokenType)
 }
-

@@ -1,21 +1,18 @@
-package com.intellij.tapestry.lang;
+package com.intellij.tapestry.lang
 
-import com.intellij.lang.InjectableLanguage;
-import com.intellij.lang.Language;
+import com.intellij.lang.InjectableLanguage
+import com.intellij.lang.Language
 
 /**
  * @author Alexey Chmutov
  */
-public final class TelLanguage extends Language implements InjectableLanguage {
+class TelLanguage private constructor() : Language("TEL"), InjectableLanguage {
+    override fun getAssociatedFileType(): TelFileType {
+        return TelFileType
+    }
 
-  public static final TelLanguage INSTANCE = new TelLanguage();
-
-  private TelLanguage() {
-    super("TEL");
-  }
-
-  @Override
-  public TelFileType getAssociatedFileType() {
-    return TelFileType.INSTANCE;
-  }
+    companion object {
+        @JvmField
+        val INSTANCE: TelLanguage = TelLanguage()
+    }
 }

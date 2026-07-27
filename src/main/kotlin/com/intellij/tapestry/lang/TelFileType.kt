@@ -1,43 +1,45 @@
-package com.intellij.tapestry.lang;
+package com.intellij.tapestry.lang
 
-import com.intellij.openapi.fileTypes.LanguageFileType;
-import com.intellij.util.PlatformIcons;
-import org.jetbrains.annotations.NonNls;
-import org.jetbrains.annotations.NotNull;
-
-import javax.swing.*;
+import com.intellij.openapi.fileTypes.LanguageFileType
+import com.intellij.util.PlatformIcons
+import org.jetbrains.annotations.NonNls
 
 /**
+ * File type for Tapestry Expression Language (TEL) files.
+ *
+ * TEL is a language used in Apache Tapestry 5 framework for writing expressions
+ * in templates and components.
+ *
  * @author Alexey Chmutov
  */
-public final class TelFileType extends LanguageFileType {
-  public static final TelFileType INSTANCE = new TelFileType();
-  private TelFileType() {
-    super(TelLanguage.INSTANCE);
-  }
+object TelFileType: LanguageFileType(TelLanguage.INSTANCE) {
+    /**
+     * Returns the name of this file type.
+     *
+     * @return the file type name "TEL"
+     */
+    @NonNls
+    override fun getName() =  "TEL"
 
-  @Override
-  @NotNull
-  @NonNls
-  public String getName() {
-    return "TEL";
-  }
+    /**
+     * Returns a human-readable description of this file type.
+     *
+     * @return the description of TEL file type
+     */
+    override fun getDescription() = "Expression Language in Tapestry 5"
 
-  @Override
-  @NotNull
-  public String getDescription() {
-    return "Expression Language in Tapestry 5";
-  }
+    /**
+     * Returns the default file extension for this file type.
+     *
+     * @return the default extension "tel"
+     */
+    @NonNls
+    override fun getDefaultExtension() = "tel"
 
-  @Override
-  @NotNull
-  @NonNls
-  public String getDefaultExtension() {
-    return "tel";
-  }
-
-  @Override
-  public Icon getIcon() {
-    return PlatformIcons.CUSTOM_FILE_ICON;
-  }
+    /**
+     * Returns the icon associated with this file type.
+     *
+     * @return the custom file icon from platform icons
+     */
+    override fun getIcon()=  PlatformIcons.CUSTOM_FILE_ICON
 }
