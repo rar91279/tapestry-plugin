@@ -16,7 +16,10 @@ public class InjectedPageNode extends DefaultMutableTreeNode {
 
         _injectedPage = injectedPage;
         // Precompute the label (touches PSI) here — toString() runs on the EDT during rendering.
-        _label = injectedPage.getElementId();
+        // Injected pages have no element id (that's a component concept), so fall back to the page name.
+        String id = injectedPage.getElementId();
+        _label = (id != null && !id.isEmpty()) ? id
+                : (injectedPage.getElement() != null ? injectedPage.getElement().getName() : "");
     }
 
     public InjectedElement getInjectedPage() {

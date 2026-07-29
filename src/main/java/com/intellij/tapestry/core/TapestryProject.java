@@ -378,8 +378,14 @@ public class TapestryProject {
    * @param element the element to find the users of.
    * @return the elements that reference {@code element}, or an empty list if none.
    */
+  /** How a referencing element uses the target: declared in a template, or injected in Java code. */
+  public enum UsageKind {TEMPLATE, INJECTED}
+
+  /** A single "used by" entry: the referencing element and how it references the target. */
+  public record Usage(PresentationLibraryElement user, UsageKind kind) {}
+
   @NotNull
-  public List<PresentationLibraryElement> findUsages(@NotNull PresentationLibraryElement element) {
+  public List<Usage> findUsages(@NotNull PresentationLibraryElement element) {
     return ourUsagesMap.get(myModule).getOrDefault(element.getElementClass().getFullyQualifiedName(), Collections.emptyList());
   }
 
@@ -387,11 +393,11 @@ public class TapestryProject {
   // Cached per module and invalidated on any PSI change (same dependency as the forward maps).
   // ponytail: full application-library scan on (re)compute; narrow the dependency or index
   // incrementally if it gets slow on very large projects.
-  private static final CachedUserDataCache<Map<String, List<PresentationLibraryElement>>, Module> ourUsagesMap =
+  private static final CachedUserDataCache<Map<String, List<Usage>>, Module> ourUsagesMap =
     new CachedUserDataCache<>("ourUsagesMap") {
       @Override
-      protected Map<String, List<PresentationLibraryElement>> computeValue(Module module) {
-        Map<String, List<PresentationLibraryElement>> usages = new HashMap<>();
+      protected Map<String, List<Usage>> computeValue(Module module) {
+        Map<String, List<Usage>> usages = new HashMap<>();
         TapestryProject project = TapestryModuleSupportLoader.getTapestryProject(module);
         if (project == null) return usages;
         TapestryLibrary application = project.getApplicationLibrary();
@@ -404,13 +410,13 @@ public class TapestryProject {
           if (user == null || user.getElementClass().getFile() == null) continue;
 
           for (TemplateElement embedded : user.getEmbeddedComponents()) {
-            addUsage(usages, embedded.getElement().getElement(), user);
+            addUsage(usages, embedded.getElement().getElement(), user, UsageKind.INJECTED);
           }
           for (TemplateElement embedded : user.getEmbeddedComponentsTemplate()) {
-            addUsage(usages, embedded.getElement().getElement(), user);
+            addUsage(usages, embedded.getElement().getElement(), user, UsageKind.TEMPLATE);
           }
           for (InjectedElement injected : user.getInjectedPages()) {
-            addUsage(usages, injected.getElement(), user);
+            addUsage(usages, injected.getElement(), user, UsageKind.INJECTED);
           }
         }
         return usages;
@@ -427,11 +433,13 @@ public class TapestryProject {
       }
     };
 
-  private static void addUsage(Map<String, List<PresentationLibraryElement>> usages,
+  private static void addUsage(Map<String, List<Usage>> usages,
                                @Nullable PresentationLibraryElement target,
-                               PresentationLibraryElement user) {
+                               PresentationLibraryElement user,
+                               UsageKind kind) {
     if (target == null || target.getElementClass() == null) return;
-    usages.computeIfAbsent(target.getElementClass().getFullyQualifiedName(), k -> new ArrayList<>()).add(user);
+    usages.computeIfAbsent(target.getElementClass().getFullyQualifiedName(), k -> new ArrayList<>())
+        .add(new Usage(user, kind));
   }
 
   @NotNull
