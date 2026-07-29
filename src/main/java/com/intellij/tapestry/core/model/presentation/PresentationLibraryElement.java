@@ -9,7 +9,7 @@ import com.intellij.tapestry.core.java.IJavaField;
 import com.intellij.tapestry.core.model.TapestryLibrary;
 import com.intellij.tapestry.core.model.externalizable.ExternalizableToClass;
 import com.intellij.tapestry.core.model.externalizable.ExternalizableToDocumentation;
-import com.intellij.tapestry.core.model.externalizable.documentation.generationchain.DocumentationGenerationChain;
+import com.intellij.tapestry.core.model.externalizable.documentation.generationchain.DocumentationGenerator;
 import com.intellij.tapestry.core.model.externalizable.toclasschain.ExternalizeToClassChain;
 import com.intellij.tapestry.core.resource.CoreXmlRecursiveElementVisitor;
 import com.intellij.tapestry.core.resource.IResource;
@@ -391,7 +391,7 @@ public abstract class PresentationLibraryElement implements ExternalizableToDocu
 
   @Override
   public String getDocumentation() throws Exception {
-    return DocumentationGenerationChain.getInstance().generate(this);
+    return DocumentationGenerator.generate(this);
   }
 
   @Override

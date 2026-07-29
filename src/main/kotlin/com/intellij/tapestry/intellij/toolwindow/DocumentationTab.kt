@@ -29,7 +29,7 @@ import com.intellij.tapestry.core.TapestryProject
 import com.intellij.tapestry.core.java.IJavaClassType
 import com.intellij.tapestry.core.model.TapestryLibrary
 import com.intellij.tapestry.core.model.externalizable.documentation.Home
-import com.intellij.tapestry.core.model.externalizable.documentation.generationchain.AbstractDocumentationGenerator
+import com.intellij.tapestry.core.model.externalizable.documentation.generationchain.DocAssets
 import com.intellij.tapestry.core.model.externalizable.documentation.generationchain.CoreLibraryDocumentation
 import com.intellij.tapestry.core.model.externalizable.documentation.generationchain.DocNav
 import com.intellij.tapestry.core.model.externalizable.documentation.generationchain.NavPageDocumentation
@@ -631,7 +631,7 @@ class DocumentationTab(private val project: Project) {
     private fun setCrumbs(vararg segments: Array<String>) {
         val sb = StringBuilder("<nav class=\"crumbs\">")
         sb.append("<img class=\"crumb-logo\" src=\"")
-            .append(AbstractDocumentationGenerator.logo())
+            .append(DocAssets.logo())
             .append("\" alt=\"Tapestry\">")
         for (i in segments.indices) {
             if (i > 0) sb.append("<span class=\"sep\">/</span>")
@@ -643,7 +643,7 @@ class DocumentationTab(private val project: Project) {
             if (last || token.isEmpty()) {
                 sb.append("<span class=\"current\">").append(label).append("</span>")
             } else {
-                sb.append("<a href=\"#\" onclick=\"tapestryNav('").append(DocNav.INSTANCE.js(token)).append("');return false;\">")
+                sb.append("<a href=\"#\" onclick=\"tapestryNav('").append(DocNav.js(token)).append("');return false;\">")
                     .append(label).append("</a>")
             }
         }
