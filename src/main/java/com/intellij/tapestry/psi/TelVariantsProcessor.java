@@ -26,7 +26,7 @@ import static com.intellij.util.containers.ContainerUtil.addIfNotNull;
 abstract class TelVariantsProcessor<T> implements PsiScopeProcessor {
 
   @NonNls private static final Set<String> INSECURE_OBJECT_METHODS =
-    ContainerUtil.<String>set("wait", "notify", "notifyAll");
+    Set.of("wait", "notify", "notifyAll");
 
   private final Set<T> myResult = new LinkedHashSet<>();
   private final boolean myForCompletion;
