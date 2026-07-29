@@ -10,6 +10,12 @@
   <depends optional="true" config-file="tapestry-css-support-plugin.xml">com.intellij.css</depends>
   <category>JVM Frameworks</category>
 
+  <!-- JCEF classes (JBCefBrowserBase etc.) live in this public content module; without an explicit
+       module dependency they aren't on the plugin classloader in the 2026.2 module system. -->
+  <dependencies>
+    <module name="intellij.platform.ui.jcef"/>
+  </dependencies>
+
   <extensions defaultExtensionNs="com.intellij">
     <facetType implementation="com.intellij.tapestry.intellij.facet.TapestryFacetType"/>
     <framework.detector implementation="com.intellij.tapestry.intellij.facet.TapestryFacetType$TapestryFrameworkDetector"/>
