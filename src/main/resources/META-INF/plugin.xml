@@ -110,17 +110,22 @@
       <add-to-group group-id="EditorPopupMenu.GoTo" anchor="last"/>
     </group>
 
-    <group id="TapestryGroup" popup="true" text="Tapestry" class="com.intellij.ide.actions.NonTrivialActionGroup">
+    <group id="TapestryGroup" popup="true" text="Tapestry"
+           icon="/com/intellij/tapestry/core/icons/tapestry_logo_small.png"
+           class="com.intellij.ide.actions.NonTrivialActionGroup">
       <separator/>
       <action id="AddNewPageAction"
               class="com.intellij.tapestry.intellij.actions.createnew.AddNewPageAction"
-              text="Page" description="Add a new page."/>
+              text="Page" description="Add a new page."
+              icon="/com/intellij/tapestry/core/icons/page.png"/>
       <action id="AddNewComponentAction"
               class="com.intellij.tapestry.intellij.actions.createnew.AddNewComponentAction"
-              text="Component" description="Add a new component."/>
+              text="Component" description="Add a new component."
+              icon="/com/intellij/tapestry/core/icons/component.png"/>
       <action id="AddNewMixinAction"
               class="com.intellij.tapestry.intellij.actions.createnew.AddNewMixinAction"
-              text="Mixin" description="Add a new mixin."/>
+              text="Mixin" description="Add a new mixin."
+              icon="/com/intellij/tapestry/core/icons/mixin.png"/>
       <add-to-group group-id="NewGroup" relative-to-action="NewAction" anchor="after"/>
     </group>
   </actions>
