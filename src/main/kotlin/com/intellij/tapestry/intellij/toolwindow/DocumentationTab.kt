@@ -31,6 +31,7 @@ import com.intellij.tapestry.core.model.TapestryLibrary
 import com.intellij.tapestry.core.model.externalizable.documentation.Home
 import com.intellij.tapestry.core.model.externalizable.documentation.generationchain.AbstractDocumentationGenerator
 import com.intellij.tapestry.core.model.externalizable.documentation.generationchain.CoreLibraryDocumentation
+import com.intellij.tapestry.core.model.externalizable.documentation.generationchain.DocNav
 import com.intellij.tapestry.core.model.externalizable.documentation.generationchain.NavPageDocumentation
 import com.intellij.tapestry.core.model.externalizable.documentation.generationchain.ServiceDocumentation
 import com.intellij.tapestry.core.model.ioc.ModuleBuilder
@@ -186,16 +187,24 @@ class DocumentationTab(private val project: Project) {
 
     /** Handles a link click: remembers the current view, then dispatches the navigation token. */
     private fun navigate(token: String) {
-        reload?.let { history.push(it) }
+        // pom/file/class tokens only open an editor and leave the doc view unchanged, so pushing
+        // them onto the back-history would make the back button re-render the current page.
+        if (changesView(token)) reload?.let { history.push(it) }
         dispatch(token)
     }
+
+    private fun changesView(token: String): Boolean =
+        when (token.substringBefore('/')) {
+            "pom", "file", "class" -> false
+            else -> true
+        }
 
     private fun dispatch(token: String) {
         val parts = token.split("/")
         when (parts[0]) {
             "module" -> showModule(parts[1])
-            "core" -> if (parts.size == 1) showCoreIndex() else showCoreElement(parts[1], parts[2])
-            "el" -> showProjectElement(parts[1], parts[2], parts[3])
+            "core" -> if (parts.size == 1) showCoreIndex() else showCoreElement(parts[1], parts.drop(2).joinToString("/"))
+            "el" -> showProjectElement(parts[1], parts[2], parts.drop(3).joinToString("/"))
             "svc" -> showService(parts[1], parts[2])
             "library" -> showLibrary(parts[1], parts[2])
             "libsvc" -> showLibraryService(parts[1], parts[2], parts[3])
@@ -393,7 +402,7 @@ class DocumentationTab(private val project: Project) {
         for (module in ModuleManager.getInstance(project).modules) {
             // Only Tapestry-recognized modules are listed; non-Tapestry project dirs are skipped.
             if (!TapestryUtils.isTapestryModule(module)) continue
-            modules.add(NavPageDocumentation.Entry(module.name, "module/" + module.name, "", "Tapestry"))
+            modules.add(NavPageDocumentation.Entry(module.name, "module/" + module.name, ""))
         }
 
         val sections = ArrayList<NavPageDocumentation.Section>()
@@ -634,7 +643,7 @@ class DocumentationTab(private val project: Project) {
             if (last || token.isEmpty()) {
                 sb.append("<span class=\"current\">").append(label).append("</span>")
             } else {
-                sb.append("<a href=\"#\" onclick=\"tapestryNav('").append(token).append("');return false;\">")
+                sb.append("<a href=\"#\" onclick=\"tapestryNav('").append(DocNav.INSTANCE.js(token)).append("');return false;\">")
                     .append(label).append("</a>")
             }
         }

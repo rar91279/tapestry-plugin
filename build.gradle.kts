@@ -101,3 +101,8 @@ tasks.named<Test>("test") {
     useJUnitPlatform()
     include("com/intellij/tapestry/tests/**")
 }
+
+// Run the core unit specs as part of the standard verification lifecycle (check/build).
+tasks.named("check") {
+    dependsOn("kotest")
+}

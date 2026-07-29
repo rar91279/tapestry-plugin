@@ -51,6 +51,15 @@ public class TapestryImplicitUsageProvider implements ImplicitUsageProvider {
   /** Category of a framework-invoked method, used to pick a gutter icon. */
   public enum FrameworkMethodKind { EVENT, LIFECYCLE, IOC }
 
+  /** The annotation FQNs that define a given method kind (for tooltip javadoc lookup). */
+  public static List<String> annotationsForKind(@NotNull FrameworkMethodKind kind) {
+    return switch (kind) {
+      case EVENT -> List.of(TapestryConstants.EVENT_ANNOTATION);
+      case LIFECYCLE -> LIFECYCLE_ANNOTATIONS;
+      case IOC -> IOC_METHOD_ANNOTATIONS;
+    };
+  }
+
   @Override
   public boolean isImplicitUsage(@NotNull PsiElement element) {
     if (element instanceof PsiMethod) return frameworkMethodKind((PsiMethod)element) != null;

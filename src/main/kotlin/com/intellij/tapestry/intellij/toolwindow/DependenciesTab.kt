@@ -3,6 +3,7 @@ package com.intellij.tapestry.intellij.toolwindow
 import com.intellij.icons.AllIcons
 import com.intellij.ide.CommonActionsManager
 import com.intellij.ide.DefaultTreeExpander
+import com.intellij.ide.setToolTipText
 import com.intellij.ide.util.EditSourceUtil
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
@@ -12,7 +13,7 @@ import com.intellij.openapi.actionSystem.impl.ActionButton
 import com.intellij.openapi.actionSystem.impl.PresentationFactory
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.ReadAction
-import com.intellij.openapi.module.Module
+import com.intellij.openapi.util.text.HtmlChunk
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiFile
@@ -120,12 +121,12 @@ class DependenciesTab {
 
     private fun toolbarButton(action: AnAction, tooltip: String): ActionButton {
         val button = ActionButton(action, presentations.getPresentation(action), tooltip, Dimension(24, 24))
-        button.toolTipText = tooltip
+        button.setToolTipText(HtmlChunk.text(tooltip))
         return button
     }
 
     /** Shows the dependencies of an element (a [PresentationLibraryElement]); otherwise clears the tree. */
-    fun showDependencies(module: Module?, element: Any?) {
+    fun showDependencies(element: Any?) {
         if (element !is PresentationLibraryElement) {
             clear()
             return

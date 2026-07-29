@@ -10,7 +10,7 @@
 <a name="TOP"></a>
 
 #if($title.length() > 0)
-<div class="box"><div class="boxHeader"><span>$title</span>#if($subtitle.length() > 0)<span class="anchor">#if($subtitleToken.length() > 0)<a class="doclink" href="#" onclick="tapestryNav('$subtitleToken');return false;">$subtitle</a>#else$subtitle#end</span>#end</div></div>
+<div class="box"><div class="boxHeader"><span>$title</span>#if($subtitle.length() > 0)<span class="anchor">#if($subtitleToken.length() > 0)<a class="doclink" href="#" onclick="tapestryNav('$nav.js($subtitleToken)');return false;">$subtitle</a>#else$subtitle#end</span>#end</div></div>
 #end
 
 <div id="menubar">
@@ -36,8 +36,8 @@
         #end
         #foreach($entry in $section.entries)
         <div class="item">
-            <div class="name">#if($entry.token.length() > 0)<a class="doclink" href="#" onclick="tapestryNav('$entry.token');return false;">$entry.label</a>#else$entry.label#end#if($entry.badge.length() > 0)<span class="tag tag-on">$entry.badge</span>#end</div>
-            #if($entry.description.length() > 0)<div class="desc">#if($entry.descriptionToken.length() > 0)<a class="doclink" href="#" onclick="tapestryNav('$entry.descriptionToken');return false;">$entry.description</a>#else$entry.description#end</div>#end
+            <div class="name">#if($entry.token.length() > 0)<a class="doclink" href="#" onclick="tapestryNav('$nav.js($entry.token)');return false;">$entry.label</a>#else$entry.label#end#if($entry.badge.length() > 0)<span class="tag tag-on">$entry.badge</span>#end</div>
+            #if($entry.description.length() > 0)<div class="desc">#if($entry.descriptionToken.length() > 0)<a class="doclink" href="#" onclick="tapestryNav('$nav.js($entry.descriptionToken)');return false;">$entry.description</a>#else$entry.description#end</div>#end
         </div>
         #end
     </div>

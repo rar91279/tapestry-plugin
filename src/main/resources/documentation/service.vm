@@ -18,7 +18,7 @@
         <tr><td class="key">Id</td><td>$service.id</td></tr>
         <tr>
             <td class="key">Class</td>
-            <td>#if($service.className.length() > 0)<a class="doclink" href="#" onclick="tapestryNav('class/$service.className');return false;">$service.className</a>#else<span class="empty">unknown</span>#end</td>
+            <td>#if($service.className.length() > 0)<a class="doclink" href="#" onclick="tapestryNav('class/$nav.js($service.className)');return false;">$service.className</a>#else<span class="empty">unknown</span>#end</td>
         </tr>
         #if($service.scope.length() > 0)<tr><td class="key">Scope</td><td>$service.scope</td></tr>#end
         <tr><td class="key">Eager load</td><td>$service.eagerLoad</td></tr>

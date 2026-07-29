@@ -42,7 +42,8 @@ public class IntellijJavaClassType extends IntellijJavaType implements IJavaClas
    */
   @Override
   public String getFullyQualifiedName() {
-    return getPsiClass().getQualifiedName();
+    PsiClass psiClass = getPsiClass();
+    return psiClass != null ? psiClass.getQualifiedName() : null;
   }
 
   /**
@@ -50,7 +51,8 @@ public class IntellijJavaClassType extends IntellijJavaType implements IJavaClas
    */
   @Override
   public String getName() {
-    return getPsiClass().getName();
+    PsiClass psiClass = getPsiClass();
+    return psiClass != null ? psiClass.getName() : null;
   }
 
   /**

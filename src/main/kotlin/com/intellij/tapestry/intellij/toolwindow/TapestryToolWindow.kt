@@ -47,7 +47,7 @@ class TapestryToolWindow(private val project: Project) : FileSystemListenerAdapt
         tabbedPane.addTab("Dependencies", dependenciesTab.mainPanel)
 
         // Keep the Dependencies tab in sync with whatever element the doc browser shows.
-        documentationTab.setElementListener { element -> dependenciesTab.showDependencies(null, element) }
+        documentationTab.setElementListener { element -> dependenciesTab.showDependencies(element) }
 
         // Restore the last-used tab, defaulting to Live Documentation the first time.
         val properties = PropertiesComponent.getInstance(project)
@@ -63,7 +63,7 @@ class TapestryToolWindow(private val project: Project) : FileSystemListenerAdapt
 
         val moduleListener = object : ModuleListener {
             override fun moduleRemoved(project: Project, module: Module) = reload()
-            override fun moduleAdded(project: Project, module: Module) = reload()
+            override fun modulesAdded(project: Project, modules: List<Module>) = reload()
         }
 
         val messageBusConnection = project.messageBus.connect()
@@ -93,7 +93,7 @@ class TapestryToolWindow(private val project: Project) : FileSystemListenerAdapt
         }
             .coalesceBy(this, file)
             .finishOnUiThread(ModalityState.any()) { element ->
-                if (element != null) dependenciesTab.showDependencies(null, element)
+                if (element != null) dependenciesTab.showDependencies(element)
             }
             .submit(AppExecutorUtil.getAppExecutorService())
     }
@@ -110,7 +110,7 @@ class TapestryToolWindow(private val project: Project) : FileSystemListenerAdapt
             if (psiFile.fileType == TmlFileType) {
                 return tapestryProject.findElementByTemplate(psiFile)
             }
-        } catch (ex: Exception) {
+        } catch (_: Exception) {
             // Not a Tapestry element — leave the current view untouched.
         }
         return null
