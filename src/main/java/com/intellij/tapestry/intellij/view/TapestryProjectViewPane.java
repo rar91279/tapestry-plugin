@@ -1,6 +1,5 @@
 package com.intellij.tapestry.intellij.view;
 
-import com.intellij.ProjectTopics;
 import com.intellij.ide.PsiCopyPasteManager;
 import com.intellij.ide.SelectInTarget;
 import com.intellij.ide.projectView.ProjectView;
@@ -97,7 +96,7 @@ public class TapestryProjectViewPane extends AbstractProjectViewPane implements 
     };
 
     myMessageBusConnection = project.getMessageBus().connect();
-    myMessageBusConnection.<ModuleListener>subscribe(ProjectTopics.MODULES, myModuleListener);
+    myMessageBusConnection.<ModuleListener>subscribe(ModuleListener.TOPIC, myModuleListener);
 
     for (Module module : ModuleManager.getInstance(myProject).getModules()) {
       TapestryModuleSupportLoader.getTapestryProject(module).getEventsManager().addFileSystemListener(this);
