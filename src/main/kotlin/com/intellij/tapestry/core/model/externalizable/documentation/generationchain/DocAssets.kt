@@ -12,7 +12,7 @@ object DocAssets {
     private val logger = Logger.getInstance(DocAssets::class.java)
 
     // Inline as data: URIs — the JCEF renderer can't fetch jar: classpath URLs.
-    private val LOGO = dataUri("/documentation/tapestry-logo.svg", "image/svg+xml")
+    private val LOGO = dataUri("/documentation/tapestry-docs-logo.svg", "image/svg+xml")
     private val STYLE = dataUri("/documentation/style.css", "text/css")
 
     /** The logo as an inlined `data:` URI (for embedding outside the Velocity templates). */

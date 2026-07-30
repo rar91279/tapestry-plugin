@@ -1,5 +1,6 @@
 package icons;
 
+import com.intellij.openapi.util.IconLoader;
 import com.intellij.ui.IconManager;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,6 +27,6 @@ public final class TapestryIcons {
   /** 16x16 */ public static final @NotNull Icon Mixins = load("com/intellij/tapestry/core/icons/mixins.png", 0, 0);
   /** 16x16 */ public static final @NotNull Icon Page = load("com/intellij/tapestry/core/icons/page.png", 0, 0);
   /** 16x16 */ public static final @NotNull Icon Pages = load("com/intellij/tapestry/core/icons/pages.png", 0, 0);
-  /** 16x18 */ public static final @NotNull Icon Tapestry_logo_small = load("com/intellij/tapestry/core/icons/tapestry_logo_small.png", 0, 0);
-  /** 13x13 */ public static final @NotNull Icon TapestryToolWindow = load("com/intellij/tapestry/core/icons/tapestryToolWindow.png", 0, 0);
+  public static final @NotNull Icon Tapestry_logo_small = IconLoader.getIcon("/documentation/tapestry-file-type-logo.svg", TapestryIcons.class);
+  public static final @NotNull Icon TapestryToolWindow = IconLoader.getIcon("/documentation/tapestry-file-type-logo.svg", TapestryIcons.class);
 }

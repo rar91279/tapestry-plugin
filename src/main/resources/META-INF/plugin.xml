@@ -111,7 +111,7 @@
     </group>
 
     <group id="TapestryGroup" popup="true" text="Tapestry"
-           icon="/com/intellij/tapestry/core/icons/tapestry_logo_small.png"
+           icon="/documentation/tapestry-file-type-logo.svg"
            class="com.intellij.ide.actions.NonTrivialActionGroup">
       <separator/>
       <action id="AddNewPageAction"
