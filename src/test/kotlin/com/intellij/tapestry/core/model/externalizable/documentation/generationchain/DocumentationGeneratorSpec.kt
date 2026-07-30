@@ -10,7 +10,8 @@ import io.mockk.mockk
 
 /**
  * Characterizes the documentation generation entry point: which element type routes to which
- * template + icon. The per-type icon (component/page/mixin.png) is the routing fingerprint.
+ * template + icon. The per-type icon (expui/nodes/class|method|parameter.svg) is the routing
+ * fingerprint.
  */
 class DocumentationGeneratorSpec : FreeSpec({
 
@@ -19,19 +20,19 @@ class DocumentationGeneratorSpec : FreeSpec({
 
     "routes a component to the presentation template with the component icon" {
         val html = generate(mockk<TapestryComponent>(relaxed = true))
-        html shouldContain "component.png"
+        html shouldContain "expui/nodes/class.svg"
         html shouldContain "Description"   // presentation-element.vm rendered
     }
 
     "routes a page to the presentation template with the page icon" {
         val html = generate(mockk<Page>(relaxed = true))
-        html shouldContain "page.png"
+        html shouldContain "expui/nodes/parameter.svg"
         html shouldContain "Description"
     }
 
     "routes a mixin to the presentation template with the mixin icon" {
         val html = generate(mockk<Mixin>(relaxed = true))
-        html shouldContain "mixin.png"
+        html shouldContain "expui/nodes/method.svg"
         html shouldContain "Description"
     }
 
