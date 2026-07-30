@@ -8,6 +8,7 @@ import com.intellij.tapestry.intellij.TapestryModuleSupportLoader
 import com.intellij.tapestry.intellij.util.IdeaUtils
 import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.panel
+import org.jetbrains.jps.model.java.JavaResourceRootType
 import javax.swing.JCheckBox
 import javax.swing.JComboBox
 import javax.swing.JComponent
@@ -47,6 +48,7 @@ class AddNewComponentDialog(module: Module, selectedPackage: String, isPage: Boo
         val newClassesSourceDirectory =
             if (isPage) state.newPagesClassesSourceDirectory else state.newComponentsClassesSourceDirectory
 
+        var resourceRoot: RootFolderWrapper? = null
         for (sourceFolder in ModuleRootManager.getInstance(module).contentEntries[0].sourceFolders) {
             if (sourceFolder.file == null) continue
             val folderWrapper = RootFolderWrapper(sourceFolder)
@@ -56,6 +58,8 @@ class AddNewComponentDialog(module: Module, selectedPackage: String, isPage: Boo
 
             classSourceDirectoryCombo.addItem(folderWrapper)
             if (folderWrapper.toString() == newClassesSourceDirectory) classSourceDirectoryCombo.selectedItem = folderWrapper
+
+            if (sourceFolder.rootType == JavaResourceRootType.RESOURCE) resourceRoot = folderWrapper
         }
 
         for (webRoot in IdeaUtils.findWebRoots(module)) {
@@ -64,6 +68,12 @@ class AddNewComponentDialog(module: Module, selectedPackage: String, isPage: Boo
 
             if (isPage) templateSourceDirectoryCombo.addItem(folderWrapper)
             if (folderWrapper.toString() == newTemplatesSourceDirectory) templateSourceDirectoryCombo.selectedItem = folderWrapper
+        }
+
+        // Convention: templates live on the classpath resource root (src/main/resources). Default to it
+        // unless the user already chose a template directory before.
+        if (newTemplatesSourceDirectory.isNullOrEmpty() && resourceRoot != null) {
+            templateSourceDirectoryCombo.selectedItem = resourceRoot
         }
 
         createTemplateCheck.addActionListener { setNotCreatingTemplate(!createTemplateCheck.isSelected) }

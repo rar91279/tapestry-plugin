@@ -6,6 +6,7 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.actionSystem.LangDataKeys
 import com.intellij.openapi.actionSystem.PlatformCoreDataKeys
 import com.intellij.openapi.actionSystem.impl.Utils
 import com.intellij.openapi.module.Module
@@ -51,11 +52,16 @@ abstract class AddNewElementAction<T : PackageNode>(private val nodeClass: Class
             }
 
             val eventPackage = IdeaUtils.getPackage(eventPsiElement)
-            if (eventPackage != null) {
+            if (event.getData(LangDataKeys.MODULE_CONTEXT) != null) {
+                // The module node itself is selected — create at the element root package.
+                enabled = true
+            } else if (eventPackage != null) {
                 val elementsRootPackage = JavaPsiFacade.getInstance(module!!.project).findPackage(aPackage)
+                // Enable inside the element package *or* on any ancestor of it (module/app-root package),
+                // so the action isn't hidden unless you drill all the way into pages/components/mixins.
                 if (elementsRootPackage != null &&
-                    eventPackage.qualifiedName.startsWith(elementsRootPackage.qualifiedName) &&
-                    TapestryUtils.isTapestryModule(module)) {
+                    (eventPackage.qualifiedName.startsWith(elementsRootPackage.qualifiedName) ||
+                        elementsRootPackage.qualifiedName.startsWith(eventPackage.qualifiedName))) {
                     enabled = true
                 }
             } else {
@@ -111,16 +117,20 @@ abstract class AddNewElementAction<T : PackageNode>(private val nodeClass: Class
             }
         }
 
-        if (eventPsiElement != null && psiPackage == null) {
+        // No package context (e.g. a web-root directory, or the module node itself): derive the path
+        // from the enclosing web root when there is one, otherwise fall back to the element root ("").
+        if (eventPsiElement is PsiDirectory && psiPackage == null) {
             val webFacet = IdeaUtils.getWebFacet(module)
-            val webRoot = WebUtil.findParentWebRoot((eventPsiElement as PsiDirectory).virtualFile, webFacet!!.webRoots)
-            defaultPagePath = eventPsiElement.virtualFile.path.replaceFirst(webRoot!!.file!!.path.toRegex(), "") +
-                PathUtils.TAPESTRY_PATH_SEPARATOR
-            if (defaultPagePath.startsWith(File.separator)) {
-                defaultPagePath = defaultPagePath.substring(1)
-            }
-            if (defaultPagePath == PathUtils.TAPESTRY_PATH_SEPARATOR) {
-                defaultPagePath = ""
+            val webRoot = if (webFacet != null) WebUtil.findParentWebRoot(eventPsiElement.virtualFile, webFacet.webRoots) else null
+            if (webRoot?.file != null) {
+                defaultPagePath = eventPsiElement.virtualFile.path.replaceFirst(webRoot.file!!.path.toRegex(), "") +
+                    PathUtils.TAPESTRY_PATH_SEPARATOR
+                if (defaultPagePath.startsWith(File.separator)) {
+                    defaultPagePath = defaultPagePath.substring(1)
+                }
+                if (defaultPagePath == PathUtils.TAPESTRY_PATH_SEPARATOR) {
+                    defaultPagePath = ""
+                }
             }
         }
         return defaultPagePath
