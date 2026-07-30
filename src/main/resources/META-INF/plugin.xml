@@ -14,6 +14,9 @@
        module dependency they aren't on the plugin classloader in the 2026.2 module system. -->
   <dependencies>
     <module name="intellij.platform.ui.jcef"/>
+    <!-- XmlStructureViewBuilderFactory (used as the TML structure-view factory below) lives in this
+         public content module; without the dependency it isn't on the plugin classloader in 2026.2. -->
+    <module name="intellij.xml.structureView.impl"/>
   </dependencies>
 
   <extensions defaultExtensionNs="com.intellij">
