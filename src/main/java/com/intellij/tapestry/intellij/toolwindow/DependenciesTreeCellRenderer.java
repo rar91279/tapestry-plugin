@@ -2,6 +2,7 @@ package com.intellij.tapestry.intellij.toolwindow;
 
 import com.intellij.icons.AllIcons;
 import com.intellij.tapestry.core.model.presentation.PresentationLibraryElement;
+import com.intellij.tapestry.core.resource.IResource;
 import com.intellij.tapestry.intellij.toolwindow.nodes.*;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
@@ -43,7 +44,16 @@ public class DependenciesTreeCellRenderer extends ColoredTreeCellRenderer {
         if (value instanceof InjectedPageNode) return AllIcons.Nodes.Controller;
         if (value instanceof TemplatesNode) return AllIcons.FileTypes.Html;
         if (value instanceof MessageCatalogNode) return AllIcons.FileTypes.Properties;
-        if (value instanceof ResourceLeafNode) return AllIcons.FileTypes.Any_type;
+        // Leaf resource files: differentiate by extension so templates and message catalogs read
+        // apart from generic resources at a glance.
+        if (value instanceof ResourceLeafNode leaf) {
+            IResource resource = (IResource) leaf.getUserObject();
+            return switch (resource.getExtension()) {
+                case "tml" -> TapestryIcons.Tapestry_logo_small;
+                case "properties" -> AllIcons.Toolwindows.ToolWindowMessages;
+                case null, default -> AllIcons.FileTypes.Any_type;
+            };
+        }
         if (value instanceof UsagesNode) return AllIcons.Hierarchy.Subtypes;
         return null;
     }

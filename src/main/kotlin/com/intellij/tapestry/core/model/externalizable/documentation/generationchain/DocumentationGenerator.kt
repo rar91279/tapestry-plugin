@@ -21,9 +21,11 @@ object DocumentationGenerator {
 
     private const val PRESENTATION_TEMPLATE = "/documentation/presentation-element.vm"
     private const val HOME_TEMPLATE = "/documentation/home.vm"
-    private const val COMPONENT_ICON = "/com/intellij/tapestry/core/icons/component.png"
-    private const val PAGE_ICON = "/com/intellij/tapestry/core/icons/page.png"
-    private const val MIXIN_ICON = "/com/intellij/tapestry/core/icons/mixin.png"
+    // Backed by intellij.platform.util.ui.jar (core platform, always on the classpath) — the same
+    // resource paths AllIcons.Nodes.{Class,Method,Parameter} load internally.
+    private const val COMPONENT_ICON = "/expui/nodes/class.svg"
+    private const val PAGE_ICON = "/expui/nodes/parameter.svg"
+    private const val MIXIN_ICON = "/expui/nodes/method.svg"
     private val HOME_ELEMENT_TYPES = arrayOf("components", "pages", "mixins")
 
     /** @return the rendered HTML, or `null` if the element type is not documentable. */

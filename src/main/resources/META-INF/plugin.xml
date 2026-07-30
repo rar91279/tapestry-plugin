@@ -120,15 +120,15 @@
       <action id="AddNewPageAction"
               class="com.intellij.tapestry.intellij.actions.createnew.AddNewPageAction"
               text="Page" description="Add a new page."
-              icon="/com/intellij/tapestry/core/icons/page.png"/>
+              icon="AllIcons.Nodes.Parameter"/>
       <action id="AddNewComponentAction"
               class="com.intellij.tapestry.intellij.actions.createnew.AddNewComponentAction"
               text="Component" description="Add a new component."
-              icon="/com/intellij/tapestry/core/icons/component.png"/>
+              icon="AllIcons.Nodes.Class"/>
       <action id="AddNewMixinAction"
               class="com.intellij.tapestry.intellij.actions.createnew.AddNewMixinAction"
               text="Mixin" description="Add a new mixin."
-              icon="/com/intellij/tapestry/core/icons/mixin.png"/>
+              icon="AllIcons.Nodes.Method"/>
       <add-to-group group-id="NewGroup" relative-to-action="NewAction" anchor="after"/>
     </group>
   </actions>
