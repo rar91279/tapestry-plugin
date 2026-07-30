@@ -1,0 +1,42 @@
+package com.intellij.tapestry.intellij.view.nodes
+
+import com.intellij.icons.AllIcons
+import com.intellij.ide.projectView.PresentationData
+import com.intellij.openapi.module.Module
+import com.intellij.psi.JavaPsiFacade
+import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.tapestry.core.TapestryConstants
+import com.intellij.tapestry.core.model.TapestryLibrary
+import com.intellij.ui.treeStructure.SimpleNode
+
+class ExternalLibraryNode(library: TapestryLibrary, module: Module) : TapestryNode(module) {
+
+    init {
+        init(library, PresentationData(library.id, library.id, AllIcons.Nodes.PpLib, null))
+    }
+
+    override fun getChildren(): Array<SimpleNode> {
+        val children = ArrayList<SimpleNode>()
+        val library = getValue() as TapestryLibrary
+
+        if (library.pages.size > 0) {
+            children.add(PagesNode(library,
+                JavaPsiFacade.getInstance(myProject).findPackage(library.basePackage + "." + TapestryConstants.PAGES_PACKAGE)!!
+                    .getDirectories(GlobalSearchScope.moduleWithLibrariesScope(module))[0], module))
+        }
+
+        if (library.components.size > 0) {
+            children.add(ComponentsNode(library,
+                JavaPsiFacade.getInstance(myProject).findPackage(library.basePackage + "." + TapestryConstants.COMPONENTS_PACKAGE)!!
+                    .getDirectories(GlobalSearchScope.moduleWithLibrariesScope(module))[0], module))
+        }
+
+        if (library.mixins.size > 0) {
+            children.add(MixinsNode(library,
+                JavaPsiFacade.getInstance(myProject).findPackage(library.basePackage + "." + TapestryConstants.MIXINS_PACKAGE)!!
+                    .getDirectories(GlobalSearchScope.moduleWithLibrariesScope(module))[0], module))
+        }
+
+        return children.toTypedArray()
+    }
+}

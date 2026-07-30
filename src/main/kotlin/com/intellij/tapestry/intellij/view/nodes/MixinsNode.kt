@@ -1,0 +1,17 @@
+package com.intellij.tapestry.intellij.view.nodes
+
+import com.intellij.ide.projectView.PresentationData
+import com.intellij.openapi.module.Module
+import com.intellij.psi.PsiDirectory
+import com.intellij.tapestry.core.model.TapestryLibrary
+import icons.TapestryIcons
+
+class MixinsNode : PackageNode {
+    constructor(library: TapestryLibrary, psiDirectory: PsiDirectory, module: Module) : super(library, psiDirectory, module) {
+        init(psiDirectory, PresentationData(psiDirectory.name, psiDirectory.name, TapestryIcons.Mixins, null))
+    }
+
+    constructor(psiDirectory: PsiDirectory, module: Module) : super(psiDirectory, module) {
+        init(psiDirectory, PresentationData(psiDirectory.name, psiDirectory.name, TapestryIcons.Mixins, null))
+    }
+}
