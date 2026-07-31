@@ -107,7 +107,7 @@ a:hover { text-decoration: underline; }
     background: #1a1b1e;
     color: #f5f6f8;
 }
-#header img { width: 40px; height: 40px; display: block; }
+#header img { width: 48px; height: 48px; display: block;}
 #header .title {
     font-size: 15px;
     font-weight: 600;
