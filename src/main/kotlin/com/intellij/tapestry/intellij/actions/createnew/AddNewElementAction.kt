@@ -2,13 +2,7 @@ package com.intellij.tapestry.intellij.actions.createnew
 
 import com.intellij.CommonBundle
 import com.intellij.javaee.web.WebUtil
-import com.intellij.openapi.actionSystem.ActionUpdateThread
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.CommonDataKeys
-import com.intellij.openapi.actionSystem.LangDataKeys
-import com.intellij.openapi.actionSystem.PlatformCoreDataKeys
-import com.intellij.openapi.actionSystem.impl.Utils
+import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.ui.Messages
 import com.intellij.psi.JavaPsiFacade
@@ -31,7 +25,7 @@ abstract class AddNewElementAction<T : PackageNode>(private val nodeClass: Class
         val module = event.getData(PlatformCoreDataKeys.MODULE)
 
         if (!TapestryUtils.isTapestryModule(module)) {
-            presentation.setEnabledAndVisible(false)
+            presentation.isEnabledAndVisible = false
             return
         }
 
@@ -42,12 +36,12 @@ abstract class AddNewElementAction<T : PackageNode>(private val nodeClass: Class
             val eventPsiElement = event.getData(CommonDataKeys.PSI_ELEMENT)
             val tapestryProject = TapestryModuleSupportLoader.getTapestryProject(module)
             if (tapestryProject == null) {
-                presentation.setEnabledAndVisible(false)
+                presentation.isEnabledAndVisible = false
                 return
             }
             val aPackage = getElementsRootPackage(tapestryProject)
             if (aPackage == null) {
-                presentation.setEnabledAndVisible(false)
+                presentation.isEnabledAndVisible = false
                 return
             }
 
@@ -78,7 +72,7 @@ abstract class AddNewElementAction<T : PackageNode>(private val nodeClass: Class
         }
         // it's the Tapestry view | folder
         else if (element.userObject is PackageNode) {
-            val session = Utils.getOrCreateUpdateSession(event)
+            val session = event.updateSession
             if (session.compute(this, "findParent", ActionUpdateThread.EDT) {
                     (IdeaUtils.findFirstParent(element, nodeClass) != null || nodeClass.isInstance(element.userObject)) &&
                         IdeaUtils.findFirstParent(element, LibrariesNode::class.java) == null
@@ -136,9 +130,7 @@ abstract class AddNewElementAction<T : PackageNode>(private val nodeClass: Class
         return defaultPagePath
     }
 
-    private fun showError() {
-        Messages.showErrorDialog(
+    private fun showError() = Messages.showErrorDialog(
             "Can't create element. Please check if this module is a valid Tapestry application!",
             CommonBundle.getErrorTitle())
-    }
 }
