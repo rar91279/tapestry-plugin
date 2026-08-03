@@ -21,6 +21,7 @@ import com.intellij.tapestry.tests.core.EmptyFixtureSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 import java.awt.event.InputEvent
@@ -28,7 +29,9 @@ import java.awt.event.InputEvent
 class AddNewComponentActionTest : EmptyFixtureSpec({
 
     beforeTest {
-        mockkStatic(TapestryUtils::class, TapestryModuleSupportLoader::class, IdeaUtils::class, JavaPsiFacade::class)
+        mockkStatic(TapestryUtils::class, IdeaUtils::class, JavaPsiFacade::class)
+        // Kotlin callers invoke the companion directly, so the @JvmStatic bridge alone is not enough.
+        mockkObject(TapestryModuleSupportLoader.Companion)
     }
     afterTest { unmockkAll() }
 

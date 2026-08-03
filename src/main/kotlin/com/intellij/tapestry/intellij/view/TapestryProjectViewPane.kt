@@ -6,7 +6,6 @@ import com.intellij.ide.projectView.ProjectView
 import com.intellij.ide.projectView.impl.AbstractProjectViewPane
 import com.intellij.ide.projectView.impl.ProjectViewTree
 import com.intellij.ide.ui.customization.CustomizationUtil
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataSink
@@ -23,7 +22,6 @@ import com.intellij.openapi.util.ActionCallback
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiFile
-import com.intellij.tapestry.core.TapestryProject
 import com.intellij.tapestry.core.events.FileSystemListener
 import com.intellij.tapestry.core.events.TapestryModelChangeListener
 import com.intellij.tapestry.core.exceptions.NotTapestryElementException
@@ -34,7 +32,7 @@ import com.intellij.tapestry.intellij.TapestryModuleSupportLoader
 import com.intellij.tapestry.intellij.actions.safedelete.SafeDeleteProvider
 import com.intellij.tapestry.intellij.core.java.IntellijJavaClassType
 import com.intellij.tapestry.intellij.core.resource.IntellijResource
-import com.intellij.tapestry.intellij.toolwindow.TapestryToolWindowFactory
+import com.intellij.tapestry.intellij.toolwindow.getToolWindow
 import com.intellij.tapestry.intellij.util.IdeaUtils
 import com.intellij.tapestry.intellij.util.TapestryUtils
 import com.intellij.tapestry.intellij.view.actions.GroupElementFilesToggleAction
@@ -273,7 +271,7 @@ class TapestryProjectViewPane(project: Project) :
     private fun addTreeListeners() {
         tree.selectionModel.addTreeSelectionListener { event ->
             val newPath = event.newLeadSelectionPath ?: return@addTreeSelectionListener
-            val toolWindow = TapestryToolWindowFactory.getToolWindow(project) ?: return@addTreeSelectionListener
+            val toolWindow = getToolWindow(project) ?: return@addTreeSelectionListener
 
             val selectedNode = (newPath.lastPathComponent as DefaultMutableTreeNode).userObject as? SimpleNode
             if (selectedNode !is TapestryNode) {

@@ -9,7 +9,9 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.xml.XmlTag
 import com.intellij.tapestry.core.model.presentation.TapestryComponent
+import com.intellij.tapestry.intellij.toolwindow.TAPESTRY_TOOLWINDOW_ID
 import com.intellij.tapestry.intellij.toolwindow.TapestryToolWindowFactory
+import com.intellij.tapestry.intellij.toolwindow.getToolWindow
 import com.intellij.tapestry.intellij.util.TapestryUtils
 
 /**
@@ -29,8 +31,8 @@ class TagDocumentationNavigation : AnAction() {
 
         val component = getTapestryComponent(event) ?: return
 
-        val toolWindow = ToolWindowManager.getInstance(project).getToolWindow(TapestryToolWindowFactory.TAPESTRY_TOOLWINDOW_ID)
-        val metatoolWindow = TapestryToolWindowFactory.getToolWindow(project)!!
+        val toolWindow = ToolWindowManager.getInstance(project).getToolWindow(TAPESTRY_TOOLWINDOW_ID)
+        val metatoolWindow = getToolWindow(project)!!
 
         if (!metatoolWindow.mainPanel.isDisplayable && toolWindow != null) {
             toolWindow.show(null)

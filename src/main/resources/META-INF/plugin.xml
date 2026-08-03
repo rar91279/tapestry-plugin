@@ -62,6 +62,7 @@
     <referencesSearch implementation="com.intellij.tapestry.intellij.editorActions.TapestryPropertyReferenceSearcher"/>
     <implicitUsageProvider implementation="com.intellij.tapestry.intellij.TapestryImplicitUsageProvider"/>
     <codeInsight.lineMarkerProvider language="JAVA" implementationClass="com.intellij.tapestry.intellij.TapestryEventHandlerLineMarkerProvider"/>
+    <codeInsight.lineMarkerProvider language="UAST" implementationClass="com.intellij.tapestry.intellij.TapestryInjectedBeanLineMarkerProvider"/>
 
     <lang.commenter language="TML" implementationClass="com.intellij.lang.xml.XmlCommenter"/>
     <lang.foldingBuilder language="TML" implementationClass="com.intellij.lang.xml.XmlFoldingBuilder"/>
