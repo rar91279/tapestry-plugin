@@ -40,12 +40,15 @@ import javax.swing.JComponent
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 
+private const val EMPTY_MESSAGE = "Select a Tapestry page, component or mixin"
+
 class DependenciesTab {
 
     private val dependenciesTree = Tree().apply {
         cellRenderer = DependenciesTreeCellRenderer()
         showsRootHandles = true
-        isVisible = false
+        model = DefaultTreeModel(null)
+        emptyText.text = EMPTY_MESSAGE
     }
     // FlowLayout keeps the action buttons at their natural size, packed left (a JToolBar's BoxLayout
     // stretches the unbounded-max-width ActionButtons across the whole bar instead).
@@ -131,20 +134,30 @@ class DependenciesTab {
             clear()
             return
         }
+        // Resolving usages and embedded components can take a while, so show progress meanwhile.
+        setContent(null, "Loading dependencies…")
+        dependenciesTree.setPaintBusy(true)
+
         // Building the tree resolves PSI/annotations — do it off the EDT, then install the model.
         ReadAction.nonBlocking<DependenciesRootNode> { DependenciesRootNode(element) }
             .coalesceBy(this)
             .finishOnUiThread(ModalityState.any()) { root ->
-                dependenciesTree.isVisible = true
-                dependenciesTree.model = DefaultTreeModel(root)
-                updateNavigationActions()
+                dependenciesTree.setPaintBusy(false)
+                setContent(root, EMPTY_MESSAGE)
             }
             .submit(AppExecutorUtil.getAppExecutorService())
     }
 
     /** Clear the dependencies tree. */
     fun clear() {
-        dependenciesTree.isVisible = false
+        dependenciesTree.setPaintBusy(false)
+        setContent(null, EMPTY_MESSAGE)
+    }
+
+    /** A null root leaves the tree empty, showing [emptyMessage] in its place. */
+    private fun setContent(root: DependenciesRootNode?, emptyMessage: String) {
+        dependenciesTree.model = DefaultTreeModel(root)
+        dependenciesTree.emptyText.text = emptyMessage
         updateNavigationActions()
     }
 
@@ -200,13 +213,13 @@ class DependenciesTab {
                 var file: PsiFile? = null
 
                 if (selectedNode is EmbeddedComponentNode) {
-                    val elementField = selectedNode.injectedComponent.field
+                    val elementField = selectedNode.injected.field
                     if (elementField != null) field = (elementField as IntellijJavaField).psiField
                     else file = ((selectedNode.parent as EmbeddedTemplateNode).userObject as IntellijResource).psiFile
                 }
 
                 if (selectedNode is InjectedPageNode) {
-                    val elementField = selectedNode.injectedPage.field
+                    val elementField = selectedNode.injected.field
                     if (elementField != null) field = (elementField as IntellijJavaField).psiField
                     else file = ((selectedNode.parent as EmbeddedTemplateNode).userObject as IntellijResource).psiFile
                 }
