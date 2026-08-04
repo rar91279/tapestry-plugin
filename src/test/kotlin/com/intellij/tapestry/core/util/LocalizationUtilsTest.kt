@@ -5,10 +5,6 @@ import io.kotest.matchers.shouldBe
 
 class LocalizationUtilsTest : FreeSpec({
 
-    "constructor is callable" {
-        LocalizationUtils()
-    }
-
     "unlocalizeFileName" {
         LocalizationUtils.unlocalizeFileName("SomeFile.properties") shouldBe "SomeFile.properties"
         LocalizationUtils.unlocalizeFileName("SomeFile_pt.properties") shouldBe "SomeFile.properties"

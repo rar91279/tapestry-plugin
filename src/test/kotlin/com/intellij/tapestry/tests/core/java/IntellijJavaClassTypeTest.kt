@@ -33,7 +33,7 @@ class IntellijJavaClassTypeTest : JavaModuleFixtureSpec({
 
     "getFile" {
         runReadAction {
-            classTypeOf("com.app.util.Class1").file.name shouldBe "Class1.java"
+            classTypeOf("com.app.util.Class1").file!!.name shouldBe "Class1.java"
         }
     }
 
@@ -143,14 +143,14 @@ class IntellijJavaClassTypeTest : JavaModuleFixtureSpec({
 
     "getDocumentation_no_documentation" {
         runReadAction {
-            classTypeOf("com.app.util.Class1").documentation.isEmpty() shouldBe true
+            classTypeOf("com.app.util.Class1").documentation!!.isEmpty() shouldBe true
 
             val resourceFinder = IntellijResourceFinder(module)
             val notJavaClassType = IntellijJavaClassType(
                 module,
                 (resourceFinder.findClasspathResource("/com/app/util/Home.tml", false).toTypedArray()[0] as IntellijResource).psiFile
             )
-            notJavaClassType.documentation.length shouldBe 0
+            notJavaClassType.documentation!!.length shouldBe 0
         }
     }
 

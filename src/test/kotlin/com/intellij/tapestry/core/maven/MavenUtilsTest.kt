@@ -19,9 +19,6 @@ private fun generatePomXmlText(mavenConfiguration: MavenConfiguration): String {
 
 class MavenUtilsTest : FreeSpec({
 
-    "constructor is callable" {
-        MavenUtils()
-    }
 
     "createMavenSupport_check_dependencies" {
         val mavenConfiguration = MavenConfiguration(true, false, null, null, null, "group", "artifact", "1.1", null)

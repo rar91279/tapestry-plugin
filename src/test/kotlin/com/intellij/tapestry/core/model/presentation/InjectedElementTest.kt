@@ -24,17 +24,17 @@ class InjectedElementTest : FreeSpec({
     "constructor_with_field" {
         val injectedElement = InjectedElement(nullValue<JavaFieldMock>(), null)
 
-        injectedElement.getElement() shouldBe null
+        injectedElement.element shouldBe null
 
-        injectedElement.getField() shouldBe null
+        injectedElement.field shouldBe null
     }
 
     "constructor_with_tag" {
         val injectedElement = InjectedElement(nullValue<XmlTag>(), null)
 
-        injectedElement.getElement() shouldBe null
+        injectedElement.element shouldBe null
 
-        injectedElement.getTag() shouldBe null
+        injectedElement.tag shouldBe null
     }
 
     "getElementId_component_without_id_and_tag_null" {
@@ -43,7 +43,7 @@ class InjectedElementTest : FreeSpec({
         val componentMock = mockk<TapestryComponent>(relaxed = true)
         val injectedElement = InjectedElement(fieldMock, componentMock)
 
-        injectedElement.getElementId() shouldBe "field1"
+        injectedElement.elementId shouldBe "field1"
     }
 
     "getElementId_component_without_id_and_field_null" {
@@ -57,13 +57,13 @@ class InjectedElementTest : FreeSpec({
 
         val injectedElement = InjectedElement(tagMock, componentMock)
 
-        injectedElement.getElementId() shouldBe "SomeComponent"
+        injectedElement.elementId shouldBe "SomeComponent"
 
         val tagMock2 = XmlTagMock("someComponent")
 
         val injectedElement2 = InjectedElement(tagMock2, componentMock)
 
-        injectedElement2.getElementId() shouldBe "someComponent"
+        injectedElement2.elementId shouldBe "someComponent"
     }
 
     "getElementId_component_with_id_and_field_null" {
@@ -72,7 +72,7 @@ class InjectedElementTest : FreeSpec({
         val componentMock = mockk<TapestryComponent>(relaxed = true)
         val injectedElement = InjectedElement(tagMock, componentMock)
 
-        injectedElement.getElementId() shouldBe "tag2"
+        injectedElement.elementId shouldBe "tag2"
     }
 
     "getElementId_component_with_id_and_tag_null" {
@@ -81,27 +81,27 @@ class InjectedElementTest : FreeSpec({
         val componentMock = mockk<TapestryComponent>(relaxed = true)
         val injectedElement = InjectedElement(fieldMock, componentMock)
 
-        injectedElement.getElementId() shouldBe "field2"
+        injectedElement.elementId shouldBe "field2"
     }
 
     "getElementId_null_values" {
         val injectedElementWithField = InjectedElement(nullValue<JavaFieldMock>(), null)
 
-        injectedElementWithField.getElementId() shouldBe null
+        injectedElementWithField.elementId shouldBe null
 
         val injectedElementWithTag = InjectedElement(nullValue<XmlTag>(), null)
 
-        injectedElementWithTag.getElementId() shouldBe null
+        injectedElementWithTag.elementId shouldBe null
     }
 
     "getParameters_with_null_values" {
         val componentMock = mockk<TapestryComponent>(relaxed = true)
 
         val injectedElement = InjectedElement(nullValue<JavaFieldMock>(), componentMock)
-        injectedElement.getParameters().size shouldBe 0
+        injectedElement.parameters.size shouldBe 0
 
         val injectedElement2 = InjectedElement(nullValue<XmlTag>(), componentMock)
-        injectedElement2.getParameters().size shouldBe 0
+        injectedElement2.parameters.size shouldBe 0
     }
 
     "getParameters_without_null_values" {
@@ -112,10 +112,10 @@ class InjectedElementTest : FreeSpec({
         val componentMock = mockk<TapestryComponent>(relaxed = true)
 
         val injectedElement = InjectedElement(fieldMock, componentMock)
-        injectedElement.getParameters().size shouldBe 1
+        injectedElement.parameters.size shouldBe 1
 
         val injectedElement2 = InjectedElement(tagMock, componentMock)
-        injectedElement2.getParameters().size shouldBe 1
+        injectedElement2.parameters.size shouldBe 1
     }
 
     "compareTo" {

@@ -44,10 +44,13 @@ class ViewTransferHandler(private val viewPane: TapestryProjectViewPane) : Trans
             val typeFileInEditor = fileInEditor.fileType
 
             if (fileInEditor is PsiClassOwner && data is ExternalizableToClass) {
-                val dropClass = IntellijJavaClassType(viewPane.getSelectedModule(), IdeaUtils.findPublicClass(fileInEditor)!!.containingFile)
+                val dropClass = IntellijJavaClassType(
+                    viewPane.getSelectedModule() ?: throw UnsupportedFlavorException(flavor),
+                    IdeaUtils.findPublicClass(fileInEditor)!!.containingFile
+                )
 
                 try {
-                    return data.getClassRepresentation(dropClass)
+                    return data.getClassRepresentation(dropClass) ?: throw UnsupportedFlavorException(flavor)
                 } catch (ex: Exception) {
                     logger.error(ex)
                     throw UnsupportedFlavorException(flavor)
@@ -57,6 +60,7 @@ class ViewTransferHandler(private val viewPane: TapestryProjectViewPane) : Trans
             if (typeFileInEditor == TmlFileType && data is ExternalizableToTemplate) {
                 try {
                     return data.getTemplateRepresentation(TapestryUtils.getTapestryNamespacePrefix(fileInEditor as XmlFile))
+                        ?: throw UnsupportedFlavorException(flavor)
                 } catch (ex: Exception) {
                     logger.error(ex)
                     throw UnsupportedFlavorException(flavor)

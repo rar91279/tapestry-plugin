@@ -32,7 +32,7 @@ class IntellijMethodParameterTest : JavaModuleFixtureSpec({
             val methodParameter = method1Parameter(1)
             methodParameter.name shouldBe "param2"
             (methodParameter.type is IJavaPrimitiveType) shouldBe true
-            methodParameter.type.name shouldBe "int"
+            methodParameter.type!!.name shouldBe "int"
         }
     }
 

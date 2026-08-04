@@ -23,19 +23,19 @@ class PageTest : FreeSpec({
 
         resourceFinderMock = mockk(relaxed = true)
         tapestryProjectMock = mockk(relaxed = true)
-        every { tapestryProjectMock.getApplicationRootPackage() } returns "com.app"
-        every { tapestryProjectMock.getResourceFinder() } returns resourceFinderMock
+        every { tapestryProjectMock.applicationRootPackage } returns "com.app"
+        every { tapestryProjectMock.resourceFinder } returns resourceFinderMock
 
         libraryMock = mockk(relaxed = true)
-        every { libraryMock.getBasePackage() } returns "com.app"
-        every { libraryMock.getId() } returns "application"
+        every { libraryMock.basePackage } returns "com.app"
+        every { libraryMock.id } returns "application"
     }
 
     "getTemplate_no_template" {
         every { resourceFinderMock.findLocalizedClasspathResource("com/app/pages/SomeClass.tml", true) } returns emptyList()
         every { resourceFinderMock.findLocalizedContextResource("SomeClass.tml") } returns emptyList()
 
-        Page(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).getTemplate().size shouldBe 0
+        Page(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).template.size shouldBe 0
     }
 
     "getTemplate_template_in_classpath" {
@@ -43,7 +43,7 @@ class PageTest : FreeSpec({
         every { resourceFinderMock.findLocalizedClasspathResource("com/app/pages/SomeClass.tml", true) } returns web1
         every { resourceFinderMock.findLocalizedContextResource("SomeClass.tml") } returns emptyList()
 
-        Page(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).getTemplate()[0].getName() shouldBe "SomeClass.tml"
+        Page(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).template[0].name shouldBe "SomeClass.tml"
     }
 
     "getTemplate_template_in_context" {
@@ -52,7 +52,7 @@ class PageTest : FreeSpec({
         val templates: Collection<IResource> = listOf(TestableResource("SomeClass.tml", "web2.xml"))
         every { resourceFinderMock.findLocalizedContextResource("SomeClass.tml") } returns templates
 
-        Page(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).getTemplate()[0].getName() shouldBe "SomeClass.tml"
+        Page(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).template[0].name shouldBe "SomeClass.tml"
     }
 
     "getTemplate_template_in_both" {
@@ -60,7 +60,7 @@ class PageTest : FreeSpec({
         every { resourceFinderMock.findLocalizedClasspathResource("com/app/pages/SomeClass.tml", true) } returns web1
         every { resourceFinderMock.findLocalizedContextResource("SomeClass.tml") } returns web1
 
-        Page(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).getTemplate().size shouldBe 2
+        Page(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).template.size shouldBe 2
     }
 
     "allowsTemplate" {

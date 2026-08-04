@@ -24,27 +24,27 @@ class ComponentTest : FreeSpec({
         every { builderClassFileMock.lastModified() } returns Long.MAX_VALUE
 
         val builderClassResourceMock = mockk<IResource>(relaxed = true)
-        every { builderClassResourceMock.getFile() } returns builderClassFileMock
+        every { builderClassResourceMock.file } returns builderClassFileMock
 
         classInRootComponentsPackageMock = JavaClassTypeMock("com.app.components.SomeClass").setPublic(true).setDefaultConstructor(true).setFile(builderClassResourceMock)
 
         resourceFinderMock = mockk(relaxed = true)
         tapestryProjectMock = mockk(relaxed = true)
-        every { tapestryProjectMock.getApplicationRootPackage() } returns "com.app"
-        every { tapestryProjectMock.getResourceFinder() } returns resourceFinderMock
+        every { tapestryProjectMock.applicationRootPackage } returns "com.app"
+        every { tapestryProjectMock.resourceFinder } returns resourceFinderMock
 
         libraryMock = mockk(relaxed = true)
-        every { libraryMock.getBasePackage() } returns "com.app"
-        every { libraryMock.getId() } returns "application"
+        every { libraryMock.basePackage } returns "com.app"
+        every { libraryMock.id } returns "application"
     }
 
     "getTemplate_no_template" {
         every { resourceFinderMock.findLocalizedClasspathResource("com/app/components/SomeClass.tml", true) } returns emptyList()
         every { resourceFinderMock.findLocalizedContextResource("SomeClass.tml") } returns emptyList()
 
-        TapestryComponent(libraryMock, classInRootComponentsPackageMock, tapestryProjectMock).getTemplate().size shouldBe 0
+        TapestryComponent(libraryMock, classInRootComponentsPackageMock, tapestryProjectMock).template.size shouldBe 0
 
-        TapestryComponent(libraryMock, classInRootComponentsPackageMock, tapestryProjectMock).getTemplate().size shouldBe 0
+        TapestryComponent(libraryMock, classInRootComponentsPackageMock, tapestryProjectMock).template.size shouldBe 0
     }
 
     "getTemplate_template_in_classpath" {
@@ -54,7 +54,7 @@ class ComponentTest : FreeSpec({
         val templates: Collection<IResource> = listOf(TestableResource("SomeClass.tml", "web2.xml"))
         every { resourceFinderMock.findLocalizedContextResource("SomeClass.tml") } returns templates
 
-        TapestryComponent(libraryMock, classInRootComponentsPackageMock, tapestryProjectMock).getTemplate()[0].getName() shouldBe "SomeClass.tml"
+        TapestryComponent(libraryMock, classInRootComponentsPackageMock, tapestryProjectMock).template[0].name shouldBe "SomeClass.tml"
     }
 
     "allowsTemplate" {

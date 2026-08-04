@@ -42,7 +42,7 @@ class AddNewMixinAction : AddNewElementAction<MixinsNode>(MixinsNode::class.java
 
             ApplicationManager.getApplication().runWriteAction(Runnable {
                 try {
-                    val classSourceDirectory = PsiManager.getInstance(module.project).findDirectory(dialog.classSourceDirectory)
+                    val classSourceDirectory = PsiManager.getInstance(module.project).findDirectory(dialog.classSourceDirectory) ?: return@Runnable
                     TapestryUtils.createMixin(module, classSourceDirectory, mixinName, dialog.isReplaceExistingFiles)
                 } catch (ex: IllegalStateException) {
                     Messages.showWarningDialog(module.project, ex.message, "Error creating mixin")

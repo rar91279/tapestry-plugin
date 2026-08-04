@@ -44,7 +44,7 @@ class AddNewComponentAction : AddNewElementAction<ComponentsNode>(ComponentsNode
 
             ApplicationManager.getApplication().runWriteAction(Runnable {
                 try {
-                    val classSourceDirectory = PsiManager.getInstance(module.project).findDirectory(dialog.classSourceDirectory)
+                    val classSourceDirectory = PsiManager.getInstance(module.project).findDirectory(dialog.classSourceDirectory) ?: return@Runnable
                     val templateSourceDirectory = PsiManager.getInstance(module.project).findDirectory(dialog.templateSourceDirectory)
                     if (dialog.isNotCreatingTemplate) {
                         TapestryUtils.createComponent(module, classSourceDirectory, null, componentName, dialog.isReplaceExistingFiles)

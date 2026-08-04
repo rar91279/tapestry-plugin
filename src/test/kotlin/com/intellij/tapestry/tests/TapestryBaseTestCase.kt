@@ -84,10 +84,10 @@ abstract class TapestryBaseTestCase : UsefulTestCase() {
             val facetType = TapestryFacetType.getInstance()
             val facetManager = FacetManager.getInstance(myModule!!)
             val facet = facetManager.addFacet(facetType, facetType.presentableName, null)
-            facet.configuration.setApplicationPackage(TEST_APPLICATION_PACKAGE)
+            facet.configuration.applicationPackage = TEST_APPLICATION_PACKAGE
             Assert.assertNotNull(facetManager.getFacetByType(TapestryFacetType.ID))
-            Assert.assertTrue("Not Tapestry module", TapestryUtils.isTapestryModule(myModule))
-            Assert.assertNotNull("No TapestryModuleSupportLoader", TapestryModuleSupportLoader.getInstance(myModule))
+            Assert.assertTrue("Not Tapestry module", TapestryUtils.isTapestryModule(myModule!!))
+            Assert.assertNotNull("No TapestryModuleSupportLoader", TapestryModuleSupportLoader.getInstance(myModule!!))
             val tapestryProject = TapestryModuleSupportLoader.getTapestryProject(myModule)
             Assert.assertNotNull("No TapestryProject", tapestryProject)
             Assert.assertNotNull(tapestryProject!!.applicationRootPackage)

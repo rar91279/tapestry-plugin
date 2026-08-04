@@ -42,7 +42,7 @@ class TemplatesNavigation : ActionGroup(), DumbAware {
             val tapestryElement: PresentationLibraryElement?
             try {
                 val psiClass = IdeaUtils.findPublicClass(psiFile) ?: return EMPTY_ARRAY
-                val module = event.getData(PlatformCoreDataKeys.MODULE)
+                val module = event.getData(PlatformCoreDataKeys.MODULE) ?: return EMPTY_ARRAY
                 tapestryElement = PresentationLibraryElement.createProjectElementInstance(
                     IntellijJavaClassType(module, psiClass.containingFile),
                     TapestryModuleSupportLoader.getTapestryProject(module))

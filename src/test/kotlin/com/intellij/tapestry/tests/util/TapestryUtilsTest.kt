@@ -14,15 +14,12 @@ import io.mockk.mockk
 
 class TapestryUtilsTest : EmptyFixtureSpec({
 
-    // preserved from the original @BeforeClass: exercises the default constructor
-    TapestryUtils()
-
     "isComponentTag_is_tag" {
         runReadAction {
             val tapestryTagMock = mockk<XmlTag>(relaxed = true)
             every { tapestryTagMock.namespace } returns TapestryConstants.TEMPLATE_NAMESPACE
 
-            ComponentUtils._isComponentTag(IntellijXmlTag(tapestryTagMock)) shouldBe true
+            ComponentUtils.isComponentTag(IntellijXmlTag(tapestryTagMock)) shouldBe true
 
             val attributeMock = mockk<XmlAttribute>(relaxed = true)
             every { attributeMock.localName } returns "att1"
@@ -31,7 +28,7 @@ class TapestryUtilsTest : EmptyFixtureSpec({
             every { tapestryTagMock.namespace } returns ""
             every { tapestryTagMock.attributes } returns arrayOf(attributeMock)
 
-            ComponentUtils._isComponentTag(IntellijXmlTag(tapestryTagMock)) shouldBe true
+            ComponentUtils.isComponentTag(IntellijXmlTag(tapestryTagMock)) shouldBe true
         }
     }
 
@@ -46,7 +43,7 @@ class TapestryUtilsTest : EmptyFixtureSpec({
             every { tapestryTagMock.namespace } returns ""
             every { tapestryTagMock.attributes } returns arrayOf(attributeMock)
 
-            ComponentUtils._isComponentTag(IntellijXmlTag(tapestryTagMock)) shouldBe false
+            ComponentUtils.isComponentTag(IntellijXmlTag(tapestryTagMock)) shouldBe false
         }
     }
 

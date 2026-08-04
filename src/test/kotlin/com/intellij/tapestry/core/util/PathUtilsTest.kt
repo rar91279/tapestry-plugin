@@ -5,10 +5,6 @@ import io.kotest.matchers.shouldBe
 
 class PathUtilsTest : FreeSpec({
 
-    "constructor is callable" {
-        PathUtils()
-    }
-
     "packageIntoPath" - {
         "empty" {
             PathUtils.packageIntoPath(null, true).shouldBe("")

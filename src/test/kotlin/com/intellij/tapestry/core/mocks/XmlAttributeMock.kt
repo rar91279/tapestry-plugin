@@ -7,41 +7,33 @@ import com.intellij.tapestry.core.resource.xml.XmlAttribute
  */
 class XmlAttributeMock() : XmlAttribute {
 
-    private var _name: String? = null
-    private var _localName: String? = null
-    private var _namespace: String? = null
-    private var _value: String? = null
+    override var name: String? = null
+    override var localName: String? = null
+    override var namespace: String? = null
+    override var value: String? = null
 
     constructor(localName: String?, value: String?) : this() {
-        _localName = localName
-        _value = value
+        this.localName = localName
+        this.value = value
     }
-
-    override fun getName(): String? = _name
 
     fun setName(name: String?): XmlAttributeMock {
-        _name = name
+        this.name = name
         return this
     }
-
-    override fun getLocalName(): String? = _localName
 
     fun setLocalName(localName: String?): XmlAttributeMock {
-        _localName = localName
+        this.localName = localName
         return this
     }
-
-    override fun getNamespace(): String? = _namespace
 
     fun setNamespace(namespace: String?): XmlAttributeMock {
-        _namespace = namespace
+        this.namespace = namespace
         return this
     }
 
-    override fun getValue(): String? = _value
-
     fun setValue(value: String?): XmlAttributeMock {
-        _value = value
+        this.value = value
         return this
     }
 }

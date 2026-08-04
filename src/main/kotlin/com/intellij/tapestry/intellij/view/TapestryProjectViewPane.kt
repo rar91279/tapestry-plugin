@@ -164,19 +164,19 @@ class TapestryProjectViewPane(project: Project) :
 
     override fun createSelectInTarget(): SelectInTarget = TapestryProjectSelectInTarget(myProject)
 
-    override fun fileCreated(path: String) {
+    override fun fileCreated(path: String?) {
         updateFromRoot(true)
     }
 
-    override fun fileDeleted(path: String) {
+    override fun fileDeleted(path: String?) {
         updateFromRoot(true)
     }
 
-    override fun classCreated(classFqn: String) {
+    override fun classCreated(classFqn: String?) {
         updateFromRoot(true)
     }
 
-    override fun classDeleted(classFqn: String) {
+    override fun classDeleted(classFqn: String?) {
         updateFromRoot(true)
     }
 

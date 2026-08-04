@@ -81,7 +81,7 @@ class IntellijJavaFieldTest : JavaModuleFixtureSpec({
 
     "getDocumentation_no_documentation" {
         runReadAction {
-            class1Field(0).documentation.isEmpty() shouldBe true
+            class1Field(0).documentation!!.isEmpty() shouldBe true
         }
     }
 

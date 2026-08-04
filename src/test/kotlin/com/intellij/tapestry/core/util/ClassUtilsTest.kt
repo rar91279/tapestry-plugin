@@ -14,10 +14,6 @@ import io.mockk.mockk
 
 class ClassUtilsTest : FreeSpec({
 
-    "constructor is callable" {
-        ClassUtils()
-    }
-
     "getClassProperties" - {
         "null" {
             ClassUtils.getClassProperties(null).size shouldBe 0

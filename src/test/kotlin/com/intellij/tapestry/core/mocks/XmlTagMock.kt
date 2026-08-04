@@ -8,45 +8,39 @@ import com.intellij.tapestry.core.resource.xml.XmlTag
  */
 class XmlTagMock() : XmlTag {
 
-    private var _name: String? = null
-    private var _namespace: String? = null
-    private var _localName: String? = null
-    private var _text: String? = null
+    override var name: String? = null
+    override var namespace: String? = null
+    override var localName: String? = null
+    override var text: String? = null
+
     private val _attributes = ArrayList<XmlAttribute>()
 
     constructor(localName: String?) : this() {
-        _localName = localName
+        this.localName = localName
     }
-
-    override fun getName(): String? = _name
 
     fun setName(name: String?): XmlTagMock {
-        _name = name
+        this.name = name
         return this
     }
-
-    override fun getNamespace(): String? = _namespace
 
     fun setNamespace(namespace: String?): XmlTagMock {
-        _namespace = namespace
+        this.namespace = namespace
         return this
     }
-
-    override fun getLocalName(): String? = _localName
 
     fun setLocalName(localName: String?): XmlTagMock {
-        _localName = localName
+        this.localName = localName
         return this
     }
-
-    override fun getText(): String? = _text
 
     fun setText(text: String?): XmlTagMock {
-        _text = text
+        this.text = text
         return this
     }
 
-    override fun getAttributes(): Array<XmlAttribute> = _attributes.toTypedArray()
+    override val attributes: Array<XmlAttribute>
+        get() = _attributes.toTypedArray()
 
     fun addAttribute(attribute: XmlAttribute): XmlTagMock {
         _attributes.add(XmlAttributeMock(attribute.localName, attribute.value))

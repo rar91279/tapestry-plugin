@@ -178,7 +178,7 @@ class DocumentationTab(private val project: Project) {
         this.element = element
         setNavigateEnabled(true)
 
-        setCrumbs(seg("Home", "home"), seg(elementType.name, ""))
+        setCrumbs(seg("Home", "home"), seg(elementType.name.orEmpty(), ""))
         notifyElement(element)
         renderAsync { elementType.documentation }
     }
@@ -412,7 +412,7 @@ class DocumentationTab(private val project: Project) {
         val libs = LinkedHashMap<String, Array<String>>() // moduleClass -> [ownerModuleName, mavenInfo]
         for (module in ModuleManager.getInstance(project).modules) {
             for (lib in TapestryUtils.getClasspathLibraryModules(module)) {
-                libs.putIfAbsent(lib.moduleClass(), arrayOf(module.name, lib.mavenInfo()))
+                libs.putIfAbsent(lib.moduleClass, arrayOf(module.name, lib.mavenInfo))
             }
         }
         if (libs.isNotEmpty()) {
@@ -490,7 +490,7 @@ class DocumentationTab(private val project: Project) {
         val module = findModule(moduleName)
         if (module != null) {
             for (lib in TapestryUtils.getClasspathLibraryModules(module)) {
-                if (lib.moduleClass() == moduleClass) return lib.mavenInfo()
+                if (lib.moduleClass == moduleClass) return lib.mavenInfo
             }
         }
         return ""
@@ -553,7 +553,7 @@ class DocumentationTab(private val project: Project) {
             val root = tapestryProject?.applicationRootPackage ?: return services
 
             for (builder in tapestryProject.javaTypeFinder.findTypesInPackageRecursively("$root.services", true)) {
-                if (!builder.fullyQualifiedName.endsWith("Module")) continue
+                if (builder.fullyQualifiedName?.endsWith("Module") != true) continue
                 addServiceDocs(builder, tapestryProject, services)
             }
         } catch (canceled: ProcessCanceledException) {

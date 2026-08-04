@@ -40,8 +40,8 @@ object CoreLibraryDocumentation {
     private fun indexSection(title: String, kind: String): NavPageDocumentation.Section {
         val entries = ArrayList<NavPageDocumentation.Entry>()
         try {
-            val locator = ClassLocator(CoreLibraryDocumentation::class.java.classLoader, "documentation.core.$kind")
-            for (location in locator.allClassLocations) {
+            val locations = ClassLocator.locate(CoreLibraryDocumentation::class.java.classLoader, "documentation.core.$kind")
+            for (location in locations) {
                 if (!location.url.toExternalForm().endsWith(".xml")) continue
 
                 val name = location.className

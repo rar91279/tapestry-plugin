@@ -98,7 +98,7 @@ class TapestryResolveTest : TapestryBaseTestCase() {
 
     fun testTmlMapping3() {
         myFixture.configureByFile("TmlMapping3.java")
-        val moduleSupportLoader = TapestryModuleSupportLoader.getInstance(myModule)
+        val moduleSupportLoader = TapestryModuleSupportLoader.getInstance(myModule!!)
         val libraries = moduleSupportLoader.tapestryProject.libraries
         var libraryOfInterest: TapestryLibrary? = null
 

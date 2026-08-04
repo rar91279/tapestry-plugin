@@ -25,35 +25,34 @@ class ParameterReceiverElementTest : FreeSpec({
         every { builderClassFileMock.lastModified() } returns Long.MAX_VALUE
 
         val builderClassResourceMock = mockk<IResource>(relaxed = true)
-        every { builderClassResourceMock.getFile() } returns builderClassFileMock
+        every { builderClassResourceMock.file } returns builderClassFileMock
 
         classInRootComponentsPackageMock = JavaClassTypeMock("com.app.components.SomeClass").setPublic(true).setDefaultConstructor(true).setFile(builderClassResourceMock)
 
         classInSubComponentsPackageMock = JavaClassTypeMock("com.app.components.folder1.SomeClass").setPublic(true).setDefaultConstructor(true).setFile(builderClassResourceMock)
 
         tapestryProjectMock = mockk(relaxed = true)
-        every { tapestryProjectMock.getApplicationRootPackage() } returns "com.app"
-        every { tapestryProjectMock.getResourceFinder() } returns null
+        every { tapestryProjectMock.applicationRootPackage } returns "com.app"
 
         // getParameters() always adds a builtin "mixins" parameter, whose creation resolves java.lang.String.
         val javaTypeFinderMock = mockk<IJavaTypeFinder>(relaxed = true)
         every { javaTypeFinderMock.findType("java.lang.String", true) } returns null
-        every { tapestryProjectMock.getJavaTypeFinder() } returns javaTypeFinderMock
+        every { tapestryProjectMock.javaTypeFinder } returns javaTypeFinderMock
 
         libraryMock = mockk(relaxed = true)
-        every { libraryMock.getBasePackage() } returns "com.app"
-        every { libraryMock.getId() } returns "application"
+        every { libraryMock.basePackage } returns "com.app"
+        every { libraryMock.id } returns "application"
     }
 
     "getParameters_no_parameters" {
-        TapestryComponent(libraryMock, classInRootComponentsPackageMock, tapestryProjectMock).getParameters().size shouldBe 1
+        TapestryComponent(libraryMock, classInRootComponentsPackageMock, tapestryProjectMock).parameters.size shouldBe 1
 
         val publicField = JavaFieldMock("publicField", false).addAnnotation(JavaAnnotationMock("org.apache.tapestry5.annotations.Parameter"))
         val privateField = JavaFieldMock("privateField", true)
 
         classInSubComponentsPackageMock.addField(publicField).addField(privateField)
 
-        TapestryComponent(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).getParameters().size shouldBe 1
+        TapestryComponent(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).parameters.size shouldBe 1
     }
 
     "getParameters_with_parameters" {
@@ -61,7 +60,7 @@ class ParameterReceiverElementTest : FreeSpec({
 
         classInSubComponentsPackageMock.addField(privateField)
 
-        TapestryComponent(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).getParameters().size shouldBe 2
+        TapestryComponent(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).parameters.size shouldBe 2
     }
 
     "getRequiredParameters_no_parameters" {
@@ -69,7 +68,7 @@ class ParameterReceiverElementTest : FreeSpec({
 
         classInSubComponentsPackageMock.addField(privateField)
 
-        TapestryComponent(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).getRequiredParameters().size shouldBe 0
+        TapestryComponent(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).requiredParameters.size shouldBe 0
     }
 
     "getRequiredParameters_with_parameters" {
@@ -78,7 +77,7 @@ class ParameterReceiverElementTest : FreeSpec({
 
         classInSubComponentsPackageMock.addField(privateField)
 
-        TapestryComponent(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).getRequiredParameters().size shouldBe 1
+        TapestryComponent(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).requiredParameters.size shouldBe 1
     }
 
     "getOptionalParameters_with_parameters" {
@@ -86,7 +85,7 @@ class ParameterReceiverElementTest : FreeSpec({
 
         classInSubComponentsPackageMock.addField(privateField)
 
-        TapestryComponent(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).getOptionalParameters().size shouldBe 2
+        TapestryComponent(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).optionalParameters.size shouldBe 2
     }
 
     "getOptionalParameters_no_parameters" {
@@ -95,6 +94,6 @@ class ParameterReceiverElementTest : FreeSpec({
 
         classInSubComponentsPackageMock.addField(privateField)
 
-        TapestryComponent(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).getOptionalParameters().size shouldBe 1
+        TapestryComponent(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).optionalParameters.size shouldBe 1
     }
 })

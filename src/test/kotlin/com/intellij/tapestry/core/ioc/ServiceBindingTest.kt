@@ -15,7 +15,7 @@ class ServiceBindingTest : FreeSpec({
         serviceBinding.scope = "myscope"
         serviceBinding.id = "myid"
 
-        serviceBinding.serviceClass.name shouldBe "MyClass"
+        serviceBinding.serviceClass!!.name shouldBe "MyClass"
         serviceBinding.id shouldBe "myid"
         serviceBinding.scope shouldBe "myscope"
         serviceBinding.isEagerLoad shouldBe true

@@ -103,7 +103,7 @@ class SafeDeleteProvider : DeleteProvider {
 
             // The element to delete is a presentation element.
             if (element is PresentationLibraryElement &&
-                element.library.id == TapestryProject.APPLICATION_LIBRARY_ID) {
+                element.library?.id == TapestryProject.APPLICATION_LIBRARY_ID) {
                 canDelete = true
             }
 

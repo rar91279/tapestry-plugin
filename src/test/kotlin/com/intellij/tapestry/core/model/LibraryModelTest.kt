@@ -35,7 +35,7 @@ class LibraryModelTest : FreeSpec({
         val tapestryProjectMock = mockk<TapestryProject>(relaxed = true)
         every { tapestryProjectMock.javaTypeFinder } returns javaTypeFinderMock
 
-        val library = TapestryLibrary(null, "com.app", tapestryProjectMock)
+        val library = TapestryLibrary("application", "com.app", tapestryProjectMock)
         library.components.size shouldBe 1
     }
 
@@ -47,7 +47,7 @@ class LibraryModelTest : FreeSpec({
         val tapestryProjectMock = mockk<TapestryProject>(relaxed = true)
         every { tapestryProjectMock.javaTypeFinder } returns javaTypeFinderMock
 
-        val library = TapestryLibrary(null, "com.app", tapestryProjectMock)
+        val library = TapestryLibrary("application", "com.app", tapestryProjectMock)
         library.pages.size shouldBe 1
     }
 
@@ -59,7 +59,7 @@ class LibraryModelTest : FreeSpec({
         val tapestryProjectMock = mockk<TapestryProject>(relaxed = true)
         every { tapestryProjectMock.javaTypeFinder } returns javaTypeFinderMock
 
-        val library = TapestryLibrary(null, "com.app", tapestryProjectMock)
+        val library = TapestryLibrary("application", "com.app", tapestryProjectMock)
         library.mixins.size shouldBe 1
     }
 

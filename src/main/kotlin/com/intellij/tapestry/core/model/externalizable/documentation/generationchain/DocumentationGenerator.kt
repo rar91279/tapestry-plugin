@@ -46,14 +46,14 @@ object DocumentationGenerator {
         context["element"] = element
         context["icon"] = javaClass.getResource(iconPath)
         context["documentation"] = try {
-            PresentationElementDocumentationWrapper(descriptorUrl(element.library.id, kind, element.name))
+            PresentationElementDocumentationWrapper(descriptorUrl(element.library?.id, kind, element.name))
         } catch (ex: Exception) {
             PresentationElementDocumentationWrapper()
         }
         return VelocityProcessor.processClasspathTemplate(PRESENTATION_TEMPLATE, context)
     }
 
-    private fun descriptorUrl(library: String, kind: String, name: String) =
+    private fun descriptorUrl(library: String?, kind: String, name: String?) =
         javaClass.getResource("/documentation/$library/$kind/$name.xml")
 
     private fun renderHome(home: Home): String {
@@ -63,7 +63,7 @@ object DocumentationGenerator {
         for (elementType in HOME_ELEMENT_TYPES) {
             val descriptors = HashMap<String, String>()
             val resources = try {
-                ClassLocator(javaClass.classLoader, "documentation.core.$elementType").allClassLocations
+                ClassLocator.locate(javaClass.classLoader, "documentation.core.$elementType")
             } catch (ex: Exception) {
                 throw RuntimeException(ex)
             }

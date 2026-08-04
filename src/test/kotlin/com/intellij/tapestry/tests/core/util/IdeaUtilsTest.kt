@@ -13,10 +13,6 @@ import io.kotest.matchers.shouldBe
 
 class IdeaUtilsTest : JavaModuleFixtureSpec({
 
-    "constructor is callable" {
-        IdeaUtils()
-    }
-
     "isModuleNode" {
         runReadAction {
             val dataContext = MapDataContext()

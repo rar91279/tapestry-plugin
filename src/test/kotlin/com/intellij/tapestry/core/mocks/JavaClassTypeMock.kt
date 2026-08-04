@@ -13,52 +13,37 @@ import java.util.regex.Pattern
  */
 class JavaClassTypeMock() : IJavaClassType {
 
-    private var _fullyQualifiedName: String? = null
-    private var _interface = false
-    private var _public = false
+    override var fullyQualifiedName: String? = null
+    override var isInterface = false
+    override var isPublic = false
+    override val isEnum = false
+    override var superClassType: IJavaClassType? = null
+    override var documentation: String? = null
+    override var file: IResource? = null
+    override val annotations = ArrayList<IJavaAnnotation>()
+
     private var _defaultConstructor = false
     private val _publicMethods = ArrayList<IJavaMethod>()
     private val _allMethods = ArrayList<IJavaMethod>()
-    private val _annotations = ArrayList<IJavaAnnotation>()
     private val _fields = HashMap<String, IJavaField>()
-    private var _documentation: String? = null
-    private var _file: IResource? = null
-    private var _superClassType: IJavaClassType? = null
 
     constructor(fullyQualifiedName: String?) : this() {
-        _fullyQualifiedName = fullyQualifiedName
+        this.fullyQualifiedName = fullyQualifiedName
     }
 
-    override fun getFullyQualifiedName(): String? = _fullyQualifiedName
-
-    override fun getName(): String? {
-        val fqn = _fullyQualifiedName ?: return null
-        if (fqn.indexOf('.') == -1) return fqn
-        return fqn.substring(fqn.lastIndexOf('.') + 1)
-    }
-
-    override fun isInterface(): Boolean = _interface
-
-    fun setInterface(anInterface: Boolean) {
-        _interface = anInterface
-    }
-
-    override fun isPublic(): Boolean = _public
-
-    override fun isEnum(): Boolean = false
+    override val name: String?
+        get() {
+            val fqn = fullyQualifiedName ?: return null
+            if (fqn.indexOf('.') == -1) return fqn
+            return fqn.substring(fqn.lastIndexOf('.') + 1)
+        }
 
     fun setPublic(aPublic: Boolean): JavaClassTypeMock {
-        _public = aPublic
+        isPublic = aPublic
         return this
     }
 
     override fun hasDefaultConstructor(): Boolean = _defaultConstructor
-
-    override fun getSuperClassType(): IJavaClassType? = _superClassType
-
-    fun setSuperClassType(superClassType: IJavaClassType?) {
-        _superClassType = superClassType
-    }
 
     fun setDefaultConstructor(defaultConstructor: Boolean): JavaClassTypeMock {
         _defaultConstructor = defaultConstructor
@@ -76,40 +61,24 @@ class JavaClassTypeMock() : IJavaClassType {
 
     override fun findPublicMethods(methodNameRegExp: String): Collection<IJavaMethod> {
         val pattern = Pattern.compile(methodNameRegExp)
-        val foundMethods = ArrayList<IJavaMethod>()
-        for (method in getPublicMethods(true)) {
-            if (pattern.matcher(method.name).matches()) {
-                foundMethods.add(method)
-            }
-        }
-        return foundMethods
+        return getPublicMethods(true).filter { pattern.matcher(it.name!!).matches() }
     }
-
-    override fun getAnnotations(): Collection<IJavaAnnotation> = _annotations
 
     override fun getFields(fromSuper: Boolean): Map<String, IJavaField> = _fields
 
     fun addField(field: IJavaField): JavaClassTypeMock {
-        _fields[field.name] = field
+        _fields[field.name!!] = field
         return this
     }
-
-    override fun getDocumentation(): String? = _documentation
-
-    fun setDocumentation(documentation: String?) {
-        _documentation = documentation
-    }
-
-    override fun getFile(): IResource? = _file
 
     override fun supportsInformalParameters(): Boolean = false
 
     fun setFile(file: IResource?): JavaClassTypeMock {
-        _file = file
+        this.file = file
         return this
     }
 
     override fun isAssignableFrom(type: IJavaType?): Boolean = false
 
-    override fun getUnderlyingObject(): Any = _fullyQualifiedName!!
+    override val underlyingObject: Any get() = fullyQualifiedName!!
 }

@@ -124,10 +124,10 @@ class TapestryToolWindow(private val project: Project) : FileSystemListenerAdapt
 
     override fun fileContentsChanged(changedFile: IResource) {
         if (element == null || module == null) return
+        val changedPath = changedFile.file?.absolutePath ?: return
         for (classType in updateOnChangeFiles) {
-            val resource = classType.file ?: continue
-            if (resource.file != null &&
-                resource.file.absolutePath.endsWith(changedFile.file.absolutePath)) {
+            val resourceFile = classType.file?.file ?: continue
+            if (resourceFile.absolutePath.endsWith(changedPath)) {
                 documentationTab.showDocumentation(element)
                 documentationTab.setElement(element)
             }

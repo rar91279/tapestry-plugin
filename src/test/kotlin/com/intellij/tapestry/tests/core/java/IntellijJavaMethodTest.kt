@@ -39,18 +39,18 @@ class IntellijJavaMethodTest : JavaModuleFixtureSpec({
             method2.name shouldBe "method2"
             (method2.returnType is IJavaArrayType) shouldBe true
             method2.annotations.size shouldBe 0
-            method2.documentation.isEmpty() shouldBe true
+            method2.documentation!!.isEmpty() shouldBe true
             method2.parameters.size shouldBe 0
 
             method3.name shouldBe "method3"
-            method3.returnType.name shouldBe "int"
+            method3.returnType!!.name shouldBe "int"
             method3.annotations.size shouldBe 0
-            method3.documentation.isEmpty() shouldBe true
+            method3.documentation!!.isEmpty() shouldBe true
             method3.parameters.size shouldBe 0
 
             // void return
             (method4.returnType is IntellijJavaPrimitiveType) shouldBe true
-            method4.returnType.name shouldBe "void"
+            method4.returnType!!.name shouldBe "void"
 
             // invalid class return
             method5.returnType shouldBe null
@@ -61,13 +61,13 @@ class IntellijJavaMethodTest : JavaModuleFixtureSpec({
         runReadAction {
             val method1 = method("method1")
             method1.getAnnotation(null) shouldBe null
-            method1.getAnnotation("java.lang.SuppressWarnings").fullyQualifiedName shouldBe "java.lang.SuppressWarnings"
+            method1.getAnnotation("java.lang.SuppressWarnings")!!.fullyQualifiedName shouldBe "java.lang.SuppressWarnings"
         }
     }
 
     "getContainingClass" {
         runReadAction {
-            method("method1").containingClass.name shouldBe "Class1"
+            method("method1").containingClass!!.name shouldBe "Class1"
         }
     }
 

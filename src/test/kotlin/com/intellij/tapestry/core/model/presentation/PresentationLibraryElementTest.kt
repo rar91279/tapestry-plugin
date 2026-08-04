@@ -26,9 +26,9 @@ private class TestableParameterReceiverElement(
 
     override fun allowsTemplate(): Boolean = false
 
-    override fun getTemplate(): Array<IResource>? = null
+    override val template: Array<IResource> = emptyArray()
 
-    override fun getMessageCatalog(): Array<IResource> = IResource.EMPTY_ARRAY
+    override val messageCatalog: Array<IResource> = emptyArray()
 }
 
 class PresentationLibraryElementTest : FreeSpec({
@@ -52,7 +52,7 @@ class PresentationLibraryElementTest : FreeSpec({
         every { builderClassFileMock.lastModified() } returns Long.MAX_VALUE
 
         val builderClassResourceMock = mockk<IResource>(relaxed = true)
-        every { builderClassResourceMock.getFile() } returns builderClassFileMock
+        every { builderClassResourceMock.file } returns builderClassFileMock
 
         classInBasePackageMock = JavaClassTypeMock("com.app.SomeClass").setPublic(true).setDefaultConstructor(true).setFile(builderClassResourceMock)
 
@@ -74,21 +74,21 @@ class PresentationLibraryElementTest : FreeSpec({
 
         resourceFinderMock = mockk(relaxed = true)
         tapestryProjectMock = mockk(relaxed = true)
-        every { tapestryProjectMock.getApplicationRootPackage() } returns "com.app"
-        every { tapestryProjectMock.getResourceFinder() } returns resourceFinderMock
+        every { tapestryProjectMock.applicationRootPackage } returns "com.app"
+        every { tapestryProjectMock.resourceFinder } returns resourceFinderMock
 
         // getParameters() always adds a builtin "mixins" parameter, whose creation resolves java.lang.String.
         val javaTypeFinderMock = mockk<IJavaTypeFinder>(relaxed = true)
         every { javaTypeFinderMock.findType("java.lang.String", true) } returns null
-        every { tapestryProjectMock.getJavaTypeFinder() } returns javaTypeFinderMock
+        every { tapestryProjectMock.javaTypeFinder } returns javaTypeFinderMock
 
         libraryMock = mockk(relaxed = true)
-        every { libraryMock.getBasePackage() } returns "com.app"
-        every { libraryMock.getId() } returns "application"
+        every { libraryMock.basePackage } returns "com.app"
+        every { libraryMock.id } returns "application"
 
         libraryNoRootPackageMock = mockk(relaxed = true)
-        every { libraryNoRootPackageMock.getBasePackage() } returns null
-        every { libraryNoRootPackageMock.getId() } returns "id"
+        every { libraryNoRootPackageMock.basePackage } returns null
+        every { libraryNoRootPackageMock.id } returns "id"
     }
 
     "isValidElement_outside_base_package" {
@@ -127,22 +127,22 @@ class PresentationLibraryElementTest : FreeSpec({
     }
 
     "getElementNameFromClass" {
-        TestableParameterReceiverElement(libraryMock, classInRootComponentsPackageMock, tapestryProjectMock).getName() shouldBe "SomeClass"
+        TestableParameterReceiverElement(libraryMock, classInRootComponentsPackageMock, tapestryProjectMock).name shouldBe "SomeClass"
 
-        TestableParameterReceiverElement(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).getName() shouldBe "SomeClass"
+        TestableParameterReceiverElement(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).name shouldBe "SomeClass"
 
-        TestableParameterReceiverElement(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).getName() shouldBe "folder1/SomeClass"
+        TestableParameterReceiverElement(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).name shouldBe "folder1/SomeClass"
     }
 
     "getParameters_no_parameters" {
-        TestableParameterReceiverElement(libraryMock, classInRootComponentsPackageMock, tapestryProjectMock).getParameters().size shouldBe 1
+        TestableParameterReceiverElement(libraryMock, classInRootComponentsPackageMock, tapestryProjectMock).parameters.size shouldBe 1
 
         val publicField = JavaFieldMock("publicField", false).addAnnotation(JavaAnnotationMock("org.apache.tapestry5.annotations.Parameter"))
         val privateField = JavaFieldMock("privateField", true)
 
         classInSubComponentsPackageMock.addField(publicField).addField(privateField)
 
-        TestableParameterReceiverElement(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).getParameters().size shouldBe 1
+        TestableParameterReceiverElement(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).parameters.size shouldBe 1
     }
 
     "getParameters_with_parameters" {
@@ -150,17 +150,17 @@ class PresentationLibraryElementTest : FreeSpec({
 
         classInSubComponentsPackageMock.addField(privateField)
 
-        TestableParameterReceiverElement(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).getParameters().size shouldBe 2
+        TestableParameterReceiverElement(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).parameters.size shouldBe 2
     }
 
     "getElementClass" {
-        TestableParameterReceiverElement(libraryMock, classInRootComponentsPackageMock, tapestryProjectMock).getElementClass().getFullyQualifiedName() shouldBe "com.app.components.SomeClass"
+        TestableParameterReceiverElement(libraryMock, classInRootComponentsPackageMock, tapestryProjectMock).elementClass.fullyQualifiedName shouldBe "com.app.components.SomeClass"
     }
 
     "getDocumentation" {
-        classInRootComponentsPackageMock.setDocumentation("docs")
+        classInRootComponentsPackageMock.documentation = "docs"
 
-        TestableParameterReceiverElement(libraryMock, classInRootComponentsPackageMock, tapestryProjectMock).getDescription() shouldBe "docs"
+        TestableParameterReceiverElement(libraryMock, classInRootComponentsPackageMock, tapestryProjectMock).description shouldBe "docs"
     }
 
     "createElementInstance_component" {
@@ -201,14 +201,14 @@ class PresentationLibraryElementTest : FreeSpec({
         )
         every { resourceFinderMock.findLocalizedClasspathResource("com/app/components/folder1/SomeClass.properties", true) } returns resources2
 
-        Page(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).getMessageCatalog().size shouldBe 2
+        Page(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).messageCatalog.size shouldBe 2
 
         resources1.clear()
 
-        TapestryComponent(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).getMessageCatalog().size shouldBe 2
+        TapestryComponent(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).messageCatalog.size shouldBe 2
 
         resources1.clear()
 
-        Page(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).getMessageCatalog().size shouldBe 0
+        Page(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).messageCatalog.size shouldBe 0
     }
 })

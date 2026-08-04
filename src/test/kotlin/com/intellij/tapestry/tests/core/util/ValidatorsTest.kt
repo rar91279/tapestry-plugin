@@ -6,10 +6,6 @@ import io.kotest.matchers.shouldBe
 
 class ValidatorsTest : FreeSpec({
 
-    "constructor is callable" {
-        Validators()
-    }
-
     "isValidPackageName_empty" {
         Validators.isValidPackageName(null)
         Validators.isValidPackageName("") shouldBe false

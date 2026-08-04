@@ -18,7 +18,7 @@ private val PresentationLibraryElement.hasClassFile: Boolean
 
 class DependenciesRootNode(element: PresentationLibraryElement) : DefaultMutableTreeNode(element) {
 
-    private val label = element.name
+    private val label = element.name.orEmpty()
 
     init {
         add(InjectedPagesNode(element))
@@ -37,7 +37,7 @@ class EmbeddedComponentsNode(element: PresentationLibraryElement) : DefaultMutab
         if (element.hasClassFile) {
             for (template in element.template) add(EmbeddedTemplateNode(template, element))
             for (embedded in element.embeddedComponents) {
-                if (embedded.template == "class") add(EmbeddedComponentNode(embedded.element))
+                if (embedded.template == "class") embedded.element?.let { add(EmbeddedComponentNode(it)) }
             }
         }
     }
@@ -53,7 +53,7 @@ class EmbeddedTemplateNode(resource: IResource, element: PresentationLibraryElem
     init {
         if (element.hasClassFile) {
             for (embedded in element.embeddedComponentsTemplate) {
-                if (embedded.template == resource.name) add(EmbeddedComponentNode(embedded.element))
+                if (embedded.template == resource.name) embedded.element?.let { add(EmbeddedComponentNode(it)) }
             }
         }
     }
@@ -117,7 +117,7 @@ class ResourceLeafNode(resource: IResource) : DefaultMutableTreeNode(resource) {
 class UsagesNode(element: PresentationLibraryElement) : DefaultMutableTreeNode(element) {
 
     init {
-        for (usage in element.project.findUsages(element)) add(UsageNode(usage.user(), usage.kind()))
+        for (usage in element.project.findUsages(element)) add(UsageNode(usage.user, usage.kind))
     }
 
     override fun toString() = "Used By"
@@ -127,7 +127,7 @@ class UsagesNode(element: PresentationLibraryElement) : DefaultMutableTreeNode(e
 class UsageNode(user: PresentationLibraryElement, val kind: TapestryProject.UsageKind) :
     DefaultMutableTreeNode(user) {
 
-    private val label = user.name
+    private val label = user.name.orEmpty()
 
     override fun toString() = label
 }

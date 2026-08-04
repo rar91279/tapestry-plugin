@@ -6,9 +6,4 @@ import com.intellij.tapestry.core.java.IMethodParameter
 /**
  * Utility class for easy creation of IMethodParameter mocks.
  */
-class MethodParameterMock(private val _name: String, private val _type: IJavaType) : IMethodParameter {
-
-    override fun getName(): String = _name
-
-    override fun getType(): IJavaType = _type
-}
+class MethodParameterMock(override val name: String, override val type: IJavaType) : IMethodParameter

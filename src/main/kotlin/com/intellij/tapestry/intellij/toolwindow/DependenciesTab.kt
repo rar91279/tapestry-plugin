@@ -94,7 +94,7 @@ class DependenciesTab {
                 val selectedObject = (selected.lastPathComponent as DefaultMutableTreeNode).userObject
                 // Embedded component / injected page leaves navigate to the element class.
                 if (selectedObject is InjectedElement) {
-                    navigate((selectedObject.element.elementClass as IntellijJavaClassType).psiClass)
+                    navigate((selectedObject.element?.elementClass as? IntellijJavaClassType)?.psiClass)
                 }
                 // "Used By" leaves navigate to the referencing element's class.
                 if (selectedObject is PresentationLibraryElement) {
@@ -194,7 +194,7 @@ class DependenciesTab {
                 navigate((selectedObject.elementClass as IntellijJavaClassType).psiClass)
             }
             if (selectedObject is InjectedElement) {
-                navigate((selectedObject.element.elementClass as IntellijJavaClassType).psiClass)
+                navigate((selectedObject.element?.elementClass as? IntellijJavaClassType)?.psiClass)
             }
             if (selectedObject is IntellijResource) {
                 navigate(selectedObject.psiFile)

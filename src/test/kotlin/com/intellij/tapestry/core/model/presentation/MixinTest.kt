@@ -20,12 +20,12 @@ class MixinTest : FreeSpec({
 
         val resourceFinderMock = mockk<IResourceFinder>(relaxed = true)
         tapestryProjectMock = mockk(relaxed = true)
-        every { tapestryProjectMock.getApplicationRootPackage() } returns "com.app"
-        every { tapestryProjectMock.getResourceFinder() } returns resourceFinderMock
+        every { tapestryProjectMock.applicationRootPackage } returns "com.app"
+        every { tapestryProjectMock.resourceFinder } returns resourceFinderMock
 
         libraryMock = mockk(relaxed = true)
-        every { libraryMock.getBasePackage() } returns "com.app"
-        every { libraryMock.getId() } returns "application"
+        every { libraryMock.basePackage } returns "com.app"
+        every { libraryMock.id } returns "application"
     }
 
     "allowsTemplate" {
@@ -33,10 +33,10 @@ class MixinTest : FreeSpec({
     }
 
     "getTemplate" {
-        Mixin(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).getTemplate().size shouldBe 0
+        Mixin(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).template.size shouldBe 0
     }
 
     "getMessageCatalog" {
-        Mixin(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).getMessageCatalog().size shouldBe 0
+        Mixin(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).messageCatalog.size shouldBe 0
     }
 })

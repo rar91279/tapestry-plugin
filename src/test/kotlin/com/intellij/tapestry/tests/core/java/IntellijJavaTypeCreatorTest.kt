@@ -21,18 +21,18 @@ class IntellijJavaTypeCreatorTest : JavaModuleFixtureSpec({
         runReadAction {
             val creator = IntellijJavaTypeCreator(module)
 
-            val psiField1 = creator.createField("field1", stringType(), true, true)
+            val psiField1 = creator.createField("field1", stringType(), true, true)!!
             psiField1.name shouldBe "field1"
             (psiField1.type as IJavaClassType).fullyQualifiedName shouldBe "java.lang.String"
             psiField1.isPrivate shouldBe true
 
-            val psiField2 = creator.createField("Field1", stringType(), true, true)
+            val psiField2 = creator.createField("Field1", stringType(), true, true)!!
             psiField2.name shouldBe "field1"
 
-            val psiField3 = creator.createField("Field1", stringType(), true, false)
+            val psiField3 = creator.createField("Field1", stringType(), true, false)!!
             psiField3.name shouldBe "Field1"
 
-            val psiField4 = creator.createField("field1", stringType(), false, true)
+            val psiField4 = creator.createField("field1", stringType(), false, true)!!
             psiField4.isPrivate shouldBe false
         }
     }
@@ -41,7 +41,7 @@ class IntellijJavaTypeCreatorTest : JavaModuleFixtureSpec({
         runReadAction {
             val creator = IntellijJavaTypeCreator(module)
 
-            val psiField1 = creator.createField("field1", stringType(), true, true)
+            val psiField1 = creator.createField("field1", stringType(), true, true)!!
             creator.createFieldAnnotation(psiField1, "java.lang.Deprecated", HashMap())
 
             psiField1.annotations.size shouldBe 1
@@ -54,7 +54,7 @@ class IntellijJavaTypeCreatorTest : JavaModuleFixtureSpec({
         runReadAction {
             val creator = IntellijJavaTypeCreator(module)
 
-            val psiField1 = creator.createField("field1", stringType(), true, true)
+            val psiField1 = creator.createField("field1", stringType(), true, true)!!
 
             val parameters = hashMapOf("param1" to "param1value", "param2" to "param2value")
 

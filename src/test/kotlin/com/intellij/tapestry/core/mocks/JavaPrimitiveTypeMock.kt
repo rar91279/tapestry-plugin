@@ -6,11 +6,9 @@ import com.intellij.tapestry.core.java.IJavaType
 /**
  * Utility class for easy creation of JavaPrimitiveType mocks.
  */
-class JavaPrimitiveTypeMock(private val _name: String) : IJavaPrimitiveType {
-
-    override fun getName(): String = _name
+class JavaPrimitiveTypeMock(override val name: String) : IJavaPrimitiveType {
 
     override fun isAssignableFrom(type: IJavaType?): Boolean = false
 
-    override fun getUnderlyingObject(): Any = _name
+    override val underlyingObject: Any get() = name
 }

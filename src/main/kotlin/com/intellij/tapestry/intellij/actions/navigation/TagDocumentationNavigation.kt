@@ -47,7 +47,7 @@ class TagDocumentationNavigation : AnAction() {
             val psiFile = event.getData(CommonDataKeys.PSI_FILE) ?: return null
 
             val caretOffset = editor.caretModel.offset
-            val tag = PsiTreeUtil.getParentOfType(psiFile.findElementAt(caretOffset), XmlTag::class.java)
+            val tag = PsiTreeUtil.getParentOfType(psiFile.findElementAt(caretOffset), XmlTag::class.java) ?: return null
 
             if (TapestryUtils.getComponentIdentifier(tag) == null) return null
 
