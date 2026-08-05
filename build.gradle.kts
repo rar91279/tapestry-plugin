@@ -1,4 +1,5 @@
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.changelog.Changelog
 
 plugins {
     id("org.jetbrains.kotlin.jvm")
@@ -21,6 +22,19 @@ sourceSets {
 intellijPlatform {
     pluginConfiguration {
         version = project.version.toString()
+
+        // The plugin's "What's new" comes from CHANGELOG.md: the section of the version being built,
+        // falling back to [Unreleased] for snapshot builds.
+        changeNotes = providers.provider {
+            with(changelog) {
+                renderItem(
+                    (getOrNull(project.version.toString()) ?: getUnreleased())
+                        .withHeader(false)
+                        .withEmptySections(false),
+                    Changelog.OutputType.HTML
+                )
+            }
+        }
     }
 
     signing {
@@ -92,12 +106,12 @@ tasks.register<Test>("kotest") {
     testClassesDirs = testSourceSet.output.classesDirs
     classpath = testSourceSet.runtimeClasspath + platformRuntime
 
-    include("com/intellij/tapestry/core/**")
+    include("com/github/rar91279/plugin/tapestry/core/**")
 }
 
 tasks.named<Test>("test") {
     useJUnitPlatform()
-    include("com/intellij/tapestry/tests/**")
+    include("com/github/rar91279/plugin/tapestry/tests/**")
 }
 
 // Run the core unit specs as part of the standard verification lifecycle (check/build).

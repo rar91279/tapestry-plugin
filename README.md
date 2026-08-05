@@ -1,188 +1,164 @@
 # Tapestry
 
-[![Twitter Follow](https://img.shields.io/badge/follow-%40JBPlatform-1DA1F2?logo=twitter)](https://twitter.com/JBPlatform)
-[![Developers Forum](https://img.shields.io/badge/JetBrains%20Platform-Join-blue)][jb:forum]
+IntelliJ IDEA support for the [Apache Tapestry™ 5](https://tapestry.apache.org) web framework: template and expression
+language support, navigation between classes, templates and message catalogs, a project view, and a live documentation
+tool window.
 
 ## Overview
 
-This repository implements an IntelliJ Platform plugin.
+This is a maintained port of the Tapestry plugin JetBrains retired into
+[intellij-obsolete-plugins/tapestry](https://github.com/JetBrains/intellij-obsolete-plugins/tree/master/tapestry).
 
-## Demo Functionality
+Compared to the original:
 
-The sample plugin adds a `My Tool Window` tool window with a simple functionality of shuffling a random number.
+- **Ported to Kotlin** — production and test sources are Kotlin; only the generated lexer (`src/main/gen`) is still Java.
+- **Modern plugin architecture** — IntelliJ Platform Gradle Plugin 2.x, current platform APIs (no internal or
+  override-only API usage), the 2026.2 module system (explicit `intellij.platform.ui.jcef` /
+  `intellij.xml.structureView.impl` module dependencies), and platform icons instead of bundled bitmaps.
+- **Restored functionality** that was broken on recent IDE versions:
+  - **Tool window** — no longer crashes on startup (JCEF moved out of the platform core in 2026.2).
+  - **Dependencies tab** — rebuilt: embedded components, injected pages, a *Used By* reverse-dependency view,
+    navigation to templates and message catalogs, empty-state and loading indicators.
+  - **New Element actions** — Page / Component / Mixin creation works again, with dialogs rewritten in the Kotlin UI DSL
+    and wider action enablement.
+  - **Live Documentation** — the documentation generation chain was rewritten in Kotlin, with working navigation links,
+    IoC service and library-module documentation, and Maven coordinates for library-provided modules.
+- **Tests migrated** to [kotest](https://kotest.io) + [MockK](https://mockk.io) (TestNG and EasyMock are gone).
 
-## Plugin structure
+## Features
 
-A generated project contains the following content structure:
+**Templates (`.tml`)**
+
+- TML file type with XHTML-based highlighting, formatting, folding, commenting, structure view and parameter info.
+- Tag and attribute completion driven by the actual component classes: components, pages, mixins, their parameters,
+  required parameters and informal parameters.
+- References from `t:type`, `t:id`, `t:mixins` and `page` attributes to the corresponding class, component instance
+  field or page, with rename support.
+- `message:` prefixes and `alt` attributes resolve to keys in the element's message catalog.
+- Type-coercion validation: a parameter value that cannot be coerced to the parameter type is reported in the editor.
+
+**Tapestry Expression Language (TEL)**
+
+- TEL is injected into template attribute values (`${...}`, `prop:` bindings) with its own lexer, parser and
+  highlighting.
+- Completion and resolution of properties, `@Property` fields, generated accessors and public methods, including
+  property chains and method calls.
+- Find Usages, rename refactoring, and an inspection that flags unresolved TEL references.
+
+**Java / Kotlin side**
+
+- Gutter markers for Tapestry event handlers (`onXxx`, `@OnEvent`) and injected beans (`@Inject`, including
+  `jakarta`/`javax` JSR-330, via UAST — so Kotlin sources work too).
+- Tapestry entry points (component fields, event handlers, page classes) are not reported as unused.
+
+**Navigation and actions**
+
+| Action | Shortcut |
+|--------|----------|
+| Class ↔ Template navigation | `Ctrl+Shift+G` |
+| Tag → documentation | `Ctrl+Shift+D` |
+| *Go to* → Tapestry Template / Tapestry Class | editor popup |
+| *New* → Tapestry Page / Component / Mixin | project view popup |
+
+- Safe Delete of a Tapestry element removes its class, templates and message catalogs together.
+
+**Views**
+
+- **Tapestry project view pane** — pages, components, mixins and libraries as a Tapestry-shaped tree.
+- **Tapestry tool window** (facet-bound, bottom):
+  - *Documentation* — live documentation rendered in an embedded browser: project modules and their IoC services, the
+    Tapestry core library, and the selected element's own documentation.
+  - *Dependencies* — what an element embeds, injects, and which elements use it.
+
+**Project setup**
+
+- Tapestry facet (application package, filter name) with framework detection from an existing facet or from
+  `Tapestry-Module-Classes` declared in the module's `pom.xml` / `META-INF/MANIFEST.MF`.
+- *Add framework support* generates a `pom.xml` for a new Tapestry module.
+
+## Requirements
+
+- **IntelliJ IDEA Ultimate 2026.2** — the plugin depends on the Jakarta EE (`com.intellij.javaee`) and Properties
+  plugins, so Community Edition is not supported.
+- **JDK 25** — the Gradle toolchain the 2026.2 platform requires.
+
+## Building and running
+
+The Gradle wrapper is checked in; no local Gradle installation is needed.
+
+| Task | Purpose |
+|------|---------|
+| `./gradlew buildPlugin` | Builds the distribution into `build/distributions/`. |
+| `./gradlew runIde` | Starts a sandbox IDE with the plugin installed. |
+| `./gradlew kotest` | Fast unit specs (`core/**`) — no IDE bootstrap, starts instantly. |
+| `./gradlew test` | IDE-fixture integration specs (`tests/**`), full platform environment. |
+| `./gradlew check` | `kotest` plus the standard verification lifecycle. |
+| `./gradlew verifyPlugin` | Runs the IntelliJ Plugin Verifier against the recommended IDEs. |
+| `./gradlew qodanaScan` | Qodana inspections (requires Docker). |
+
+Predefined run configurations for the IDE, tests and verification live in `.run/`.
+
+> [!NOTE]
+> The two test tasks are split on purpose: `kotest` hand-builds its classpath and runs the pure unit specs in seconds,
+> while `test` boots the platform test fixtures. Both run kotest specs on the JUnit Platform; `junit-vintage-engine`
+> keeps the remaining `UsefulTestCase`-based tests discoverable.
+
+### Source layout
 
 ```
 .
-├── .qodana
-│   └── profiles
-│       └── plugin.yaml     Qodana plugin inspections profile
-├── .run/                   Predefined Run/Debug Configurations
-├── gradle
-│   ├── wrapper/            Gradle Wrapper
-│   ├── libs.versions.toml  Version catalog
-├── src                     Plugin sources
-│   └── main
-│       ├── kotlin/         Kotlin production sources
-│       └── resources/      Plugin resources
-│           ├── META-INF/   Plugin configuration file and logo
-│           └── messages/   Message bundles
-├── .gitignore              Git ignoring rules
-├── build.gradle.kts        Gradle build configuration
-├── gradle.properties       Gradle configuration properties
-├── gradlew                 *nix Gradle Wrapper script
-├── gradlew.bat             Windows Gradle Wrapper script
-├── README.md               This file
-├── qodana.yml              Qodana code inspections configuration
-└── settings.gradle.kts     Gradle project settings
+├── .qodana/profiles/plugin.yaml     Qodana inspection profile
+├── .run/                            Predefined Run/Debug configurations
+├── gradle/
+│   ├── libs.versions.toml           Version catalog (kotest, MockK, JUnit)
+│   └── wrapper/                     Gradle wrapper
+├── src
+│   ├── main
+│   │   ├── gen/                     Generated sources — not edited by hand
+│   │   │   ├── com/github/rar91279/plugin/tapestry/psi/_TelLexer.java
+│   │   │   └── icons/TapestryIcons.java
+│   │   ├── kotlin/com/github/rar91279/plugin/tapestry/
+│   │   │   ├── core/                IDE-independent model: elements, resources, IoC, coercion, externalizers
+│   │   │   ├── intellij/            IDE integration: facet, actions, views, tool window, inspections
+│   │   │   │   ├── core/            PSI-backed implementations of the core model interfaces
+│   │   │   │   ├── lang/            Descriptors, annotator, completion, references, TEL injection
+│   │   │   │   ├── toolwindow/      Documentation and Dependencies tabs
+│   │   │   │   └── view/            Tapestry project view pane
+│   │   │   ├── lang/                TML and TEL file types, languages and highlighters
+│   │   │   └── psi/                 TML/TEL PSI: lexers, parsers, elements, references
+│   │   └── resources/
+│   │       ├── META-INF/            plugin.xml, plugin icon, Tapestry XSDs
+│   │       ├── documentation/       Velocity templates, stylesheet and logos for the documentation tab
+│   │       ├── fileTemplates/j2ee/  New page / component / mixin / pom templates
+│   │       └── messages/            Message bundle
+│   └── test
+│       ├── java/                    Test *data* only (fixture sources and testData files)
+│       └── kotlin/com/github/rar91279/plugin/tapestry/
+│           ├── core/                Unit specs run by the `kotest` task
+│           └── tests/               IDE-fixture specs run by the `test` task
+├── build.gradle.kts                 Build configuration
+├── gradle.properties                Gradle properties
+└── qodana.yml                       Qodana configuration
 ```
 
-In addition to the configuration files, the most crucial part is the `src` directory, which contains our implementation
-and the manifest for our plugin – [plugin.xml][file:plugin.xml].
+The `core` package deliberately knows nothing about IntelliJ: it models Tapestry itself (pages, components, mixins,
+parameters, resources, IoC services) behind small interfaces, and `intellij/core` provides the PSI-backed
+implementations. Unit specs test `core` with mocks; everything that needs real PSI is tested through IDE fixtures.
 
-> [!NOTE]
-> To use Java in your plugin, create the `/src/main/java` directory.
+## License
 
-The plugin logo is placed in `src/main/resources/META-INF/pluginIcon.svg`. See [Plugin Logo][docs:logo] for more
-information and logo requirements.
+[Apache License 2.0](LICENSE) — the license of the original JetBrains plugin this project is derived from.
+Portions are Copyright JetBrains s.r.o.
 
-## Build script
+## Trademarks
 
-The [build.gradle.kts][file:build.gradle.kts] is the core of the project definition. It applies three Gradle plugins:
+Apache, Apache Tapestry, Tapestry and the Apache Tapestry logo are trademarks of
+[The Apache Software Foundation](https://www.apache.org) (ASF). The official project site is
+<https://tapestry.apache.org>.
 
-| Plugin                            | Description                                                                      |
-|-----------------------------------|----------------------------------------------------------------------------------|
-| `org.jetbrains.kotlin.jvm`        | Adds Kotlin support                                                              |
-| `org.jetbrains.changelog`         | Simplifies patching the [CHANGELOG.md][file:CHANGELOG.md] file                   |
-| `org.jetbrains.intellij.platform` | The [IntelliJ Platform Gradle Plugin][docs:intellij-platform-gradle-plugin-docs] |
+This is an independent, community-maintained IntelliJ IDEA plugin **for working with** Apache Tapestry. It is not
+affiliated with, sponsored by, or endorsed by the ASF or the Apache Tapestry project.
 
-The `intellijPlatform` dependencies block selects the IDE to compile against:
-
-```kotlin
-intellijIdea("2025.3.5")
-```
-
-See [Target Versions][docs:target-version] for more information.
-
-The `intellijPlatform` dependencies block also contains a dependency on the platform testing framework:
-
-```kotlin
-testFramework(TestFrameworkType.Platform)
-```
-
-See [Testing][docs:testing] for more information
-
-## Plugin configuration file
-
-The plugin configuration file is a [plugin.xml][file:plugin.xml] file located in the `src/main/resources/META-INF`
-directory. It provides general information about the plugin, its dependencies, extensions, and listeners.
-
-You can read more about this file in the [Plugin Configuration File][docs:plugin.xml] section of our documentation.
-
-### Plugin ID and name
-
-Generated plugin ID and name may require adjustment.
-
-These values are generated based on _Group ID_ and _Artifact ID_ provided in the IDE Plugin wizard. It is recommended to
-review `<id>` and `<name>` elements in the plugin.xml file, and adjust them if needed.
-
-Please note that Gradle properties `rootProject.name` and `project.group` don't need to match the `<id>` and `<name>`
-elements. There is no IntelliJ Platform-related reason they should as they serve different functions.
-
-## Predefined Run/Debug configurations
-
-Within the default project structure, there is a `.run` directory provided containing predefined *Run/Debug
-configurations* that expose corresponding Gradle tasks:
-
-| Configuration name  | Description                                                                                                                                                                           |
-|---------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Run IDE with Plugin | Runs [`:runIde`][docs:intellij-platform-gradle-plugin-runIde] IntelliJ Platform Gradle Plugin task. Use the *Debug* icon for plugin debugging.                                        |
-| Run Tests           | Runs [`:check`][gradle:lifecycle-tasks] Gradle task.                                                                                                                                  |
-| Run Verifications   | Runs [`:verifyPlugin`][docs:intellij-platform-gradle-plugin-verifyPlugin] IntelliJ Platform Gradle Plugin task to check the plugin compatibility against the specified IntelliJ IDEs. |
-
-> [!NOTE]
-> You can find the logs from the running task in the `idea.log` tab.
-
-## Publishing the plugin
-
-> [!TIP]
-> Make sure to follow all guidelines listed in [Publishing a Plugin][docs:publishing] to follow all recommended and
-required steps.
-
-Releasing a plugin to [JetBrains Marketplace](https://plugins.jetbrains.com) is a straightforward operation that uses
-the `publishPlugin` Gradle task provided by
-the [intellij-platform-gradle-plugin][docs:intellij-platform-gradle-plugin-docs].
-
-You can also upload the plugin to the [JetBrains Plugin Repository](https://plugins.jetbrains.com/plugin/upload)
-manually via UI.
-
-## Qodana Code Inspections
-
-> Running Qodana locally requires [Docker](https://www.docker.com/).
-
-Qodana integration adds the possibility of inspecting the plugin code against the same inspections that are available in
-JetBrains IDEs.
-
-This plugin project declares a Qodana inspections profile: `.qodana/profiles/plugin.yaml`. It is referenced in the
-`qodana.yml` configuration file.
-
-The profile includes the default profiles of JetBrains IDEs and all inspections from the **Plugin DevKit** category.
-
-See more about [Qodana inspection profiles](https://www.jetbrains.com/help/qodana/inspection-profiles.html).
-
-### Qodana Gradle Plugin
-
-To run Qodana code inspections locally
-
-1. Make sure that Docker is running.
-2. Run the `qodanaScan` Gradle task in the project root:
-   ```
-   ./gradlew qodanaScan
-   ```
-
-It generates results in `build/qodana/results/`. To view the results open one of:
-
-- `qodana.sarif.json` - opens the results in the IDE
-- `report/index.html` - to see the report in the browser
-
-See more information
-about [Gradle integration](https://www.jetbrains.com/help/qodana/quick-start.html#quickstart-gradle-plugin).
-
-## Useful links
-
-- [IntelliJ Platform SDK Plugin SDK][docs]
-- [IntelliJ Platform Gradle Plugin Documentation][docs:intellij-platform-gradle-plugin-docs]
-- [IntelliJ Platform Explorer][jb:ipe]
-- [JetBrains Marketplace Quality Guidelines][jb:quality-guidelines]
-- [IntelliJ Platform UI Guidelines][jb:ui-guidelines]
-- [JetBrains Marketplace Paid Plugins][jb:paid-plugins]
-- [IntelliJ SDK Code Samples][gh:code-samples]
-
-[docs]: https://plugins.jetbrains.com/docs/intellij
-[docs:plugin.xml]: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html?from=IJPluginReadmeFile
-[docs:publishing]: https://plugins.jetbrains.com/docs/intellij/publishing-plugin.html?from=IJPluginReadmeFile
-[docs:intellij-platform-gradle-plugin-docs]: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin.html?from=IJPluginReadmeFile
-[docs:intellij-platform-gradle-plugin-runIde]: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-tasks.html?from=IJPluginReadmeFile#runIde
-[docs:intellij-platform-gradle-plugin-verifyPlugin]: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-tasks.html?from=IJPluginReadmeFile#verifyPlugin
-[docs:logo]: https://plugins.jetbrains.com/docs/intellij/plugin-icon-file.html?from=IJPluginReadmeFile
-[docs:target-version]: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-dependencies-extension.html?from=IJPluginReadmeFile#target-versions
-[docs:testing]: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-dependencies-extension.html?from=IJPluginReadmeFile#testing
-
-[file:build.gradle.kts]: ./build.gradle.kts
-[file:CHANGELOG.md]: ./CHANGELOG.md
-[file:gradle.properties]: ./gradle.properties
-[file:plugin.xml]: ./src/main/resources/META-INF/plugin.xml
-
-[gh:code-samples]: https://github.com/JetBrains/intellij-sdk-code-samples
-
-[gradle:lifecycle-tasks]: https://docs.gradle.org/current/userguide/java_plugin.html#lifecycle_tasks
-
-[jb:github]: https://github.com/JetBrains/.github/blob/main/profile/README.md
-[jb:forum]: https://platform.jetbrains.com/
-[jb:quality-guidelines]: https://plugins.jetbrains.com/docs/marketplace/quality-guidelines.html
-[jb:paid-plugins]: https://plugins.jetbrains.com/docs/marketplace/paid-plugins-marketplace.html
-[jb:ipe]: https://jb.gg/ipe
-[jb:ui-guidelines]: https://jetbrains.github.io/ui
+The plugin icon and the icons used for `.tml` files and the tool window depict the Apache Tapestry logo, solely to
+identify the framework this plugin supports. The Apache License 2.0 covering this project's code does not grant rights
+to ASF trademarks (see section 6 of the license).

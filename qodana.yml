@@ -8,6 +8,11 @@ linter: jetbrains/qodana-jvm-community:2026.1
 profile:
   path: .qodana/profiles/plugin.yaml
 
+# Without this the containerized Gradle import fails with
+# "Invalid Gradle JDK configuration found": the linter cannot resolve the vendor-specific project
+# SDK name from .idea/misc.xml. 25 matches the jvmToolchain(25) of this build.
+projectJDK: "25"
+
 exclude:
   - name: All
     paths:

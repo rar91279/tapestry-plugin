@@ -1,0 +1,58 @@
+name: Release
+
+# Publishes a GitHub Release for a pushed version tag (e.g. v1.0.0) with the plugin
+# distribution attached. Marketplace publishing is deliberately not wired up here.
+on:
+  push:
+    tags: [ 'v*' ]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish release
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 25
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # See build.yml: the verifier's IDEs come from the Gradle cache; this is its plugin download home.
+      - name: Cache Plugin Verifier downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.pluginVerifier
+          key: plugin-verifier-${{ runner.os }}-${{ hashFiles('build.gradle.kts', 'gradle.properties') }}
+          restore-keys: plugin-verifier-${{ runner.os }}-
+
+      - name: Verify the tag matches the project version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version=$(grep '^version=' gradle.properties | cut -d= -f2)
+          if [ "$tag" != "$version" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match version=$version in gradle.properties" >&2
+            exit 1
+          fi
+
+      - name: Build and verify
+        run: ./gradlew check buildPlugin verifyPlugin
+
+      # The distribution zip is what "Install Plugin from Disk" expects; the plugin jar lives inside it.
+      - name: Collect release notes
+        run: ./gradlew getChangelog --no-header --no-summary --console=plain -q > release-notes.md
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body_path: release-notes.md
+          files: build/distributions/*.zip

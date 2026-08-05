@@ -1,0 +1,69 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and verify
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The 2026.2 platform requires a Java 25 toolchain (see jvmToolchain(25) in build.gradle.kts).
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 25
+
+      # Caches the Gradle user home, which is also where the Plugin Verifier's IDEs live: IPGP 2.x
+      # resolves them as Gradle dependencies (archive in caches/modules-2, unpacked by an artifact
+      # transform), not into ~/.pluginVerifier/ides — that directory stays empty.
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # The verifier additionally downloads the plugins its IDEs depend on (~2 GB) into its own home.
+      - name: Cache Plugin Verifier downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.pluginVerifier
+          key: plugin-verifier-${{ runner.os }}-${{ hashFiles('build.gradle.kts', 'gradle.properties') }}
+          restore-keys: plugin-verifier-${{ runner.os }}-
+
+      # `check` runs the fast `kotest` unit specs; `test` boots the IDE fixtures and needs a display.
+      - name: Run unit specs
+        run: ./gradlew check
+
+      - name: Run IDE fixture specs
+        run: xvfb-run --auto-servernum ./gradlew test
+
+      - name: Build plugin
+        run: ./gradlew buildPlugin
+
+      - name: Verify plugin
+        run: ./gradlew verifyPlugin
+
+      - name: Upload distribution
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-distribution
+          path: build/distributions/*.zip
+
+      - name: Upload reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: |
+            build/reports/
+            build/test-results/

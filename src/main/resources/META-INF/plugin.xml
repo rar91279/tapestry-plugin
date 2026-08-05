@@ -1,8 +1,30 @@
 <idea-plugin>
   <name>Tapestry</name>
   <id>com.github.rar91279.plugin.tapestry</id>
-  <vendor>rar91279</vendor>
-  <description>Provides advanced code insight features for Tapestry 5.1 framework.</description>
+  <vendor url="https://github.com/rar91279">rar91279</vendor>
+  <description><![CDATA[
+    <p>Code insight for the <a href="https://tapestry.apache.org">Apache Tapestry 5</a> web framework.</p>
+    <ul>
+      <li><b>Templates</b> — <code>.tml</code> highlighting, formatting and structure view, with completion and
+        references for components, pages, mixins and their parameters.</li>
+      <li><b>Tapestry Expression Language</b> — injected into template attributes, with completion, resolution,
+        Find Usages, rename and an unresolved-reference inspection.</li>
+      <li><b>Navigation</b> — class &harr; template, tag &rarr; documentation, and message catalog keys.</li>
+      <li><b>Generation</b> — new page / component / mixin actions, and Safe Delete that removes an element's
+        class, templates and message catalogs together.</li>
+      <li><b>Views</b> — a Tapestry project view pane and a tool window with live documentation
+        (modules, IoC services, core library) and a dependency/usage tree.</li>
+      <li><b>Gutter markers</b> for event handlers and injected beans, in Java and Kotlin sources.</li>
+    </ul>
+    <p>A maintained port of the plugin JetBrains retired into
+      <a href="https://github.com/JetBrains/intellij-obsolete-plugins/tree/master/tapestry">intellij-obsolete-plugins</a>,
+      rewritten in Kotlin for current IntelliJ Platform versions.</p>
+    <p><b>Requires IntelliJ IDEA Ultimate</b> — the plugin builds on the bundled Jakarta EE and Properties plugins,
+      so IntelliJ IDEA Community Edition is not supported.</p>
+    <p><small>Apache, Apache Tapestry, Tapestry and the Apache Tapestry logo are trademarks of
+      <a href="https://www.apache.org">The Apache Software Foundation</a>. This is an independent plugin for working
+      with Apache Tapestry and is not affiliated with or endorsed by the ASF.</small></p>
+  ]]></description>
 
   <depends>com.intellij.javaee</depends>
   <depends>com.intellij.properties</depends>
