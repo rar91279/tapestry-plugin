@@ -141,15 +141,15 @@
            class="com.intellij.ide.actions.NonTrivialActionGroup">
       <separator/>
       <action id="AddNewPageAction"
-              class="com.github.rar91279.plugin.tapestry.intellij.actions.createnew.AddNewPageAction"
+              class="com.github.rar91279.plugin.tapestry.intellij.actions.createnew.action.AddNewPageAction"
               text="Page" description="Add a new page."
               icon="AllIcons.Nodes.Parameter"/>
       <action id="AddNewComponentAction"
-              class="com.github.rar91279.plugin.tapestry.intellij.actions.createnew.AddNewComponentAction"
+              class="com.github.rar91279.plugin.tapestry.intellij.actions.createnew.action.AddNewComponentAction"
               text="Component" description="Add a new component."
               icon="AllIcons.Nodes.Class"/>
       <action id="AddNewMixinAction"
-              class="com.github.rar91279.plugin.tapestry.intellij.actions.createnew.AddNewMixinAction"
+              class="com.github.rar91279.plugin.tapestry.intellij.actions.createnew.action.AddNewMixinAction"
               text="Mixin" description="Add a new mixin."
               icon="AllIcons.Nodes.Method"/>
       <add-to-group group-id="NewGroup" relative-to-action="NewAction" anchor="after"/>

@@ -20,12 +20,34 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreePath
 
 /**
- * Safe Delete action provider.
+ * Provides safe delete functionality for Tapestry elements in the IntelliJ IDEA plugin.
+ *
+ * This provider handles deletion of Tapestry-specific elements including:
+ * - Individual PSI files
+ * - Presentation library elements (component classes with their templates and message catalogs)
+ * - Package nodes containing multiple Tapestry elements
+ *
+ * The provider integrates with IntelliJ's refactoring system to perform safe deletion
+ * with usage preview before actual deletion occurs.
  */
 class SafeDeleteProvider : DeleteProvider {
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
 
+    /**
+     * Performs the safe delete operation on selected elements from the Tapestry project view.
+     *
+     * This method collects all PSI elements to be deleted based on the current selection in the
+     * Tapestry project view pane. It handles different types of elements:
+     * - For PSI files, adds the file directly to the deletion list
+     * - For presentation elements, adds the class, all templates, and all message catalogs
+     * - For package nodes, recursively collects all presentation elements within the package
+     *
+     * The collected elements are then passed to IntelliJ's safe delete refactoring with
+     * usage preview enabled.
+     *
+     * @param dataContext the action data context containing the current project and selection information
+     */
     override fun deleteElement(dataContext: DataContext) {
         val project = dataContext.getData(CommonDataKeys.PROJECT)!!
 
@@ -88,6 +110,17 @@ class SafeDeleteProvider : DeleteProvider {
         safeDeleteRefactoring.run()
     }
 
+    /**
+     * Determines whether the selected elements can be safely deleted.
+     *
+     * This method validates that all selected elements meet the criteria for deletion:
+     * - Presentation elements must belong to the application library (not external libraries)
+     * - PSI files must not be in the local file system (e.g., TML files)
+     * - Package nodes must not be under the Libraries node
+     *
+     * @param dataContext the action data context containing the current project and selection information
+     * @return true if all selected elements can be deleted, false otherwise
+     */
     override fun canDeleteElement(dataContext: DataContext): Boolean {
         val project = dataContext.getData(CommonDataKeys.PROJECT)
 
@@ -123,16 +156,19 @@ class SafeDeleteProvider : DeleteProvider {
         return true
     }
 
-    companion object {
-        /** Adds the class, templates and message catalogs of the node's presentation element to [elementsList]. */
-        private fun addElementToDelete(child: DefaultMutableTreeNode, elementsList: MutableList<PsiElement>) {
-            val element = (child.userObject as TapestryNode).getValue() as PresentationLibraryElement
-            val elementClass = (element.elementClass.file as IntellijResource).psiFile
+    /**
+     * Adds the class, templates and message catalogs of the node's presentation element to [elementsList].
+     *
+     * @param child the tree node containing the presentation element to be deleted
+     * @param elementsList the mutable list to which PSI elements (class, templates, catalogs) will be added
+     */
+    private fun addElementToDelete(child: DefaultMutableTreeNode, elementsList: MutableList<PsiElement>) {
+        val element = (child.userObject as TapestryNode).getValue() as PresentationLibraryElement
+        val elementClass = (element.elementClass.file as IntellijResource).psiFile
 
-            elementsList.add(IdeaUtils.findPublicClass(elementClass)!!)
+        elementsList.add(IdeaUtils.findPublicClass(elementClass)!!)
 
-            for (template in element.template) elementsList.add((template as IntellijResource).psiFile)
-            for (catalog in element.messageCatalog) elementsList.add((catalog as IntellijResource).psiFile)
-        }
+        for (template in element.template) elementsList.add((template as IntellijResource).psiFile)
+        for (catalog in element.messageCatalog) elementsList.add((catalog as IntellijResource).psiFile)
     }
 }
