@@ -1,6 +1,5 @@
 package com.github.rar91279.plugin.tapestry.core
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.JavaRecursiveElementVisitor
 import com.intellij.psi.PsiCompiledElement
@@ -21,7 +20,6 @@ import org.jetbrains.annotations.VisibleForTesting
 object MappingDataCache {
 
     private const val TAPESTRY_MAPPING_FQN = "org.apache.tapestry5.services.LibraryMapping"
-    private const val TAPESTRY_MAPPING_TEST_FQN = "LibraryMapping"
 
     @JvmStatic
     fun getMappingData(file: PsiFile): Map<String, String> =
@@ -32,11 +30,7 @@ object MappingDataCache {
 
         file.sourceFile().accept(object : JavaRecursiveElementVisitor() {
             override fun visitNewExpression(expression: PsiNewExpression) {
-                val classReferenceQualifiedName = expression.classReference?.qualifiedName
-
-                if (classReferenceQualifiedName == TAPESTRY_MAPPING_FQN ||
-                    (ApplicationManager.getApplication().isUnitTestMode && classReferenceQualifiedName == TAPESTRY_MAPPING_TEST_FQN)
-                ) {
+                if (expression.classReference?.qualifiedName == TAPESTRY_MAPPING_FQN) {
                     val expressions = expression.argumentList?.expressions
                     if (expressions != null && expressions.size == 2) {
                         val prefix = expressions[0].constantStringValue()

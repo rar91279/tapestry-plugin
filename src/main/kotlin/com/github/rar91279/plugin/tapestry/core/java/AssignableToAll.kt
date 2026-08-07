@@ -5,9 +5,6 @@ package com.github.rar91279.plugin.tapestry.core.java
  */
 object AssignableToAll : IJavaType {
 
-    @JvmStatic
-    fun getInstance(): AssignableToAll = this
-
     override val name: String = "assignable"
 
     override fun isAssignableFrom(type: IJavaType?): Boolean = true

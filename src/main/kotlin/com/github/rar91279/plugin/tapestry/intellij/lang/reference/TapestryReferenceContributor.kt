@@ -34,9 +34,30 @@ import com.intellij.util.ProcessingContext
 /**
  * Contributes the references of a Tapestry template: component types and ids, page names,
  * parameter values and link targets.
+ *
+ * This contributor registers several reference providers that enable navigation and code insight
+ * for various Tapestry-specific attributes and elements in template files (.tml).
  */
 class TapestryReferenceContributor : PsiReferenceContributor() {
+    /**
+     * Key used to store and retrieve XmlTag instances in the processing context during pattern matching.
+     */
+    private val TAG_KEY: Key<XmlTag> = Key.create("TAG_KEY")
 
+    /**
+     * Pattern condition that accepts only XML elements contained within Tapestry template files (.tml).
+     */
+    private val TAPESTRY_FILE_CONDITION = object : PatternCondition<XmlElement>("tapestryFileCondition") {
+        override fun accepts(element: XmlElement, context: ProcessingContext?): Boolean =
+            element.containingFile is TmlFile
+    }
+
+
+    /**
+     * Registers all reference providers for Tapestry template elements.
+     *
+     * @param registrar the reference registrar to which providers are registered
+     */
     override fun registerReferenceProviders(registrar: PsiReferenceRegistrar) {
         val tapestryTemplateNamespaces = TapestryXmlExtension.tapestryTemplateNamespaces()
 
@@ -46,6 +67,11 @@ class TapestryReferenceContributor : PsiReferenceContributor() {
         registerLinkHrefReference(registrar)
     }
 
+    /**
+     * Registers a reference provider for href attributes in link tags, enabling file path references.
+     *
+     * @param registrar the reference registrar to which the provider is registered
+     */
     private fun registerLinkHrefReference(registrar: PsiReferenceRegistrar) {
         registrar.registerReferenceProvider(
             XmlPatterns.xmlAttributeValue("href").inside(XmlPatterns.xmlTag().withName("link")).with(TAPESTRY_FILE_CONDITION),
@@ -55,6 +81,14 @@ class TapestryReferenceContributor : PsiReferenceContributor() {
         )
     }
 
+    /**
+     * Registers reference providers for type attributes and alt attributes with message: prefix.
+     *
+     * Handles references to component class definitions and property file message keys.
+     *
+     * @param registrar the reference registrar to which providers are registered
+     * @param namespaces the array of Tapestry namespace URIs to match
+     */
     private fun registerTypeAttrValueReferenceProvider(registrar: PsiReferenceRegistrar, namespaces: Array<String>) {
         registrar.registerReferenceProvider(
             XmlPatterns.xmlAttributeValue("type").withNamespace(*namespaces).with(TAPESTRY_FILE_CONDITION),
@@ -81,6 +115,12 @@ class TapestryReferenceContributor : PsiReferenceContributor() {
         )
     }
 
+    /**
+     * Registers a reference provider for id attributes, enabling navigation to embedded component fields.
+     *
+     * @param registrar the reference registrar to which the provider is registered
+     * @param namespaces the array of Tapestry namespace URIs to match
+     */
     private fun registerIdAttrValueReferenceProvider(registrar: PsiReferenceRegistrar, namespaces: Array<String>) {
         registrar.registerReferenceProvider(
             XmlPatterns.xmlAttributeValue("id").withNamespace(*namespaces).with(TAPESTRY_FILE_CONDITION),
@@ -95,6 +135,13 @@ class TapestryReferenceContributor : PsiReferenceContributor() {
         )
     }
 
+    /**
+     * Registers a reference provider for parameter value attributes in Tapestry component tags.
+     *
+     * Resolves parameter values to Java fields, methods, or page templates based on parameter type and prefix.
+     *
+     * @param registrar the reference registrar to which the provider is registered
+     */
     private fun registerAttrValueReferenceProvider(registrar: PsiReferenceRegistrar) {
         val tapestryTagCondition = object : PatternCondition<XmlTag>("tapestryTagCondition") {
             override fun accepts(tag: XmlTag, context: ProcessingContext?): Boolean =
@@ -123,6 +170,16 @@ class TapestryReferenceContributor : PsiReferenceContributor() {
         )
     }
 
+    /**
+     * Creates references from parameter value attributes to their Java bindings (fields or methods).
+     *
+     * Uses the value resolver chain to resolve the attribute value according to the parameter's default prefix.
+     *
+     * @param attrValue the XML attribute value element
+     * @param project the Tapestry project context
+     * @param parameter the parameter definition for this attribute
+     * @return an array of references to the resolved Java elements, or empty if resolution fails
+     */
     private fun getAttrValueReference(
         attrValue: XmlAttributeValue,
         project: TapestryProject,
@@ -132,9 +189,9 @@ class TapestryReferenceContributor : PsiReferenceContributor() {
         val elementClass = element.elementClass as? IntellijJavaClassType ?: return PsiReference.EMPTY_ARRAY
 
         val resolvedValue = try {
-            ValueResolverChain.getInstance().resolve(project, elementClass, attrValue.value, parameter.defaultPrefix)
+            ValueResolverChain.resolve(project, elementClass, attrValue.value, parameter.defaultPrefix)
         }
-        catch (ex: Exception) {
+        catch (_: Exception) {
             return PsiReference.EMPTY_ARRAY
         } ?: return PsiReference.EMPTY_ARRAY
 
@@ -145,6 +202,15 @@ class TapestryReferenceContributor : PsiReferenceContributor() {
         }
     }
 
+    /**
+     * Creates a reference from a type attribute value to the component's Java class.
+     *
+     * Provides code completion with available component names from the current Tapestry project.
+     *
+     * @param attributeValue the XML attribute value element
+     * @param range the text range within the element for the reference
+     * @return an array containing the reference, or empty if range is null or component cannot be resolved
+     */
     private fun getReferenceToComponentClass(attributeValue: XmlAttributeValue, range: TextRange?): Array<PsiReference> {
         if (range == null) return PsiReference.EMPTY_ARRAY
 
@@ -160,6 +226,15 @@ class TapestryReferenceContributor : PsiReferenceContributor() {
         })
     }
 
+    /**
+     * Creates a reference from an id attribute value to the embedded component's Java field.
+     *
+     * Provides code completion with all embedded component IDs defined in the current component.
+     *
+     * @param attr the XML attribute value element
+     * @param range the text range within the element for the reference
+     * @return an array containing the reference, or empty if range is null or field cannot be found
+     */
     private fun getReferenceToEmbeddedComponent(attr: XmlAttributeValue, range: TextRange?): Array<PsiReference> {
         if (range == null) return PsiReference.EMPTY_ARRAY
 
@@ -174,6 +249,15 @@ class TapestryReferenceContributor : PsiReferenceContributor() {
         })
     }
 
+    /**
+     * Creates a self-reference for a component ID attribute value.
+     *
+     * Used when the ID doesn't correspond to an embedded component field.
+     *
+     * @param attrValue the XML attribute value element
+     * @param range the text range within the element for the reference
+     * @return an array containing the self-reference, or empty if range is null
+     */
     private fun getReferenceByComponentId(attrValue: XmlAttributeValue, range: TextRange?): Array<PsiReference> {
         if (range == null) return PsiReference.EMPTY_ARRAY
 
@@ -183,8 +267,17 @@ class TapestryReferenceContributor : PsiReferenceContributor() {
         })
     }
 
+    /**
+     * Creates a reference from a page attribute value to the corresponding page's template file.
+     *
+     * Provides code completion with all available page names in the current Tapestry project.
+     *
+     * @param component the component containing the page parameter
+     * @param pageAttrValue the XML attribute value element containing the page name
+     * @return an array containing the reference to the page template file
+     */
     private fun getReferenceToPage(component: TapestryComponent, pageAttrValue: XmlAttributeValue): Array<PsiReference> {
-        val range = ElementManipulators.getValueTextRange(pageAttrValue) ?: return PsiReference.EMPTY_ARRAY
+        val range = ElementManipulators.getValueTextRange(pageAttrValue)
         val page = component.project.findPage(pageAttrValue.value)
 
         return arrayOf(object : TapestryPsiReferenceBase<PsiElement>(pageAttrValue, range) {
@@ -196,24 +289,25 @@ class TapestryReferenceContributor : PsiReferenceContributor() {
         })
     }
 
+    /**
+     * Extracts the parent XmlTag from an XML attribute value.
+     *
+     * @param value the XML attribute value element
+     * @return the parent XmlTag, or null if the value is not inside a tag
+     */
     private fun parentTag(value: XmlAttributeValue): XmlTag? = (value.parent as? XmlAttribute)?.parent
 
-    /** A [PsiReferenceProvider] built from the given reference factory. */
+    /**
+     * Creates a [PsiReferenceProvider] from a lambda that produces references for an element.
+     *
+     * @param references the function that creates references given a PSI element and processing context
+     * @return a PsiReferenceProvider that delegates to the given function
+     */
     private fun referenceProvider(
         references: (element: PsiElement, context: ProcessingContext) -> Array<PsiReference>
     ): PsiReferenceProvider = object : PsiReferenceProvider() {
 
         override fun getReferencesByElement(element: PsiElement, context: ProcessingContext): Array<PsiReference> =
             references(element, context)
-    }
-
-    private companion object {
-
-        val TAG_KEY: Key<XmlTag> = Key.create("TAG_KEY")
-
-        val TAPESTRY_FILE_CONDITION = object : PatternCondition<XmlElement>("tapestryFileCondition") {
-            override fun accepts(element: XmlElement, context: ProcessingContext?): Boolean =
-                element.containingFile is TmlFile
-        }
     }
 }

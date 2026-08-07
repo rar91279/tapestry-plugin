@@ -16,9 +16,6 @@ object ValueResolverChain : ChainBase(
 
     private val logger = Logger.getInstance(ValueResolverChain::class.java)
 
-    @JvmStatic
-    fun getInstance(): ValueResolverChain = this
-
     /**
      * Resolves a value.
      *

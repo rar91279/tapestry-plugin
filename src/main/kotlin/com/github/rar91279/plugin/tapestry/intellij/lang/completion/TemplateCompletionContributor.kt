@@ -106,8 +106,7 @@ class TemplateCompletionContributor : CompletionContributor() {
                         val qualifier = qualifierOf(attributeValue)
 
                         val resolvedValue = try {
-                            ValueResolverChain.getInstance()
-                                .resolve(tapestryProject, elementClass, qualifier, parameter.defaultPrefix)
+                            ValueResolverChain.resolve(tapestryProject, elementClass, qualifier, parameter.defaultPrefix)
                         }
                         catch (ex: Exception) {
                             logger.error(ex)

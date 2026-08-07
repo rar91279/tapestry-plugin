@@ -74,8 +74,7 @@ class TemplateTagAnnotator : XmlRecursiveElementVisitor(), Annotator {
         val value = attribute.valueElement ?: return
 
         val resolvedValue = try {
-            ValueResolverChain.getInstance()
-                .resolve(tapestryProject, elementClass, attribute.value, parameter.defaultPrefix)
+            ValueResolverChain.resolve(tapestryProject, elementClass, attribute.value, parameter.defaultPrefix)
         }
         catch (pce: ProcessCanceledException) {
             throw pce
