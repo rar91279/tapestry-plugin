@@ -20,7 +20,6 @@ object AddTapestrySupportUtil {
 
     private val logger = Logger.getInstance(AddTapestrySupportUtil::class.java)
 
-    @JvmStatic
     fun addSupportInWriteCommandAction(
         module: Module,
         configuration: TapestryFacetConfiguration,

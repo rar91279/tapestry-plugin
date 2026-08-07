@@ -21,7 +21,6 @@ object MappingDataCache {
 
     private const val TAPESTRY_MAPPING_FQN = "org.apache.tapestry5.services.LibraryMapping"
 
-    @JvmStatic
     fun getMappingData(file: PsiFile): Map<String, String> =
         CachedValuesManager.getProjectPsiDependentCache(file, ::computeMappingData)
 

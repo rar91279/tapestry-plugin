@@ -22,7 +22,6 @@ object ClassExternalizer {
      * @param targetClass the class where the representation is going to be included.
      * @return the element representation, or `null` if the element can't be externalized to a class.
      */
-    @JvmStatic
     @Throws(Exception::class)
     fun externalize(element: Any, targetClass: IJavaClassType): String? = try {
         when (element) {

@@ -12,7 +12,15 @@ import com.intellij.psi.tree.TokenSet
 import com.github.rar91279.plugin.tapestry.lang.TelFileType
 import com.github.rar91279.plugin.tapestry.lang.TelLanguage
 
-/** The token types of the Tapestry Expression Language. */
+/**
+ * The token types of the Tapestry Expression Language.
+ *
+ * The `@JvmField` annotations here are load-bearing, unlike elsewhere in this (otherwise Java-free) codebase:
+ * the generated lexer `src/main/gen/.../_TelLexer.java` does `import static ...TelTokenTypes.*` and returns
+ * these as bare static fields. Drop the annotations and the generated Java stops compiling. They are kept on
+ * every member rather than only the 19 the lexer currently uses, so regenerating the lexer can't break the
+ * build by starting to reference one of the others.
+ */
 object TelTokenTypes {
 
     @JvmField

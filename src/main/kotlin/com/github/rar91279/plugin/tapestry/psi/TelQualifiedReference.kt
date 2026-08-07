@@ -207,7 +207,6 @@ abstract class TelQualifiedReference(private val myElement: TelReferenceQualifie
             expression.resolveInner()
         }
 
-        @JvmStatic
         fun getSuperClassSubstitutor(superClass: PsiClass, classType: PsiClassType): PsiSubstitutor {
             val classResolveResult = classType.resolveGenerics()
             val resolved = classResolveResult.element ?: return PsiSubstitutor.EMPTY

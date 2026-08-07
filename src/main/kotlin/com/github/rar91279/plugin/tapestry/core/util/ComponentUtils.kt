@@ -13,7 +13,6 @@ object ComponentUtils {
     /**
      * @return `true` if the given tag is an opening or closing tag of a Tapestry component.
      */
-    @JvmStatic
     fun isComponentTag(tag: XmlTag): Boolean =
         isTapestryNamespace(tag.namespace) || hasTapestryNamespaceAttribute(tag.attributes)
 

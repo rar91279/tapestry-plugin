@@ -15,7 +15,6 @@ object ClassLocator {
      * @param packageName the package to scan, e.g. `documentation.core.components`.
      * @return one location per entry found under the package, sub-packages included.
      */
-    @JvmStatic
     fun locate(classLoader: ClassLoader, packageName: String): List<ClassLocation> {
         val path = packageName.replace('.', '/')
         val locations = ArrayList<ClassLocation>()

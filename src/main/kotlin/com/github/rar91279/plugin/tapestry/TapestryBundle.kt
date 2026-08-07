@@ -36,7 +36,6 @@ object TapestryBundle : DynamicBundle(BUNDLE) {
      * @param params optional parameters to substitute into the message template
      * @return the localized and formatted message string
      */
-    @JvmStatic
     @Nls
     fun message(
         @PropertyKey(resourceBundle = BUNDLE) key: @PropertyKey(resourceBundle = BUNDLE) String, vararg params: Any

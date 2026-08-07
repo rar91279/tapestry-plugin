@@ -42,11 +42,9 @@ class TapestryModuleSupportLoader(module: Module) :
 
     companion object {
 
-        @JvmStatic
         fun getInstance(module: Module): TapestryModuleSupportLoader =
             module.getService(TapestryModuleSupportLoader::class.java)
 
-        @JvmStatic
         fun getInstance(element: PsiElement): TapestryModuleSupportLoader? {
             val file = element.containingFile ?: return null
             if (file.fileType !is TmlFileType) return null
@@ -55,11 +53,9 @@ class TapestryModuleSupportLoader(module: Module) :
         }
 
         /** The Tapestry project associated with a module, or null if there is none. */
-        @JvmStatic
         fun getTapestryProject(module: Module?): TapestryProject? =
             if (module == null || module.isDisposed) null else getInstance(module).tapestryProject
 
-        @JvmStatic
         fun getTapestryProject(element: XmlElement): TapestryProject? = getInstance(element)?.tapestryProject
     }
 }

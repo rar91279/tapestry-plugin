@@ -26,7 +26,6 @@ object TypeCoercionValidator {
         ::validateEnumType
     )
 
-    @JvmStatic
     fun canCoerce(
         project: TapestryProject,
         sourceType: IJavaType,

@@ -25,7 +25,6 @@ abstract class TelCompositeElementType(debugName: String) :
     companion object {
 
         /** A `prefix:value` binding; a `message:key` one references the message catalog. */
-        @JvmField
         val EXPLICIT_BINDING: TelCompositeElementType = object : TelCompositeElementType("ExplicitBinding") {
 
             override fun createPsiElement(node: ASTNode): PsiElement = object : TelCompositeElement(node) {
@@ -52,49 +51,38 @@ abstract class TelCompositeElementType(debugName: String) :
             }
         }
 
-        @JvmField
         val REFERENCE_EXPRESSION: TelCompositeElementType = object : TelCompositeElementType("ReferenceExpression") {
             override fun createPsiElement(node: ASTNode): PsiElement = TelReferenceExpression(node)
         }
 
-        @JvmField
         val ARGUMENT_LIST: TelCompositeElementType = object : TelCompositeElementType("ArgumentList") {
             override fun createPsiElement(node: ASTNode): PsiElement = TelArgumentList(node)
         }
 
-        @JvmField
         val METHOD_CALL_EXPRESSION: TelCompositeElementType = object : TelCompositeElementType("MethodCallExpression") {
             override fun createPsiElement(node: ASTNode): PsiElement = TelMethodCallExpression(node)
         }
 
-        @JvmField
         val RANGE_EXPRESSION: TelCompositeElementType = object : TelCompositeElementType("RangeExpression") {
             override fun createPsiElement(node: ASTNode): PsiElement = TelRangeExpression(node)
         }
 
-        @JvmField
         val NOT_OP_EXPRESSION: TelCompositeElementType = object : TelCompositeElementType("NotOpExpression") {
             override fun createPsiElement(node: ASTNode): PsiElement = TelNotOpExpression(node)
         }
 
-        @JvmField
         val LIST_EXPRESSION: TelCompositeElementType =
             TelLiteralExpressionType("ListExpression", CommonClassNames.JAVA_UTIL_LIST)
 
-        @JvmField
         val STRING_LITERAL: TelCompositeElementType =
             TelLiteralExpressionType("StringLiteral", CommonClassNames.JAVA_LANG_STRING)
 
-        @JvmField
         val INTEGER_LITERAL: TelCompositeElementType = TelLiteralExpressionType("IntegerLiteral", PsiTypes.intType())
 
-        @JvmField
         val DECIMAL_LITERAL: TelCompositeElementType = TelLiteralExpressionType("DoubleLiteral", PsiTypes.doubleType())
 
-        @JvmField
         val BOOLEAN_LITERAL: TelCompositeElementType = TelLiteralExpressionType("BooleanLiteral", PsiTypes.booleanType())
 
-        @JvmField
         val NULL_LITERAL: TelCompositeElementType = TelLiteralExpressionType("NullLiteral", PsiTypes.nullType())
     }
 }

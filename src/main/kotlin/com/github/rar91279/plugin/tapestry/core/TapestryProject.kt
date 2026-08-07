@@ -197,12 +197,12 @@ class TapestryProject(
         val result = HashMap<String, MutableList<String>>()
 
         val scope = GlobalSearchScope.moduleWithDependenciesAndLibrariesScope(module)
-        for (psiMethod in JavaMethodNameIndex.getInstance().get("contributeComponentClassResolver", module.project, scope)) {
+        for (psiMethod in JavaMethodNameIndex.getInstance().getMethods("contributeComponentClassResolver", module.project, scope)) {
             result.addMappingData(MappingDataCache.getMappingData(psiMethod.containingFile))
         }
 
         // method annotated with @Contribute(ComponentClassResolver.class)
-        for (annotation in JavaAnnotationIndex.getInstance().get("Contribute", module.project, scope)) {
+        for (annotation in JavaAnnotationIndex.getInstance().getAnnotations("Contribute", module.project, scope)) {
             val attributes = annotation.parameterList.attributes
             if (attributes.size != 1) continue
 
@@ -222,11 +222,7 @@ class TapestryProject(
     }
 
     companion object {
-        @JvmField
         val JAVA_STRUCTURE_DEPENDENCY: Array<Any> = arrayOf(PsiModificationTracker.MODIFICATION_COUNT)
-
-        @JvmField
-        val OUT_OF_CODE_BLOCK_DEPENDENCY: Array<Any> = arrayOf(PsiModificationTracker.MODIFICATION_COUNT)
 
         /** The application library id. */
         const val APPLICATION_LIBRARY_ID: String = "application"

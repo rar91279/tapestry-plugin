@@ -74,7 +74,6 @@ class TapestryFrameworkSupportProvider : FacetBasedFrameworkSupportProvider<Tape
 
     companion object {
 
-        @JvmStatic
         fun setupConfiguration(conf: TapestryFacetConfiguration, module: Module, version: TapestryVersion?) {
             conf.version = version
             if (StringUtil.isEmpty(conf.filterName)) conf.filterName = StringUtil.toLowerCase(module.name)

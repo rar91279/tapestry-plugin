@@ -9,7 +9,6 @@ import com.github.rar91279.plugin.tapestry.core.java.IJavaClassType
  */
 object ClassUtils {
 
-    @JvmStatic
     fun instanceOf(items: Array<Any>, aClass: Class<*>): Boolean = items.all { aClass.isInstance(it) }
 
     /**
@@ -17,7 +16,6 @@ object ClassUtils {
      *
      * @return the property name mapped to the place in the code where that property is bound to.
      */
-    @JvmStatic
     fun getClassProperties(javaClassType: IJavaClassType?): Map<String, Any> {
         if (javaClassType == null) return HashMap()
 
@@ -52,7 +50,6 @@ object ClassUtils {
     /**
      * Computes the name of a field without any leading `$` and `_` characters.
      */
-    @JvmStatic
     fun getName(name: String): String =
         if (name.startsWith("$") || name.startsWith("_")) name.substring(1) else name
 }

@@ -69,7 +69,6 @@ class TelParser : PsiParser {
 
         private val LAST_FOUND_IDENT: Key<String> = Key.create("LAST_FOUND_IDENT")
 
-        @JvmStatic
         fun parseExpression(builder: PsiBuilder) {
             if (!consumeToken(builder, TAP5_EL_START)) {
                 builder.advanceLexer()

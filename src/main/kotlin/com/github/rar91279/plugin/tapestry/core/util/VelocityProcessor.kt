@@ -15,7 +15,6 @@ object VelocityProcessor {
      *
      * @throws RuntimeException if an error occurs processing the template.
      */
-    @JvmStatic
     fun processClasspathTemplate(templatePath: String, context: Map<String, Any>): String {
         // Read the template via the plugin classloader rather than Velocity's ClasspathResourceLoader:
         // Velocity is provided by the platform, so its own classloader can't see plugin resources.

@@ -30,9 +30,12 @@ import java.awt.event.InputEvent
 class AddNewComponentActionTest : EmptyFixtureSpec({
 
     beforeTest {
-        mockkStatic(TapestryUtils::class, IdeaUtils::class, JavaPsiFacade::class)
-        // Kotlin callers invoke the companion directly, so the @JvmStatic bridge alone is not enough.
-        mockkObject(TapestryModuleSupportLoader.Companion)
+        // mockkObject for our own Kotlin objects/companions: it intercepts the members Kotlin call sites
+        // actually invoke. mockkStatic only replaces JVM static bridges, which exist solely for Java callers
+        // and which this (Java-free) plugin no longer generates.
+        mockkObject(TapestryUtils, IdeaUtils, TapestryModuleSupportLoader.Companion)
+        // JavaPsiFacade is a platform Java class with a genuine static getInstance.
+        mockkStatic(JavaPsiFacade::class)
     }
     afterTest { unmockkAll() }
 

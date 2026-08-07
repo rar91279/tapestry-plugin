@@ -34,7 +34,6 @@ abstract class AbstractValueResolver : Command {
         /**
          * Trims and removes the prefix of the value.
          */
-        @JvmStatic
         fun getCleanValue(value: String?): String? {
             if (value == null) return null
 
@@ -56,7 +55,6 @@ abstract class AbstractValueResolver : Command {
          * @return the defined prefix in the value, the default prefix if no prefix was defined
          *         or `null` if the given value is invalid.
          */
-        @JvmStatic
         fun getPrefix(value: String?, defaultPrefix: String?): String? {
             if (value == null) return null
 

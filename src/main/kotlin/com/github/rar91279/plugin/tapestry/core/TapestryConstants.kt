@@ -38,7 +38,6 @@ object TapestryConstants {
     const val SERVICES_PACKAGE: String = "services"
     const val BASE_PACKAGE: String = "base"
 
-    @JvmField
     val ELEMENT_PACKAGES: Array<String> = arrayOf(PAGES_PACKAGE, COMPONENTS_PACKAGE, BASE_PACKAGE, MIXINS_PACKAGE)
 
     /** The suffix of the module builder class. */

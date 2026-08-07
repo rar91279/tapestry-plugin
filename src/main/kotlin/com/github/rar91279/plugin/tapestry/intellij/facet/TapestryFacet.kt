@@ -18,7 +18,6 @@ class TapestryFacet(
 
     companion object {
 
-        @JvmStatic
         fun findFacetConfiguration(module: Module): TapestryFacetConfiguration? =
             FacetManager.getInstance(module).getFacetByType(TapestryFacetType.ID)?.configuration
     }

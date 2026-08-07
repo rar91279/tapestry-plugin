@@ -17,7 +17,6 @@ object TemplateExternalizer {
      * @param namespacePrefix the Tapestry namespace prefix in the template where the representation is going to be included.
      * @return the element representation, or `null` if the element can't be externalized to a template.
      */
-    @JvmStatic
     @Throws(Exception::class)
     fun externalize(element: Any, namespacePrefix: String?): String? = when (element) {
         is TapestryComponent -> {

@@ -88,18 +88,14 @@ class TapestryXmlExtension : DefaultXmlExtension() {
             TapestryConstants.TEMPLATE_NAMESPACE4
         )
 
-        @JvmStatic
         fun isTapestryTemplateNamespace(namespace: String?): Boolean = namespace in TEMPLATE_NAMESPACES
 
-        @JvmStatic
         fun getTapestryNamespace(tag: XmlTag?): String =
             TEMPLATE_NAMESPACES.firstOrNull { tag?.getPrefixByNamespace(it) != null } ?: TapestryConstants.TEMPLATE_NAMESPACE
 
-        @JvmStatic
         fun getTapestryTemplateDescriptor(tag: XmlTag): TapestryNamespaceDescriptor? =
             tag.getNSDescriptor(getTapestryNamespace(tag), true) as? TapestryNamespaceDescriptor
 
-        @JvmStatic
         fun tapestryTemplateNamespaces(): Array<String> = TEMPLATE_NAMESPACES.toTypedArray()
     }
 }

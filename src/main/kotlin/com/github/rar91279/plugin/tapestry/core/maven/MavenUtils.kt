@@ -26,7 +26,6 @@ object MavenUtils {
      * @param tapestryVersion    the selected Tapestry version.
      * @throws IOException if an error occurs creating the pom.xml file.
      */
-    @JvmStatic
     @Throws(IOException::class)
     fun createMavenSupport(path: String, mavenConfiguration: MavenConfiguration, tapestryVersion: String) {
         val model = Model()

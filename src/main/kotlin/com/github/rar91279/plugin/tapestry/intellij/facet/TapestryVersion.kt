@@ -8,7 +8,6 @@ enum class TapestryVersion(private val version: String) {
 
     companion object {
 
-        @JvmStatic
         fun fromString(name: String?): TapestryVersion? = entries.firstOrNull { it.toString() == name }
     }
 }

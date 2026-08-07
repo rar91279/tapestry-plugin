@@ -40,47 +40,36 @@ class TemplateColorSettingsPage : ColorSettingsPage {
 
     companion object {
 
-        @JvmField
         val TAG_NAME: TextAttributesKey =
             TextAttributesKey.createTextAttributesKey("TAPESTRY_COMPONENT_TAG", XmlHighlighterColors.HTML_TAG_NAME)
 
-        @JvmField
         val ATTR_NAME: TextAttributesKey =
             TextAttributesKey.createTextAttributesKey("TAPESTRY_COMPONENT_PARAMATER", XmlHighlighterColors.HTML_ATTRIBUTE_NAME)
 
-        @JvmField
         val TEL_BOUNDS: TextAttributesKey =
             TextAttributesKey.createTextAttributesKey("TEL_BOUNDS", JavaHighlightingColors.KEYWORD)
 
-        @JvmField
         val TEL_IDENT: TextAttributesKey =
             TextAttributesKey.createTextAttributesKey("TEL_IDENT", JavaHighlightingColors.LOCAL_VARIABLE_ATTRIBUTES)
 
-        @JvmField
         val TEL_DOT: TextAttributesKey =
             TextAttributesKey.createTextAttributesKey("TEL_DOT", JavaHighlightingColors.DOT)
 
-        @JvmField
         val TEL_NUMBER: TextAttributesKey =
             TextAttributesKey.createTextAttributesKey("TEL_NUMBER", JavaHighlightingColors.NUMBER)
 
-        @JvmField
         val TEL_PARENTHS: TextAttributesKey =
             TextAttributesKey.createTextAttributesKey("TEL_PARENTHS", JavaHighlightingColors.PARENTHESES)
 
-        @JvmField
         val TEL_BRACKETS: TextAttributesKey =
             TextAttributesKey.createTextAttributesKey("TEL_BRACKETS", JavaHighlightingColors.BRACKETS)
 
-        @JvmField
         val TEL_STRING: TextAttributesKey =
             TextAttributesKey.createTextAttributesKey("TEL_STRING", JavaHighlightingColors.STRING)
 
-        @JvmField
         val TEL_BACKGROUND: TextAttributesKey =
             TextAttributesKey.createTextAttributesKey("TEL_BACKGROUND", JspHighlighterColors.JSP_SCRIPTING_BACKGROUND)
 
-        @JvmField
         val TEL_BAD_CHAR: TextAttributesKey =
             TextAttributesKey.createTextAttributesKey("TEL_BAD_CHAR", HighlighterColors.BAD_CHARACTER)
 

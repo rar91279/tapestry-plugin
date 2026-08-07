@@ -45,14 +45,12 @@ object IdeaUtils {
     /**
      * @return `true` if the given event was created from a module node, `false` otherwise.
      */
-    @JvmStatic
     fun isModuleNode(event: AnActionEvent): Boolean =
         event.getData(CommonDataKeys.PROJECT) != null && event.getData(LangDataKeys.MODULE_CONTEXT) != null
 
     /**
      * @return all the module web roots except the WEB-INF directory.
      */
-    @JvmStatic
     fun findWebRoots(module: Module): List<WebRoot> =
         getWebFacet(module)?.webRoots?.filter { it.relativePath != "/WEB-INF" } ?: emptyList()
 
@@ -62,7 +60,6 @@ object IdeaUtils {
      * @return the new/existing directory.
      * @throws IncorrectOperationException if an error occurs executing.
      */
-    @JvmStatic
     @Throws(IncorrectOperationException::class)
     fun findOrCreateDirectoryForPackage(sourceDirectory: PsiDirectory, packageName: String): PsiDirectory =
         packageName.split('.')
@@ -74,18 +71,15 @@ object IdeaUtils {
     /**
      * @return `true` if the given directory is a web root in the given module, `false` otherwise.
      */
-    @JvmStatic
     fun isWebRoot(module: Module, directory: VirtualFile): Boolean =
         getWebFacet(module)?.webRoots?.any { directory == it.file } ?: false
 
-    @JvmStatic
     fun findPublicClass(psiFile: PsiFile?): PsiClass? =
         (psiFile as? PsiClassOwner)?.let { findPublicClass(it.classes) }
 
     /**
      * @return the first public class in the given array of classes, `null` if none is found.
      */
-    @JvmStatic
     fun findPublicClass(classes: Array<PsiClass>): PsiClass? = classes.firstOrNull { clazz ->
         clazz.isValid &&
         clazz.modifierList?.hasModifierProperty(PsiModifier.PUBLIC) == true &&
@@ -97,7 +91,6 @@ object IdeaUtils {
     /**
      * Executes some code inside a write action command block.
      */
-    @JvmStatic
     fun runWriteCommand(project: Project?, runnable: Runnable) {
         CommandProcessor.getInstance().executeCommand(
             project, { ApplicationManager.getApplication().runWriteAction(runnable) }, "", null
@@ -107,7 +100,6 @@ object IdeaUtils {
     /**
      * Finds the first parent node whose user object is of the given type.
      */
-    @JvmStatic
     @Suppress("UNCHECKED_CAST")
     fun <T> findFirstParent(node: DefaultMutableTreeNode?, clazz: Class<T>): T? {
         var parent = node?.parent as DefaultMutableTreeNode?
@@ -125,7 +117,6 @@ object IdeaUtils {
      *
      * @return the corresponding JavaType instance, or `null` if the type can't be converted into a JavaType.
      */
-    @JvmStatic
     fun createJavaTypeFromPsiType(module: Module, type: PsiType?): IJavaType? {
         when (type) {
             is PsiClassType -> {
@@ -151,10 +142,8 @@ object IdeaUtils {
     /**
      * @return the web facet of the given module, or `null` if the module doesn't have one.
      */
-    @JvmStatic
     fun getWebFacet(module: Module): WebFacet? = FacetManager.getInstance(module).getFacetByType(WebFacet.ID)
 
-    @JvmStatic
     fun getPackage(psiElement: PsiElement?): PsiPackage? {
         if (psiElement is PsiDirectory) {
             val project = psiElement.project
@@ -167,10 +156,8 @@ object IdeaUtils {
         return psiElement as? PsiPackage
     }
 
-    @JvmStatic
     fun getNameElement(tag: XmlTag): XmlElement? = tag.firstChild.nextSiblings().filterIsInstance<XmlElement>().firstOrNull()
 
-    @JvmStatic
     fun getNameElementClosing(tag: XmlTag): XmlElement? = tag.lastChild.prevSiblings().filterIsInstance<XmlElement>().firstOrNull()
 
     private fun PsiElement?.nextSiblings(): Sequence<PsiElement> = generateSequence(this) { it.nextSibling }.drop(1)

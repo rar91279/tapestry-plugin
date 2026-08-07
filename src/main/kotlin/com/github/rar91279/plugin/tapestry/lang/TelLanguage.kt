@@ -12,7 +12,6 @@ class TelLanguage private constructor() : Language("TEL"), InjectableLanguage {
     }
 
     companion object {
-        @JvmField
         val INSTANCE: TelLanguage = TelLanguage()
     }
 }

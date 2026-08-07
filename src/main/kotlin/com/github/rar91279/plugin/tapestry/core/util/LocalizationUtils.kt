@@ -17,7 +17,6 @@ object LocalizationUtils {
      * `Somefile_en_GB.properties` -> `Somefile.properties`,
      * `Somefile.properties` -> `Somefile.properties`
      */
-    @JvmStatic
     fun unlocalizeFileName(filename: String): String {
         val lastDot = filename.lastIndexOf('.')
         val extension = if (lastDot >= 0) lastDot else filename.length

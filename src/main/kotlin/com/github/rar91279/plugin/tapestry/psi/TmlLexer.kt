@@ -17,7 +17,6 @@ class TmlLexer : XHtmlLexer(createElAwareXmlLexer()) {
 
     companion object {
 
-        @JvmStatic
         fun createElAwareXmlLexer(): XmlLexer {
             val internalLexer = __XmlLexer(null)
             internalLexer.setElTypes(TelTokenTypes.TAP5_EL_CONTENT, TelTokenTypes.TAP5_EL_CONTENT)

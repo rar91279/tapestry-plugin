@@ -276,7 +276,6 @@ abstract class PresentationLibraryElement internal constructor(
          *
          * @throws NotTapestryElementException if the given parameters do not correspond to a Tapestry element.
          */
-        @JvmStatic
         fun createElementInstance(
             library: TapestryLibrary,
             elementClass: IJavaClassType,
@@ -292,7 +291,6 @@ abstract class PresentationLibraryElement internal constructor(
          *
          * @throws NotTapestryElementException if the given parameters do not correspond to a Tapestry element.
          */
-        @JvmStatic
         fun createProjectElementInstance(
             elementClass: IJavaClassType,
             project: TapestryProject?
@@ -304,7 +302,6 @@ abstract class PresentationLibraryElement internal constructor(
         /**
          * Checks if the files in a group of resources are all valid.
          */
-        @JvmStatic
         fun checkAllValidResources(resources: Array<IResource>): Boolean =
             resources.all { it.file?.exists() == true }
 

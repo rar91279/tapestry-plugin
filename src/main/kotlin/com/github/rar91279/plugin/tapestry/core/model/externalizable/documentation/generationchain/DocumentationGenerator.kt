@@ -29,7 +29,6 @@ object DocumentationGenerator {
     private val HOME_ELEMENT_TYPES = arrayOf("components", "pages", "mixins")
 
     /** @return the rendered HTML, or `null` if the element type is not documentable. */
-    @JvmStatic
     fun generate(element: Any): String? = when (element) {
         is Home -> renderHome(element)
         is TapestryComponent -> renderPresentationElement(element, "components", COMPONENT_ICON)

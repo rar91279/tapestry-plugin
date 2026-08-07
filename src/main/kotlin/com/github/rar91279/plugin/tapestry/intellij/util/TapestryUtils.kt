@@ -60,7 +60,6 @@ object TapestryUtils {
      * or its own `META-INF/MANIFEST.MF`. Dependency jars are deliberately not scanned, so merely
      * depending on Tapestry (whose own jars carry that attribute) does not flag a module.
      */
-    @JvmStatic
     fun isTapestryModule(module: Module?): Boolean {
         if (module == null) return false
         if (FacetManager.getInstance(module).getFacetsByType(TapestryFacetType.ID).isNotEmpty()) return true
@@ -74,7 +73,6 @@ object TapestryUtils {
      * By convention the module class lives in `<root>.services`, so the trailing `.services`
      * segment is dropped. Returns `null` if the module declares no module class.
      */
-    @JvmStatic
     fun getModuleClassesRootPackage(module: Module): String? =
         getDeclaredModuleClasses(module).firstNotNullOfOrNull { rootPackageForModuleClass(it) }
 
@@ -83,7 +81,6 @@ object TapestryUtils {
      * `de.betterbits.comp.security.services.SecurityModule` → `de.betterbits.comp.security`.
      * Returns `null` for a module class with no usable package.
      */
-    @JvmStatic
     fun rootPackageForModuleClass(moduleClassFqn: String): String? =
         StringUtil.trimEnd(StringUtil.getPackageName(moduleClassFqn), ".services").ifEmpty { null }
 
@@ -95,7 +92,6 @@ object TapestryUtils {
      * `META-INF/MANIFEST.MF` declares `Tapestry-Module-Classes`. Unlike [getDeclaredModuleClasses],
      * this looks only at dependency libraries. Cached per module.
      */
-    @JvmStatic
     fun getClasspathLibraryModules(module: Module): List<LibraryModule> =
         CachedValuesManager.getManager(module.project).getCachedValue(module) {
             val result = ArrayList<LibraryModule>()
@@ -116,7 +112,6 @@ object TapestryUtils {
      * `pom.xml` (maven-jar-plugin `manifestEntries`) or its own `META-INF/MANIFEST.MF`.
      * Dependency jars are deliberately not scanned. Cached per module.
      */
-    @JvmStatic
     fun getDeclaredModuleClasses(module: Module): List<String> =
         CachedValuesManager.getManager(module.project).getCachedValue(module) {
             val roots = ModuleRootManager.getInstance(module)
@@ -156,14 +151,12 @@ object TapestryUtils {
     /**
      * @return all modules in the given project with Tapestry support.
      */
-    @JvmStatic
     fun getAllTapestryModules(project: Project): Array<Module> =
         ModuleManager.getInstance(project).modules.filter { isTapestryModule(it) }.toTypedArray()
 
     /**
      * @return the element in a Tapestry component tag that identifies the type of component.
      */
-    @JvmStatic
     fun getComponentIdentifier(tag: XmlTag?): XmlElement? = when {
         tag == null -> null
         // embedded components using invisible instrumentation
@@ -171,14 +164,11 @@ object TapestryUtils {
         else -> getIdentifyingAttribute(tag)
     }
 
-    @JvmStatic
     fun getIdentifyingAttribute(tag: XmlTag): XmlAttribute? = getTTypeAttribute(tag) ?: getTIdAttribute(tag)
 
-    @JvmStatic
     fun getTIdAttribute(tag: XmlTag): XmlAttribute? =
         tag.getAttribute("id", TapestryXmlExtension.getTapestryNamespace(tag))
 
-    @JvmStatic
     fun getTTypeAttribute(tag: XmlTag): XmlAttribute? =
         tag.getAttribute("type", TapestryXmlExtension.getTapestryNamespace(tag))
 
@@ -187,7 +177,6 @@ object TapestryUtils {
      *
      * @return `true` if the parameter is defined in the class, `false` otherwise.
      */
-    @JvmStatic
     fun parameterDefinedInClass(paramName: String, elementClass: IntellijJavaClassType, tag: XmlTag): Boolean {
         val field = findIdentifyingField(elementClass, tag) ?: return false
         val annotation = field.annotations[TapestryConstants.COMPONENT_ANNOTATION] ?: return false
@@ -196,21 +185,18 @@ object TapestryUtils {
         return fieldParameters.any { it.split("=").let { parts -> parts.size == 2 && parts[0] == paramName } }
     }
 
-    @JvmStatic
     fun getFieldId(field: IJavaField): String? {
         val annotation = field.annotations[TapestryConstants.COMPONENT_ANNOTATION] ?: return null
 
         return annotation.parameters["id"]?.firstOrNull()?.ifEmpty { null } ?: field.name
     }
 
-    @JvmStatic
     fun findIdentifyingField(tag: XmlTag): IJavaField? {
         val element = getTapestryProject(tag)?.findElementByTemplate(tag.containingFile) ?: return null
 
         return findIdentifyingField(element.elementClass as IntellijJavaClassType, tag)
     }
 
-    @JvmStatic
     fun getEmbeddedComponentIds(tag: XmlTag): List<String> {
         val element = getTapestryProject(tag)?.findElementByTemplate(tag.containingFile) ?: return emptyList()
 
@@ -223,11 +209,9 @@ object TapestryUtils {
         return elementClass.getFields(false).values.firstOrNull { tagId == getFieldId(it) }
     }
 
-    @JvmStatic
     fun getTapestryProject(psiElement: PsiElement): TapestryProject? =
         TapestryModuleSupportLoader.getTapestryProject(ModuleUtilCore.findModuleForPsiElement(psiElement))
 
-    @JvmStatic
     fun getTapestryAttribute(tag: XmlTag, attrName: String): XmlAttribute? =
         tag.getAttribute(attrName, TapestryXmlExtension.getTapestryNamespace(tag)) ?: tag.getAttribute(attrName, "")
 
@@ -236,7 +220,6 @@ object TapestryUtils {
      *
      * @throws IllegalStateException if the component file already existed and `replaceExistingFiles = false`
      */
-    @JvmStatic
     @Throws(IllegalStateException::class)
     fun createComponent(
         module: Module,
@@ -267,7 +250,6 @@ object TapestryUtils {
      *
      * @throws IllegalStateException if the page file already existed and `replaceExistingFiles = false`
      */
-    @JvmStatic
     @Throws(IllegalStateException::class)
     fun createPage(
         module: Module,
@@ -298,7 +280,6 @@ object TapestryUtils {
      *
      * @throws IllegalStateException if the mixin file already existed and `replaceExistingFiles = false`
      */
-    @JvmStatic
     @Throws(IllegalStateException::class)
     fun createMixin(module: Module, classSourceDirectory: PsiDirectory, mixinName: String, replaceExistingFiles: Boolean) {
         val rootPackage = TapestryModuleSupportLoader.getTapestryProject(module)?.mixinsRootPackage
@@ -331,7 +312,6 @@ object TapestryUtils {
     /**
      * @return the component that the given tag represents.
      */
-    @JvmStatic
     fun getTypeOfTag(tag: XmlTag): TapestryComponent? =
         CachedValuesManager.getProjectPsiDependentCache(tag) {
             ModuleUtilCore.findModuleForPsiElement(tag)?.let { getTypeOfTag(it, tag) }
@@ -363,7 +343,6 @@ object TapestryUtils {
     /**
      * @return the Tapestry namespace prefix declared in the given template, or `null` if none is found.
      */
-    @JvmStatic
     fun getTapestryNamespacePrefix(template: XmlFile): String? {
         val rootTag = template.document?.rootTag ?: return null
 

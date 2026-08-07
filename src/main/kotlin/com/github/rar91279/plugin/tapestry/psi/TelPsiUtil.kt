@@ -13,7 +13,6 @@ object TelPsiUtil {
 
     private const val NULL_TYPE_NAME = "???"
 
-    @JvmStatic
     fun parseReference(text: String, project: Project): TelReferenceExpression {
         val expression = parseFtlFile("\${$text}", project)
         val interpolation = expression.firstChild
@@ -22,10 +21,8 @@ object TelPsiUtil {
         return elStart.nextSibling as TelReferenceExpression
     }
 
-    @JvmStatic
     fun parseFtlFile(text: String, project: Project): PsiElement =
         PsiFileFactory.getInstance(project).createFileFromText("dummy.tel", TelFileType, text).firstChild
 
-    @JvmStatic
     fun getPresentableText(psiType: PsiType?): String = psiType?.presentableText ?: NULL_TYPE_NAME
 }

@@ -10,14 +10,12 @@ import com.intellij.psi.PsiTypes
  */
 object TapestryPropertyNamingUtil {
 
-    @JvmStatic
     fun isWaitOrNotifyOfObject(method: PsiMethod): Boolean {
         if (method.containingClass?.qualifiedName != CommonClassNames.JAVA_LANG_OBJECT) return false
 
         return method.name in setOf("wait", "notify", "notifyAll")
     }
 
-    @JvmStatic
     fun isPropertyGetter(method: PsiMethod): Boolean {
         if (method.isConstructor) return false
 
@@ -37,7 +35,6 @@ object TapestryPropertyNamingUtil {
         return method.parameterList.parametersCount == 0
     }
 
-    @JvmStatic
     fun isPropertySetter(method: PsiMethod): Boolean {
         if (method.isConstructor) return false
 
@@ -47,21 +44,17 @@ object TapestryPropertyNamingUtil {
                (method.returnType == null || method.returnType == PsiTypes.voidType())
     }
 
-    @JvmStatic
     fun isPropertyAccessor(method: PsiMethod): Boolean = isPropertyGetter(method) || isPropertySetter(method)
 
-    @JvmStatic
     fun getPropertyNameFromAccessor(accessor: PsiMethod): String? = when {
         isPropertySetter(accessor) -> propertyNameFromSetter(accessor)
         isPropertyGetter(accessor) -> propertyNameFromGetter(accessor)
         else -> null
     }
 
-    @JvmStatic
     fun findPropertyGetter(aClass: PsiClass?, propertyName: String): PsiMethod? =
         findPropertyAccessor(aClass, propertyName) { if (isPropertyGetter(it)) propertyNameFromGetter(it) else null }
 
-    @JvmStatic
     fun findPropertySetter(aClass: PsiClass?, propertyName: String): PsiMethod? =
         findPropertyAccessor(aClass, propertyName) { if (isPropertySetter(it)) propertyNameFromSetter(it) else null }
 

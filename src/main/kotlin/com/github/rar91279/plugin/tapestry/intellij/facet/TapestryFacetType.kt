@@ -70,10 +70,8 @@ class TapestryFacetType internal constructor() :
 
     companion object {
 
-        @JvmField
         val ID: FacetTypeId<TapestryFacet> = FacetTypeId("tapestry")
 
-        @JvmStatic
         fun getInstance(): TapestryFacetType = findInstance(TapestryFacetType::class.java)
     }
 }

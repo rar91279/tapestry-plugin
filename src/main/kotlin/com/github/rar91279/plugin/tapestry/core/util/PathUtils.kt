@@ -11,7 +11,6 @@ object PathUtils {
     const val TAPESTRY_PATH_SEPARATOR = "/"
 
     /** The file path separator character. */
-    @JvmField
     val SYSTEM_PATH_SEPARATOR: String = File.separator
 
     /** The unix file path separator character. */
@@ -29,7 +28,6 @@ object PathUtils {
      *
      * @param includeFinalSeparator if a path separator should be included in the end.
      */
-    @JvmStatic
     fun packageIntoPath(packageName: String?, includeFinalSeparator: Boolean): String {
         if (packageName.isNullOrEmpty()) return ""
 
@@ -43,7 +41,6 @@ object PathUtils {
      *
      * @param removeLastElement if the last element of the path should be removed from the resulting package.
      */
-    @JvmStatic
     fun pathIntoPackage(path: String?, removeLastElement: Boolean): String {
         if (path.isNullOrEmpty()) return ""
 
@@ -60,7 +57,6 @@ object PathUtils {
      * Constructs the full package name of a component.
      * Example: `com.myapp.pages` | `admin/Login` -> `com.myapp.pages.admin`
      */
-    @JvmStatic
     fun getFullComponentPackage(basePackage: String?, componentName: String?): String {
         if (componentName.isNullOrEmpty() || !componentName.contains(TAPESTRY_PATH_SEPARATOR)) {
             return basePackage ?: ""
@@ -74,7 +70,6 @@ object PathUtils {
      * Computes the last element of a path.
      * Example: `admin/Login` -> `Login`
      */
-    @JvmStatic
     fun getLastPathElement(path: String?): String {
         if (path.isNullOrEmpty()) return ""
 
@@ -85,7 +80,6 @@ object PathUtils {
      * Computes the first element of a path.
      * Example: `admin/Login` -> `admin`
      */
-    @JvmStatic
     fun getFirstPathElement(path: String?): String {
         if (path.isNullOrEmpty()) return ""
         if (!path.contains(TAPESTRY_PATH_SEPARATOR)) return path
@@ -99,7 +93,6 @@ object PathUtils {
      *
      * @param removeIfOnlyOneElement remove the last element even if it's the only element in the path.
      */
-    @JvmStatic
     fun removeLastFilePathElement(path: String?, removeIfOnlyOneElement: Boolean): String {
         if (path.isNullOrEmpty()) return ""
 
@@ -112,13 +105,11 @@ object PathUtils {
      * Computes the component file name from the component name.
      * Example: `admin/Login` -> `Login`
      */
-    @JvmStatic
     fun getComponentFileName(componentName: String?): String = getLastPathElement(componentName)
 
     /**
      * Returns a given path in UNIX format.
      */
-    @JvmStatic
     fun toUnixPath(path: String?): String? = path?.replace(File.separatorChar, '/')
 
     private fun findSeparator(path: String): String? = when {

@@ -11,12 +11,10 @@ object Validators {
     /**
      * @return `true` if the given string is a valid package name, `false` otherwise.
      */
-    @JvmStatic
     fun isValidPackageName(packageName: String?): Boolean = packageName != null && PACKAGE_NAME.matches(packageName)
 
     /**
      * @return `true` if the given string is a valid component name, `false` otherwise.
      */
-    @JvmStatic
     fun isValidComponentName(componentName: String?): Boolean = componentName != null && COMPONENT_NAME.matches(componentName)
 }
