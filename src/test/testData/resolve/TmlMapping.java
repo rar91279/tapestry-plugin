@@ -1,7 +1,7 @@
-import org.apache.tapestry5.services;
+import org.apache.tapestry5.services.LibraryMapping;
 
 class TestModule {
   public static void contributeComponentClassResolver(){
-    new LibraryMapping("foo", "com.testapp.components.other");
+    new org.apache.tapestry5.services.LibraryMapping("foo", "com.testapp.components.other");
   }
 }

@@ -1,6 +1,7 @@
 package com.github.rar91279.plugin.tapestry.intellij.toolwindow
 
 import com.intellij.ide.util.PropertiesComponent
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
@@ -14,7 +15,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiClassOwner
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
-import com.github.rar91279.plugin.tapestry.core.events.FileSystemListenerAdapter
+import com.github.rar91279.plugin.tapestry.core.events.FileSystemListener
 import com.github.rar91279.plugin.tapestry.core.java.IJavaClassType
 import com.github.rar91279.plugin.tapestry.core.model.presentation.PresentationLibraryElement
 import com.github.rar91279.plugin.tapestry.core.resource.IResource
@@ -30,7 +31,9 @@ import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.SwingUtilities
 
-class TapestryToolWindow(private val project: Project) : FileSystemListenerAdapter() {
+// Disposable so the events-manager subscriptions and the message bus connection die with the tool window
+// content; the manager lives on the module and would otherwise keep notifying a discarded tool window.
+class TapestryToolWindow(private val project: Project) : FileSystemListener, Disposable {
 
     private val tabbedPane = JBTabbedPane(JBTabbedPane.BOTTOM)
     val mainPanel: JComponent = JPanel(BorderLayout()).apply { add(tabbedPane, BorderLayout.CENTER) }
@@ -66,7 +69,7 @@ class TapestryToolWindow(private val project: Project) : FileSystemListenerAdapt
             override fun modulesAdded(project: Project, modules: List<Module>) = reload()
         }
 
-        val messageBusConnection = project.messageBus.connect()
+        val messageBusConnection = project.messageBus.connect(this)
         messageBusConnection.subscribe(ModuleListener.TOPIC, moduleListener)
 
         // Follow the active editor: show the Tapestry element of the selected tab.
@@ -148,12 +151,20 @@ class TapestryToolWindow(private val project: Project) : FileSystemListenerAdapt
         }
     }
 
+    /**
+     * Subscribes to every module's events manager, parented to this tool window. Safe to re-run when modules
+     * change: registration is idempotent.
+     */
     private fun reload() {
         for (module in ModuleManager.getInstance(project).modules) {
             val eventsManager = TapestryModuleSupportLoader.getTapestryProject(module)?.eventsManager ?: continue
-            eventsManager.removeFileSystemListener(this)
-            eventsManager.addFileSystemListener(this)
+            eventsManager.addFileSystemListener(this, this)
         }
+    }
+
+    override fun dispose() {
+        // Nothing of our own to release: the events-manager subscriptions and the message bus connection are
+        // both parented to this Disposable and are torn down by the platform.
     }
 
     companion object {

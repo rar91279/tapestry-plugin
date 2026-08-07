@@ -1,27 +1,5 @@
 package com.github.rar91279.plugin.tapestry.intellij.view
 
-import com.intellij.ide.PsiCopyPasteManager
-import com.intellij.ide.SelectInTarget
-import com.intellij.ide.projectView.ProjectView
-import com.intellij.ide.projectView.impl.AbstractProjectViewPane
-import com.intellij.ide.projectView.impl.ProjectViewTree
-import com.intellij.ide.ui.customization.CustomizationUtil
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.CommonDataKeys
-import com.intellij.openapi.actionSystem.DataSink
-import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.intellij.openapi.actionSystem.IdeActions
-import com.intellij.openapi.actionSystem.LangDataKeys
-import com.intellij.openapi.actionSystem.PlatformCoreDataKeys
-import com.intellij.openapi.actionSystem.PlatformDataKeys
-import com.intellij.openapi.module.Module
-import com.intellij.openapi.module.ModuleManager
-import com.intellij.openapi.project.ModuleListener
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.ActionCallback
-import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiDirectory
-import com.intellij.psi.PsiFile
 import com.github.rar91279.plugin.tapestry.core.events.FileSystemListener
 import com.github.rar91279.plugin.tapestry.core.events.TapestryModelChangeListener
 import com.github.rar91279.plugin.tapestry.core.exceptions.NotTapestryElementException
@@ -38,14 +16,25 @@ import com.github.rar91279.plugin.tapestry.intellij.util.TapestryUtils
 import com.github.rar91279.plugin.tapestry.intellij.view.actions.GroupElementFilesToggleAction
 import com.github.rar91279.plugin.tapestry.intellij.view.actions.ShowLibrariesTogleAction
 import com.github.rar91279.plugin.tapestry.intellij.view.actions.StartInBasePackageAction
-import com.github.rar91279.plugin.tapestry.intellij.view.nodes.ClassNode
-import com.github.rar91279.plugin.tapestry.intellij.view.nodes.ComponentNode
-import com.github.rar91279.plugin.tapestry.intellij.view.nodes.ExternalLibraryNode
-import com.github.rar91279.plugin.tapestry.intellij.view.nodes.FileNode
-import com.github.rar91279.plugin.tapestry.intellij.view.nodes.MixinNode
-import com.github.rar91279.plugin.tapestry.intellij.view.nodes.PageNode
-import com.github.rar91279.plugin.tapestry.intellij.view.nodes.RootNode
-import com.github.rar91279.plugin.tapestry.intellij.view.nodes.TapestryNode
+import com.github.rar91279.plugin.tapestry.intellij.view.nodes.*
+import com.intellij.ide.PsiCopyPasteManager
+import com.intellij.ide.SelectInTarget
+import com.intellij.ide.projectView.ProjectView
+import com.intellij.ide.projectView.impl.AbstractProjectViewPane
+import com.intellij.ide.projectView.impl.ProjectViewTree
+import com.intellij.ide.ui.customization.CustomizationUtil
+import com.intellij.openapi.actionSystem.*
+import com.intellij.openapi.module.Module
+import com.intellij.openapi.module.ModuleManager
+import com.intellij.openapi.project.ModuleListener
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.ActionCallback
+import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.platform.ide.progress.ModalTaskOwner.component
+import com.intellij.platform.ide.progress.ModalTaskOwner.project
+import com.intellij.psi.PsiDirectory
+import com.intellij.psi.PsiFile
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.TreeSpeedSearch
 import com.intellij.ui.tree.AsyncTreeModel
@@ -85,28 +74,38 @@ class TapestryProjectViewPane(project: Project) :
     private val messageBusConnection = project.messageBus.connect()
     private var structureTreeModel: StructureTreeModel<TapestryProjectTreeStructure>? = null
 
+    // Owns the events-manager subscriptions. Disposed explicitly from dispose() rather than relying on this
+    // pane being torn down via Disposer.dispose(), so the subscriptions are released either way.
+    private val subscriptions = Disposer.newDisposable("TapestryProjectViewPane subscriptions")
+
     /** The project this pane belongs to; exposed for the other view classes in this package. */
     val project: Project get() = myProject
 
     init {
         messageBusConnection.subscribe(ModuleListener.TOPIC, moduleListener)
-
-        for (module in ModuleManager.getInstance(myProject).modules) {
-            TapestryModuleSupportLoader.getTapestryProject(module)!!.eventsManager.addFileSystemListener(this)
-            TapestryModuleSupportLoader.getTapestryProject(module)!!.eventsManager.addTapestryModelListener(this)
-        }
+        subscribeToModules()
     }
 
-    override fun isInitiallyVisible(): Boolean {
-        shown = ModuleManager.getInstance(myProject).modules.any { TapestryUtils.isTapestryModule(it) }
-        return shown
+    /**
+     * Subscribes to every module's events manager, parented to this pane so the subscriptions die with it.
+     * Safe to re-run when modules change: registration is idempotent, and modules gone from the project
+     * take their (now unreachable) events manager with them.
+     */
+    private fun subscribeToModules() {
+        ModuleManager.getInstance(myProject).modules
+            .mapNotNull { TapestryModuleSupportLoader.getTapestryProject(it)?.eventsManager }
+            .onEach {
+                it.addFileSystemListener(this, subscriptions)
+                it.addTapestryModelListener(this, subscriptions)
+            }
     }
+
+    override fun isInitiallyVisible()= ModuleManager.getInstance(myProject).modules.any { TapestryUtils.isTapestryModule(it) }
 
     override fun addToolbarActions(defaultActionGroup: DefaultActionGroup) {
-        for (action in defaultActionGroup.childActionsOrStubs) {
-            if (action.templatePresentation.text == "Autoscroll to Source") continue
-            defaultActionGroup.remove(action)
-        }
+        defaultActionGroup.childActionsOrStubs
+            .filterNot { it.templatePresentation.text == "Autoscroll to Source" }
+            .onEach { defaultActionGroup.remove(it) }
 
         defaultActionGroup.addAction(object : StartInBasePackageAction() {
             override fun isSelected(e: AnActionEvent) = isFromBasePackage
@@ -187,6 +186,7 @@ class TapestryProjectViewPane(project: Project) :
     override fun modelChanged() = reload()
 
     override fun dispose() {
+        Disposer.dispose(subscriptions)
         messageBusConnection.disconnect()
         super.dispose()
     }
@@ -199,16 +199,17 @@ class TapestryProjectViewPane(project: Project) :
     override fun uiDataSnapshot(sink: DataSink) {
         super.uiDataSnapshot(sink)
 
-        sink.set(CommonDataKeys.PROJECT, myProject)
+        sink[CommonDataKeys.PROJECT] = myProject
 
         val selected = getSelectedSimpleNode() as? TapestryNode
         if (selected != null) {
             val value = selected.getValue()
             if ((value is PsiDirectory || value is PsiFile) &&
-                IdeaUtils.findFirstParent(getSelectedTreeNode(), ExternalLibraryNode::class.java) == null) {
-                sink.set(LangDataKeys.IDE_VIEW, ideView)
+                IdeaUtils.findFirstParent(getSelectedTreeNode(), ExternalLibraryNode::class.java) == null
+            ) {
+                sink[LangDataKeys.IDE_VIEW] = ideView
             }
-            sink.set(PlatformCoreDataKeys.MODULE, selected.module)
+            sink[PlatformCoreDataKeys.MODULE] = selected.module
         }
 
         // PSI-derived, so provided lazily rather than computed eagerly on the EDT.
@@ -219,8 +220,8 @@ class TapestryProjectViewPane(project: Project) :
             } else null
         }
 
-        sink.set(PlatformDataKeys.DELETE_ELEMENT_PROVIDER, SafeDeleteProvider())
-        sink.set(PlatformCoreDataKeys.SELECTED_ITEM, getSelectedTreeNode())
+        sink[PlatformDataKeys.DELETE_ELEMENT_PROVIDER] = SafeDeleteProvider()
+        sink[PlatformCoreDataKeys.SELECTED_ITEM] = getSelectedTreeNode()
     }
 
     /** The module of the currently selected Tapestry node, or `null` if none is selected. */
@@ -281,17 +282,24 @@ class TapestryProjectViewPane(project: Project) :
 
             if (selectedNode is PageNode || selectedNode is ComponentNode || selectedNode is MixinNode) {
                 val selectedValue = selectedNode.getValue()
-                toolWindow.update(getSelectedModule(), selectedValue,
-                    listOf((selectedValue as PresentationLibraryElement).elementClass))
+                toolWindow.update(
+                    getSelectedModule(), selectedValue,
+                    listOf((selectedValue as PresentationLibraryElement).elementClass)
+                )
             }
 
             if (selectedNode is ClassNode || selectedNode is FileNode) {
-                val parentSelectedNode = ((newPath.lastPathComponent as DefaultMutableTreeNode).parent as DefaultMutableTreeNode)
-                    .userObject as TapestryNode
+                val parentSelectedNode =
+                    ((newPath.lastPathComponent as DefaultMutableTreeNode).parent as DefaultMutableTreeNode)
+                        .userObject as TapestryNode
 
                 val parentSelectedValue = parentSelectedNode.getValue()
                 if (parentSelectedValue is PresentationLibraryElement) {
-                    toolWindow.update(getSelectedModule(), parentSelectedValue, listOf(parentSelectedValue.elementClass))
+                    toolWindow.update(
+                        getSelectedModule(),
+                        parentSelectedValue,
+                        listOf(parentSelectedValue.elementClass)
+                    )
                 } else {
                     var elementClass: IJavaClassType? = null
                     var component: PresentationLibraryElement? = null
@@ -302,16 +310,19 @@ class TapestryProjectViewPane(project: Project) :
                     if (selectedNode is ClassNode) {
                         elementClass = IntellijJavaClassType(module, selectedNode.getValue() as PsiFile)
                         try {
-                            component = PresentationLibraryElement.createProjectElementInstance(elementClass, tapestryProject)
+                            component =
+                                PresentationLibraryElement.createProjectElementInstance(elementClass, tapestryProject)
                         } catch (ex: NotTapestryElementException) {
                             // the selected class is not a Tapestry element
                         }
                     }
 
                     if (selectedNode is FileNode) {
-                        elementClass = tapestryProject.findElementByTemplate(selectedNode.getValue() as PsiFile)?.elementClass
+                        elementClass =
+                            tapestryProject.findElementByTemplate(selectedNode.getValue() as PsiFile)?.elementClass
                         if (elementClass != null) {
-                            component = PresentationLibraryElement.createProjectElementInstance(elementClass, tapestryProject)
+                            component =
+                                PresentationLibraryElement.createProjectElementInstance(elementClass, tapestryProject)
                         }
                     }
 
@@ -322,7 +333,8 @@ class TapestryProjectViewPane(project: Project) :
             }
 
             if (selectedNode !is PageNode && selectedNode !is ComponentNode && selectedNode !is MixinNode &&
-                selectedNode !is ClassNode && selectedNode !is FileNode) {
+                selectedNode !is ClassNode && selectedNode !is FileNode
+            ) {
                 toolWindow.update(null, null, emptyList())
             }
         }
@@ -330,16 +342,9 @@ class TapestryProjectViewPane(project: Project) :
     }
 
     private fun modulesChanged() {
-        var shouldShow = false
-        for (module in ModuleManager.getInstance(myProject).modules) {
-            val tapestryProject = TapestryModuleSupportLoader.getTapestryProject(module)!!
-            tapestryProject.eventsManager.removeFileSystemListener(this)
-            tapestryProject.eventsManager.removeTapestryModelListener(this)
-            tapestryProject.eventsManager.addFileSystemListener(this)
-            tapestryProject.eventsManager.addTapestryModelListener(this)
+        subscribeToModules()
 
-            if (TapestryUtils.isTapestryModule(module)) shouldShow = true
-        }
+        val shouldShow = ModuleManager.getInstance(myProject).modules.any { TapestryUtils.isTapestryModule(it) }
 
         if (shouldShow && !shown) addMe()
         if (!shouldShow && shown) removeMe()
@@ -360,7 +365,6 @@ class TapestryProjectViewPane(project: Project) :
         private const val ID = "TapestryProjectView"
 
         /** Returns the project instance of this view pane. */
-        @JvmStatic
         fun getInstance(project: Project): TapestryProjectViewPane =
             ProjectView.getInstance(project).getProjectViewPaneById(ID) as TapestryProjectViewPane
     }
