@@ -19,10 +19,7 @@ import com.github.rar91279.plugin.tapestry.core.model.presentation.Mixin
 import com.github.rar91279.plugin.tapestry.core.model.presentation.Page
 import com.github.rar91279.plugin.tapestry.core.model.presentation.PresentationLibraryElement
 import com.github.rar91279.plugin.tapestry.core.model.presentation.TapestryComponent
-import com.github.rar91279.plugin.tapestry.core.model.presentation.components.BlockComponent
-import com.github.rar91279.plugin.tapestry.core.model.presentation.components.BodyComponent
-import com.github.rar91279.plugin.tapestry.core.model.presentation.components.ContainerComponent
-import com.github.rar91279.plugin.tapestry.core.model.presentation.components.ParameterComponent
+import com.github.rar91279.plugin.tapestry.core.model.presentation.components.BuiltinComponent
 import com.github.rar91279.plugin.tapestry.core.util.LocalizationUtils
 import com.github.rar91279.plugin.tapestry.intellij.TapestryModuleSupportLoader
 import com.github.rar91279.plugin.tapestry.intellij.facet.TapestryFacet
@@ -163,15 +160,7 @@ class TapestryProject(
         get() = ourNameToComponentMap.get(module).keys.toTypedArray()
 
     val builtinComponents: Collection<PresentationLibraryElement>
-        get() = listOfNotNull(
-            BodyComponent.getInstance(this),
-            BlockComponent.getInstance(this),
-            ParameterComponent.getInstance(this),
-            ContainerComponent.getInstance(this)
-        )
-
-    val builtinPages: Collection<PresentationLibraryElement>
-        get() = emptyList()
+        get() = BuiltinComponent.all(this)
 
     /**
      * Finds a Tapestry element, either a component or a page.
@@ -344,7 +333,6 @@ private class ElementsCachedMap(
             if (mixins) map.putAll(library.mixins.values, library.shortName)
         }
         if (components) map.putAll(project.builtinComponents, null)
-        if (pages) map.putAll(project.builtinPages, null)
 
         return map
     }
