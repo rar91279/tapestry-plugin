@@ -1,6 +1,6 @@
 package com.github.rar91279.plugin.tapestry.tests.core.java
 
-import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.application.readActionBlocking
 import com.github.rar91279.plugin.tapestry.core.java.IJavaArrayType
 import com.github.rar91279.plugin.tapestry.core.java.IJavaClassType
 import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaMethod
@@ -19,7 +19,7 @@ class IntellijJavaMethodTest : JavaModuleFixtureSpec({
     )
 
     "test_full_method" {
-        runReadAction {
+        readActionBlocking {
             val method = method("method1")
             method.name shouldBe "method1"
             (method.returnType as IJavaClassType).fullyQualifiedName shouldBe "com.app.util.Class1"
@@ -30,7 +30,7 @@ class IntellijJavaMethodTest : JavaModuleFixtureSpec({
     }
 
     "test_empty_methods" {
-        runReadAction {
+        readActionBlocking {
             val method2 = method("method2")
             val method3 = method("method3")
             val method4 = method("method4")
@@ -58,7 +58,7 @@ class IntellijJavaMethodTest : JavaModuleFixtureSpec({
     }
 
     "getAnnotation".config(enabled = jdkAvailable) {
-        runReadAction {
+        readActionBlocking {
             val method1 = method("method1")
             method1.getAnnotation(null) shouldBe null
             method1.getAnnotation("java.lang.SuppressWarnings")!!.fullyQualifiedName shouldBe "java.lang.SuppressWarnings"
@@ -66,13 +66,13 @@ class IntellijJavaMethodTest : JavaModuleFixtureSpec({
     }
 
     "getContainingClass" {
-        runReadAction {
+        readActionBlocking {
             method("method1").containingClass!!.name shouldBe "Class1"
         }
     }
 
     "getPsiMethod" {
-        runReadAction {
+        readActionBlocking {
             method("method1").psiMethod.name shouldBe "method1"
         }
     }
