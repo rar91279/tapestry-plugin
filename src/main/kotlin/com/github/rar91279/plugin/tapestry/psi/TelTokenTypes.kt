@@ -1,11 +1,9 @@
 package com.github.rar91279.plugin.tapestry.psi
 
-import com.intellij.extapi.psi.ASTWrapperPsiElement
 import com.intellij.lang.ASTNode
 import com.intellij.lang.LanguageParserDefinitions
 import com.intellij.lang.PsiBuilderFactory
 import com.intellij.openapi.util.Key
-import com.intellij.psi.PsiElement
 import com.intellij.psi.TokenType
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.IFileElementType
@@ -13,20 +11,6 @@ import com.intellij.psi.tree.ILazyParseableElementType
 import com.intellij.psi.tree.TokenSet
 import com.github.rar91279.plugin.tapestry.lang.TelFileType
 import com.github.rar91279.plugin.tapestry.lang.TelLanguage
-import com.github.rar91279.plugin.tapestry.lang.TmlLanguage
-
-/** A token of the Tapestry Expression Language. */
-class TelTokenType(debugName: String) : IElementType(debugName, TelFileType.language) {
-
-    fun createPsiElement(node: ASTNode): PsiElement = ASTWrapperPsiElement(node)
-}
-
-/** The file element type of a Tapestry template. */
-object TmlElementType {
-
-    @JvmField
-    val TML_FILE: IFileElementType = IFileElementType("TML_FILE", TmlLanguage)
-}
 
 /** The token types of the Tapestry Expression Language. */
 object TelTokenTypes {

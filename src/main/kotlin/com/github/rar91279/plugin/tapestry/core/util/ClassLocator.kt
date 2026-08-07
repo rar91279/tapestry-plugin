@@ -6,9 +6,6 @@ import java.net.URI
 import java.net.URL
 import java.util.jar.JarFile
 
-/** A resource found on the classpath: its simple name (no extension) and the URL to read it from. */
-data class ClassLocation(val className: String, val url: URL)
-
 /**
  * Lists the classpath entries of a package, whether they live in a directory or inside a jar.
  */
