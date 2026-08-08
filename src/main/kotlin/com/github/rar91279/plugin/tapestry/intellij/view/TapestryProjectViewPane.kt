@@ -3,13 +3,13 @@ package com.github.rar91279.plugin.tapestry.intellij.view
 import com.github.rar91279.plugin.tapestry.core.events.FileSystemListener
 import com.github.rar91279.plugin.tapestry.core.events.TapestryModelChangeListener
 import com.github.rar91279.plugin.tapestry.core.exceptions.NotTapestryElementException
-import com.github.rar91279.plugin.tapestry.core.java.IJavaClassType
+import com.intellij.psi.PsiClass
 import com.github.rar91279.plugin.tapestry.core.model.presentation.PresentationLibraryElement
-import com.github.rar91279.plugin.tapestry.core.resource.IResource
+import com.intellij.psi.PsiFile
 import com.github.rar91279.plugin.tapestry.intellij.TapestryModuleSupportLoader
+import com.github.rar91279.plugin.tapestry.intellij.tapestryScope
 import com.github.rar91279.plugin.tapestry.intellij.actions.safedelete.SafeDeleteProvider
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaClassType
-import com.github.rar91279.plugin.tapestry.intellij.core.resource.IntellijResource
+import com.github.rar91279.plugin.tapestry.intellij.toolwindow.TapestryToolWindow
 import com.github.rar91279.plugin.tapestry.intellij.toolwindow.getToolWindow
 import com.github.rar91279.plugin.tapestry.intellij.util.IdeaUtils
 import com.github.rar91279.plugin.tapestry.intellij.util.TapestryUtils
@@ -29,12 +29,13 @@ import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.ModuleListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.ActionCallback
+import com.intellij.openapi.application.EDT
+import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.ide.progress.ModalTaskOwner.component
 import com.intellij.platform.ide.progress.ModalTaskOwner.project
 import com.intellij.psi.PsiDirectory
-import com.intellij.psi.PsiFile
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.TreeSpeedSearch
 import com.intellij.ui.tree.AsyncTreeModel
@@ -44,6 +45,10 @@ import com.intellij.ui.treeStructure.actions.CollapseAllAction
 import com.intellij.util.EditSourceOnDoubleClickHandler
 import com.intellij.util.EditSourceOnEnterKeyHandler
 import com.intellij.util.ui.tree.TreeUtil
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import icons.TapestryIcons
 import javax.swing.BorderFactory
 import javax.swing.Icon
@@ -71,12 +76,16 @@ class TapestryProjectViewPane(project: Project) :
         override fun moduleRemoved(project: Project, module: Module) = reload()
         override fun moduleAdded(project: Project, module: Module) = reload()
     }
-    private val messageBusConnection = project.messageBus.connect()
+    // Parented to this pane, so the connection is released even if the pane is discarded without dispose().
+    private val messageBusConnection = project.messageBus.connect(this)
     private var structureTreeModel: StructureTreeModel<TapestryProjectTreeStructure>? = null
 
     // Owns the events-manager subscriptions. Disposed explicitly from dispose() rather than relying on this
     // pane being torn down via Disposer.dispose(), so the subscriptions are released either way.
     private val subscriptions = Disposer.newDisposable("TapestryProjectViewPane subscriptions")
+
+    /** The in-flight background resolution of the current tree selection; superseded by the next selection. */
+    private var selectionJob: Job? = null
 
     /** The project this pane belongs to; exposed for the other view classes in this package. */
     val project: Project get() = myProject
@@ -179,13 +188,14 @@ class TapestryProjectViewPane(project: Project) :
         updateFromRoot(true)
     }
 
-    override fun fileContentsChanged(changedFile: IResource) {
+    override fun fileContentsChanged(changedFile: PsiFile) {
         // do nothing
     }
 
     override fun modelChanged() = reload()
 
     override fun dispose() {
+        selectionJob?.cancel()
         Disposer.dispose(subscriptions)
         messageBusConnection.disconnect()
         super.dispose()
@@ -216,7 +226,7 @@ class TapestryProjectViewPane(project: Project) :
         sink.lazy(CommonDataKeys.NAVIGATABLE) {
             val value = (getSelectedSimpleNode() as? TapestryNode)?.getValue()
             if (value is PresentationLibraryElement) {
-                (value.elementClass.file as IntellijResource).psiFile
+                value.elementClass?.containingFile
             } else null
         }
 
@@ -272,73 +282,76 @@ class TapestryProjectViewPane(project: Project) :
     private fun addTreeListeners() {
         tree.selectionModel.addTreeSelectionListener { event ->
             val newPath = event.newLeadSelectionPath ?: return@addTreeSelectionListener
-            val toolWindow = getToolWindow(project) ?: return@addTreeSelectionListener
+            val toolWindow = getToolWindow(myProject) ?: return@addTreeSelectionListener
 
             val selectedNode = (newPath.lastPathComponent as DefaultMutableTreeNode).userObject as? SimpleNode
-            if (selectedNode !is TapestryNode) {
-                toolWindow.update(null, null, emptyList())
-                return@addTreeSelectionListener
-            }
 
-            if (selectedNode is PageNode || selectedNode is ComponentNode || selectedNode is MixinNode) {
-                val selectedValue = selectedNode.getValue()
-                toolWindow.update(
-                    getSelectedModule(), selectedValue,
-                    listOf((selectedValue as PresentationLibraryElement).elementClass)
-                )
-            }
+            when {
+                selectedNode !is TapestryNode -> toolWindow.update(null, null, emptyList())
 
-            if (selectedNode is ClassNode || selectedNode is FileNode) {
-                val parentSelectedNode =
-                    ((newPath.lastPathComponent as DefaultMutableTreeNode).parent as DefaultMutableTreeNode)
-                        .userObject as TapestryNode
+                selectedNode is PageNode || selectedNode is ComponentNode || selectedNode is MixinNode -> {
+                    val selectedValue = selectedNode.getValue() as PresentationLibraryElement
+                    toolWindow.update(getSelectedModule(), selectedValue, listOfNotNull(selectedValue.elementClass))
+                }
 
-                val parentSelectedValue = parentSelectedNode.getValue()
-                if (parentSelectedValue is PresentationLibraryElement) {
-                    toolWindow.update(
-                        getSelectedModule(),
-                        parentSelectedValue,
-                        listOf(parentSelectedValue.elementClass)
-                    )
-                } else {
-                    var elementClass: IJavaClassType? = null
-                    var component: PresentationLibraryElement? = null
+                selectedNode is ClassNode || selectedNode is FileNode -> {
+                    val parentSelectedValue =
+                        ((newPath.lastPathComponent as DefaultMutableTreeNode).parent as DefaultMutableTreeNode)
+                            .let { it.userObject as TapestryNode }
+                            .getValue()
 
-                    val module = selectedNode.module
-                    val tapestryProject = TapestryModuleSupportLoader.getTapestryProject(module)!!
-
-                    if (selectedNode is ClassNode) {
-                        elementClass = IntellijJavaClassType(module, selectedNode.getValue() as PsiFile)
-                        try {
-                            component =
-                                PresentationLibraryElement.createProjectElementInstance(elementClass, tapestryProject)
-                        } catch (ex: NotTapestryElementException) {
-                            // the selected class is not a Tapestry element
-                        }
-                    }
-
-                    if (selectedNode is FileNode) {
-                        elementClass =
-                            tapestryProject.findElementByTemplate(selectedNode.getValue() as PsiFile)?.elementClass
-                        if (elementClass != null) {
-                            component =
-                                PresentationLibraryElement.createProjectElementInstance(elementClass, tapestryProject)
-                        }
-                    }
-
-                    if (component != null) {
-                        toolWindow.update(getSelectedModule(), component, listOf(component.elementClass))
+                    if (parentSelectedValue is PresentationLibraryElement) {
+                        // Already resolved by the parent node — nothing to look up.
+                        toolWindow.update(getSelectedModule(), parentSelectedValue, listOfNotNull(parentSelectedValue.elementClass))
+                    } else {
+                        resolveSelectionInBackground(selectedNode, toolWindow)
                     }
                 }
-            }
 
-            if (selectedNode !is PageNode && selectedNode !is ComponentNode && selectedNode !is MixinNode &&
-                selectedNode !is ClassNode && selectedNode !is FileNode
-            ) {
-                toolWindow.update(null, null, emptyList())
+                else -> toolWindow.update(null, null, emptyList())
             }
         }
         tree.addKeyListener(PsiCopyPasteManager.EscapeHandler())
+    }
+
+    /**
+     * Resolving a class/template node to its Tapestry element goes through the stub indexes
+     * (`createProjectElementInstance` → `TapestryProject.libraries`, `findElementByTemplate`), which must not
+     * run on the EDT — a Swing selection listener doing index work freezes the IDE on every arrow-key press
+     * and trips the "Slow operations are prohibited on EDT" assertion.
+     *
+     * `smartReadAction` also means a selection made while indexing waits for smart mode instead of resolving
+     * to nothing. Each new selection cancels the previous lookup.
+     */
+    private fun resolveSelectionInBackground(selectedNode: TapestryNode, toolWindow: TapestryToolWindow) {
+        val module = selectedNode.module
+        val psiFile = selectedNode.getValue() as? PsiFile ?: return
+        val isClassNode = selectedNode is ClassNode
+        val selectedModule = getSelectedModule()
+
+        selectionJob?.cancel()
+        selectionJob = myProject.tapestryScope.launch {
+            val component = smartReadAction(myProject) { resolveElement(module, psiFile, isClassNode) } ?: return@launch
+
+            withContext(Dispatchers.EDT) {
+                toolWindow.update(selectedModule, component, listOfNotNull(component.elementClass))
+            }
+        }
+    }
+
+    private fun resolveElement(module: Module, psiFile: PsiFile, isClassNode: Boolean): PresentationLibraryElement? {
+        val tapestryProject = TapestryModuleSupportLoader.getTapestryProject(module) ?: return null
+
+        val elementClass: PsiClass = if (isClassNode) IdeaUtils.findPublicClass(psiFile) ?: return null
+        else tapestryProject.findElementByTemplate(psiFile)?.elementClass ?: return null
+
+        return try {
+            PresentationLibraryElement.createProjectElementInstance(elementClass, tapestryProject)
+        } catch (ex: NotTapestryElementException) {
+            // the selection is not a Tapestry element; previously this could escape for a FileNode, which
+            // would now fail the coroutine rather than the Swing listener.
+            null
+        }
     }
 
     private fun modulesChanged() {
@@ -351,7 +364,11 @@ class TapestryProjectViewPane(project: Project) :
     }
 
     private fun addMe() {
-        ProjectView.getInstance(myProject).addProjectPane(this)
+        // The pane is also registered declaratively (<projectViewPane> in plugin.xml), so the platform may
+        // already hold one under this id; `shown` only tracks our own add/remove. Adding a second time is a
+        // logged error blamed on the plugin.
+        val projectView = ProjectView.getInstance(myProject)
+        if (projectView.getProjectViewPaneById(ID) == null) projectView.addProjectPane(this)
         shown = true
     }
 

@@ -2,85 +2,81 @@ package com.github.rar91279.plugin.tapestry.core.model.presentation
 
 import com.github.rar91279.plugin.tapestry.core.TapestryProject
 import com.github.rar91279.plugin.tapestry.core.exceptions.NotTapestryElementException
-import com.github.rar91279.plugin.tapestry.core.java.IJavaClassType
-import com.github.rar91279.plugin.tapestry.core.java.IJavaTypeFinder
-import com.github.rar91279.plugin.tapestry.core.mocks.JavaAnnotationMock
-import com.github.rar91279.plugin.tapestry.core.mocks.JavaClassTypeMock
-import com.github.rar91279.plugin.tapestry.core.mocks.JavaFieldMock
+import com.github.rar91279.plugin.tapestry.core.mocks.psiAnnotationMock
+import com.github.rar91279.plugin.tapestry.core.mocks.psiClassMock
+import com.github.rar91279.plugin.tapestry.core.mocks.psiFieldMock
+import com.github.rar91279.plugin.tapestry.core.mocks.psiFileMock
+import com.github.rar91279.plugin.tapestry.core.mocks.stubFields
 import com.github.rar91279.plugin.tapestry.core.model.TapestryLibrary
-import com.github.rar91279.plugin.tapestry.core.resource.IResource
 import com.github.rar91279.plugin.tapestry.core.resource.IResourceFinder
-import com.github.rar91279.plugin.tapestry.core.resource.TestableResource
+import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiFile
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
-import java.io.File
 
 private class TestableParameterReceiverElement(
     library: TapestryLibrary?,
-    elementClass: IJavaClassType,
+    elementClass: PsiClass,
     project: TapestryProject
 ) : ParameterReceiverElement(library, elementClass, project) {
 
     override fun allowsTemplate(): Boolean = false
 
-    override val template: Array<IResource> = emptyArray()
+    override val template: Array<PsiFile> = emptyArray()
 
-    override val messageCatalog: Array<IResource> = emptyArray()
+    override val messageCatalog: Array<PsiFile> = emptyArray()
 }
 
 class PresentationLibraryElementTest : FreeSpec({
 
-    lateinit var classInBasePackageMock: JavaClassTypeMock
-    lateinit var classInSomePackageMock: JavaClassTypeMock
-    lateinit var classInComponentsPackageNotPublicMock: JavaClassTypeMock
-    lateinit var classInComponentsPackageNoDefaultConstructorMock: JavaClassTypeMock
-    lateinit var classInRootComponentsPackageMock: JavaClassTypeMock
-    lateinit var classInRootMixinsPackageMock: JavaClassTypeMock
-    lateinit var classInSubComponentsPackageMock: JavaClassTypeMock
-    lateinit var classInRootPagesPackageMock: JavaClassTypeMock
-    lateinit var rootComponentClassMock: JavaClassTypeMock
+    lateinit var classInBasePackageMock: PsiClass
+    lateinit var classInSomePackageMock: PsiClass
+    lateinit var classInComponentsPackageNotPublicMock: PsiClass
+    lateinit var classInComponentsPackageNoDefaultConstructorMock: PsiClass
+    lateinit var classInRootComponentsPackageMock: PsiClass
+    lateinit var classInRootMixinsPackageMock: PsiClass
+    lateinit var classInSubComponentsPackageMock: PsiClass
+    lateinit var classInRootPagesPackageMock: PsiClass
+    lateinit var rootComponentClassMock: PsiClass
     lateinit var tapestryProjectMock: TapestryProject
     lateinit var resourceFinderMock: IResourceFinder
     lateinit var libraryMock: TapestryLibrary
     lateinit var libraryNoRootPackageMock: TapestryLibrary
 
     beforeTest {
-        val builderClassFileMock = mockk<File>(relaxed = true)
-        every { builderClassFileMock.lastModified() } returns Long.MAX_VALUE
+        val builderClassResourceMock = psiFileMock("Builder.java", timeStamp = Long.MAX_VALUE)
 
-        val builderClassResourceMock = mockk<IResource>(relaxed = true)
-        every { builderClassResourceMock.file } returns builderClassFileMock
+        fun classMock(fqn: String, isPublic: Boolean = true, hasDefaultConstructor: Boolean = true, javadoc: String? = null) =
+            psiClassMock(fqn, isPublic, hasDefaultConstructor, builderClassResourceMock, javadoc)
 
-        classInBasePackageMock = JavaClassTypeMock("com.app.SomeClass").setPublic(true).setDefaultConstructor(true).setFile(builderClassResourceMock)
+        classInBasePackageMock = classMock("com.app.SomeClass")
 
-        classInComponentsPackageNotPublicMock = JavaClassTypeMock("com.app.components.SomeClass").setPublic(false).setDefaultConstructor(true).setFile(builderClassResourceMock)
+        classInComponentsPackageNotPublicMock = classMock("com.app.components.SomeClass", isPublic = false)
 
-        classInComponentsPackageNoDefaultConstructorMock = JavaClassTypeMock("com.app.components.SomeClass").setPublic(true).setDefaultConstructor(false).setFile(builderClassResourceMock)
+        classInComponentsPackageNoDefaultConstructorMock =
+            classMock("com.app.components.SomeClass", hasDefaultConstructor = false)
 
-        rootComponentClassMock = JavaClassTypeMock("com.app.components.SomeClass").setPublic(true).setDefaultConstructor(true).setFile(builderClassResourceMock)
+        rootComponentClassMock = classMock("com.app.components.SomeClass")
 
-        classInSomePackageMock = JavaClassTypeMock("com.app.test.components.SomeClass").setPublic(true).setDefaultConstructor(true).setFile(builderClassResourceMock)
+        classInSomePackageMock = classMock("com.app.test.components.SomeClass")
 
-        classInRootComponentsPackageMock = JavaClassTypeMock("com.app.components.SomeClass").setPublic(true).setDefaultConstructor(true).setFile(builderClassResourceMock)
+        classInRootComponentsPackageMock = classMock("com.app.components.SomeClass", javadoc = "docs")
 
-        classInRootMixinsPackageMock = JavaClassTypeMock("com.app.mixins.SomeClass").setPublic(true).setDefaultConstructor(true).setFile(builderClassResourceMock)
+        classInRootMixinsPackageMock = classMock("com.app.mixins.SomeClass")
 
-        classInRootPagesPackageMock = JavaClassTypeMock("com.app.pages.SomeClass").setPublic(true).setDefaultConstructor(true).setFile(builderClassResourceMock)
+        classInRootPagesPackageMock = classMock("com.app.pages.SomeClass")
 
-        classInSubComponentsPackageMock = JavaClassTypeMock("com.app.components.folder1.SomeClass").setPublic(true).setDefaultConstructor(true).setFile(builderClassResourceMock)
+        classInSubComponentsPackageMock = classMock("com.app.components.folder1.SomeClass")
 
         resourceFinderMock = mockk(relaxed = true)
         tapestryProjectMock = mockk(relaxed = true)
         every { tapestryProjectMock.applicationRootPackage } returns "com.app"
         every { tapestryProjectMock.resourceFinder } returns resourceFinderMock
-
         // getParameters() always adds a builtin "mixins" parameter, whose creation resolves java.lang.String.
-        val javaTypeFinderMock = mockk<IJavaTypeFinder>(relaxed = true)
-        every { javaTypeFinderMock.findType("java.lang.String", true) } returns null
-        every { tapestryProjectMock.javaTypeFinder } returns javaTypeFinderMock
+        every { tapestryProjectMock.findClassType("java.lang.String") } returns null
 
         libraryMock = mockk(relaxed = true)
         every { libraryMock.basePackage } returns "com.app"
@@ -137,29 +133,33 @@ class PresentationLibraryElementTest : FreeSpec({
     "getParameters_no_parameters" {
         TestableParameterReceiverElement(libraryMock, classInRootComponentsPackageMock, tapestryProjectMock).parameters.size shouldBe 1
 
-        val publicField = JavaFieldMock("publicField", false).addAnnotation(JavaAnnotationMock("org.apache.tapestry5.annotations.Parameter"))
-        val privateField = JavaFieldMock("privateField", true)
+        val publicField = psiFieldMock(
+            "publicField", isPrivate = false,
+            annotations = listOf(psiAnnotationMock("org.apache.tapestry5.annotations.Parameter"))
+        )
+        val privateField = psiFieldMock("privateField")
 
-        classInSubComponentsPackageMock.addField(publicField).addField(privateField)
+        classInSubComponentsPackageMock.stubFields(publicField, privateField)
 
         TestableParameterReceiverElement(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).parameters.size shouldBe 1
     }
 
     "getParameters_with_parameters" {
-        val privateField = JavaFieldMock("field1", true).addAnnotation(JavaAnnotationMock("org.apache.tapestry5.annotations.Parameter"))
+        val privateField = psiFieldMock(
+            "field1", annotations = listOf(psiAnnotationMock("org.apache.tapestry5.annotations.Parameter"))
+        )
 
-        classInSubComponentsPackageMock.addField(privateField)
+        classInSubComponentsPackageMock.stubFields(privateField)
 
         TestableParameterReceiverElement(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).parameters.size shouldBe 2
     }
 
     "getElementClass" {
-        TestableParameterReceiverElement(libraryMock, classInRootComponentsPackageMock, tapestryProjectMock).elementClass.fullyQualifiedName shouldBe "com.app.components.SomeClass"
+        TestableParameterReceiverElement(libraryMock, classInRootComponentsPackageMock, tapestryProjectMock)
+            .elementClass?.qualifiedName shouldBe "com.app.components.SomeClass"
     }
 
     "getDocumentation" {
-        classInRootComponentsPackageMock.documentation = "docs"
-
         TestableParameterReceiverElement(libraryMock, classInRootComponentsPackageMock, tapestryProjectMock).description shouldBe "docs"
     }
 
@@ -176,10 +176,10 @@ class PresentationLibraryElementTest : FreeSpec({
     }
 
     "checkAllValidResources" {
-        val resource1: IResource = TestableResource("web.xml", "web1.xml")
-        val resource2: IResource = TestableResource("web.xml", "web2.xml")
-        val resource3: IResource = TestableResource("web.xml", "idontexist1.xml")
-        val resource4: IResource = TestableResource("web.xml", "idontexist2.xml")
+        val resource1: PsiFile = psiFileMock("web.xml")
+        val resource2: PsiFile = psiFileMock("web.xml")
+        val resource3: PsiFile = psiFileMock("web.xml", valid = false)
+        val resource4: PsiFile = psiFileMock("web.xml", valid = false)
 
         PresentationLibraryElement.checkAllValidResources(arrayOf(resource1, resource2)) shouldBe true
 
@@ -189,15 +189,15 @@ class PresentationLibraryElementTest : FreeSpec({
     }
 
     "getMessageCatalog" {
-        val resources1 = arrayListOf<IResource>(
-            TestableResource("SomeClass.properties", "SomeClass.properties"),
-            TestableResource("SomeClass_pt.properties", "SomeClass_pt.properties")
+        val resources1 = arrayListOf<PsiFile>(
+            psiFileMock("SomeClass.properties"),
+            psiFileMock("SomeClass_pt.properties")
         )
         every { resourceFinderMock.findLocalizedClasspathResource("com/app/pages/SomeClass.properties", true) } returns resources1
 
-        val resources2 = arrayListOf<IResource>(
-            TestableResource("SomeClass.properties", "SomeClass.properties"),
-            TestableResource("SomeClass_pt.properties", "SomeClass_pt.properties")
+        val resources2 = arrayListOf<PsiFile>(
+            psiFileMock("SomeClass.properties"),
+            psiFileMock("SomeClass_pt.properties")
         )
         every { resourceFinderMock.findLocalizedClasspathResource("com/app/components/folder1/SomeClass.properties", true) } returns resources2
 

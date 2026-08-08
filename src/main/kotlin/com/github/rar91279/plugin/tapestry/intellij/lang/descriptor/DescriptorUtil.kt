@@ -1,5 +1,6 @@
 package com.github.rar91279.plugin.tapestry.intellij.lang.descriptor
 
+import com.github.rar91279.plugin.tapestry.core.util.supportsInformalParameters
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.xml.XmlDocument
@@ -193,7 +194,7 @@ internal object DescriptorUtil {
     }
 
     private fun getImplicitHtmlContainer(component: ParameterReceiverElement, context: XmlTag): XmlElementDescriptor? {
-        if (!component.elementClass.supportsInformalParameters()) return null
+        if (component.elementClass?.supportsInformalParameters() != true) return null
 
         val descriptor = context.getNSDescriptor(XmlUtil.XHTML_URI, false)
 

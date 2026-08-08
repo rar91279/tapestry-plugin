@@ -48,7 +48,7 @@ internal abstract class TelVariantsProcessor<T>(
 
     override fun execute(element: PsiElement, state: ResolveState): Boolean {
         if (element !is PsiNamedElement) return true
-        if (StringUtil.isEmpty(element.name)) return true
+        if (element.name.isNullOrEmpty()) return true
         if (element is PsiClass) return true
 
         if (element is PsiMethod) {

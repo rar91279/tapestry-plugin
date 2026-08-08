@@ -1,16 +1,15 @@
 package com.github.rar91279.plugin.tapestry.core.util
 
-import com.github.rar91279.plugin.tapestry.core.java.IJavaField
-import com.github.rar91279.plugin.tapestry.core.java.IJavaMethod
-import com.github.rar91279.plugin.tapestry.core.mocks.JavaAnnotationMock
-import com.github.rar91279.plugin.tapestry.core.mocks.JavaClassTypeMock
-import com.github.rar91279.plugin.tapestry.core.mocks.JavaFieldMock
-import com.github.rar91279.plugin.tapestry.core.mocks.JavaPrimitiveTypeMock
+import com.github.rar91279.plugin.tapestry.core.mocks.psiAnnotationMock
+import com.github.rar91279.plugin.tapestry.core.mocks.psiClassMock
+import com.github.rar91279.plugin.tapestry.core.mocks.psiFieldMock
+import com.github.rar91279.plugin.tapestry.core.mocks.psiMethodMock
+import com.github.rar91279.plugin.tapestry.core.mocks.stubFields
+import com.github.rar91279.plugin.tapestry.core.mocks.stubMethods
+import com.intellij.psi.PsiTypes
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import io.mockk.every
-import io.mockk.mockk
 
 class ClassUtilsTest : FreeSpec({
 
@@ -21,52 +20,25 @@ class ClassUtilsTest : FreeSpec({
 
         "no_properties" {
             // a class with no methods
-            val noMethodsClassMock = JavaClassTypeMock()
-            ClassUtils.getClassProperties(noMethodsClassMock).size shouldBe 0
+            ClassUtils.getClassProperties(psiClassMock()).size shouldBe 0
 
             // a class with no getter methods.
-            val notGetterMethodsMock = mockk<IJavaMethod>(relaxed = true)
-            every { notGetterMethodsMock.name } returns "setProperty"
-            every { notGetterMethodsMock.returnType } returns null
-
-            val notGetterMethodsMock2 = mockk<IJavaMethod>(relaxed = true)
-            every { notGetterMethodsMock2.name } returns "getProperty2"
-            every { notGetterMethodsMock2.returnType } returns null
-
-            val notGetterMethodsMock3 = mockk<IJavaMethod>(relaxed = true)
-            every { notGetterMethodsMock3.name } returns "get"
-            every { notGetterMethodsMock3.returnType } returns JavaPrimitiveTypeMock("char")
-
-            val noGetterMethodsClassMock = JavaClassTypeMock()
-            noGetterMethodsClassMock.addPublicMethod(notGetterMethodsMock)
-                .addPublicMethod(notGetterMethodsMock2)
-                .addPublicMethod(notGetterMethodsMock3)
+            val noGetterMethodsClassMock = psiClassMock().stubMethods(
+                psiMethodMock("setProperty"),
+                psiMethodMock("getProperty2"),
+                psiMethodMock("get", returnType = PsiTypes.charType())
+            )
 
             ClassUtils.getClassProperties(noGetterMethodsClassMock).size shouldBe 0
         }
 
         "with_properties" {
-            val getterMethodMock = mockk<IJavaMethod>(relaxed = true)
-            every { getterMethodMock.name } returns "getProperty1"
-            every { getterMethodMock.returnType } returns JavaPrimitiveTypeMock("boolean")
-
-            val getterMethod2Mock = mockk<IJavaMethod>(relaxed = true)
-            every { getterMethod2Mock.name } returns "getPropertyProp2"
-            every { getterMethod2Mock.returnType } returns JavaPrimitiveTypeMock("boolean")
-
-            val isMethodMock = mockk<IJavaMethod>(relaxed = true)
-            every { isMethodMock.name } returns "isProperty2"
-            every { isMethodMock.returnType } returns JavaPrimitiveTypeMock("boolean")
-
-            val isMethodNotBooleanMock = mockk<IJavaMethod>(relaxed = true)
-            every { isMethodNotBooleanMock.name } returns "isProperty3"
-            every { isMethodNotBooleanMock.returnType } returns JavaPrimitiveTypeMock("short")
-
-            val getterMethodsClassMock = JavaClassTypeMock()
-            getterMethodsClassMock.addPublicMethod(getterMethodMock)
-                .addPublicMethod(isMethodMock)
-                .addPublicMethod(isMethodNotBooleanMock)
-                .addPublicMethod(getterMethod2Mock)
+            val getterMethodsClassMock = psiClassMock().stubMethods(
+                psiMethodMock("getProperty1", returnType = PsiTypes.booleanType()),
+                psiMethodMock("isProperty2", returnType = PsiTypes.booleanType()),
+                psiMethodMock("isProperty3", returnType = PsiTypes.shortType()),
+                psiMethodMock("getPropertyProp2", returnType = PsiTypes.booleanType())
+            )
 
             val properties = ClassUtils.getClassProperties(getterMethodsClassMock)
 
@@ -75,13 +47,12 @@ class ClassUtilsTest : FreeSpec({
         }
 
         "with_annotated_properties" {
-            val annotatedField: IJavaField = JavaFieldMock("_myProp", true)
-                .addAnnotation(JavaAnnotationMock("org.apache.tapestry5.annotations.Property"))
+            val annotatedField = psiFieldMock(
+                "_myProp", annotations = listOf(psiAnnotationMock("org.apache.tapestry5.annotations.Property"))
+            )
+            val notAnnotatedField = psiFieldMock("MyField")
 
-            val notAnnotatedField: IJavaField = JavaFieldMock("MyField", true)
-
-            val classMock = JavaClassTypeMock()
-            classMock.addField(annotatedField).addField(notAnnotatedField)
+            val classMock = psiClassMock().stubFields(annotatedField, notAnnotatedField)
 
             val properties = ClassUtils.getClassProperties(classMock)
 

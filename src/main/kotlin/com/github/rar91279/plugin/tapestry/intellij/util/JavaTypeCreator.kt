@@ -1,5 +1,6 @@
-package com.github.rar91279.plugin.tapestry.intellij.core.java
+package com.github.rar91279.plugin.tapestry.intellij.util
 
+import com.intellij.openapi.diagnostic.ControlFlowException
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.module.Module
@@ -8,6 +9,7 @@ import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiDocumentManager
+import com.intellij.psi.PsiField
 import com.intellij.psi.PsiImportList
 import com.intellij.psi.PsiJavaFile
 import com.intellij.psi.PsiModifier
@@ -15,23 +17,23 @@ import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.psi.codeStyle.JavaCodeStyleManager
 import com.intellij.psi.codeStyle.VariableKind
 import com.intellij.psi.util.ClassUtil
-import com.github.rar91279.plugin.tapestry.core.java.IJavaAnnotation
-import com.github.rar91279.plugin.tapestry.core.java.IJavaClassType
-import com.github.rar91279.plugin.tapestry.core.java.IJavaField
-import com.github.rar91279.plugin.tapestry.core.java.IJavaTypeCreator
-import com.github.rar91279.plugin.tapestry.intellij.util.IdeaUtils
 import com.intellij.util.IncorrectOperationException
 import com.siyeh.ig.psiutils.ImportUtils
 
-/** [IJavaTypeCreator] that builds PSI elements for a module. */
-open class IntellijJavaTypeCreator(private val module: Module) : IJavaTypeCreator {
+/** Builds the PSI elements the "add new element" actions and the class externalizer write out. */
+open class JavaTypeCreator(private val module: Module) {
 
-    override fun createField(
+    /**
+     * Creates a new field.
+     *
+     * @param changeNameToReflectIdeSettings `true` if the IDE coding style should be used to change the field name accordingly.
+     */
+    fun createField(
         name: String,
-        type: IJavaClassType,
+        type: PsiClass,
         isPrivate: Boolean,
         changeNameToReflectIdeSettings: Boolean
-    ): IJavaField? {
+    ): PsiField? {
         val fieldName =
             if (changeNameToReflectIdeSettings) {
                 JavaCodeStyleManager.getInstance(module.project)
@@ -41,25 +43,26 @@ open class IntellijJavaTypeCreator(private val module: Module) : IJavaTypeCreato
 
         return try {
             val elementFactory = JavaPsiFacade.getInstance(module.project).elementFactory
-            val field = elementFactory.createField(
-                fieldName, elementFactory.createType((type as IntellijJavaClassType).psiClass!!)
-            )
+            val field = elementFactory.createField(fieldName, elementFactory.createType(type))
 
             field.modifierList?.setModifierProperty(PsiModifier.PRIVATE, isPrivate)
 
-            IntellijJavaField(module, field)
+            field
         }
         catch (ex: Throwable) {
+            // Throwable, so this also caught ControlFlowException and ProcessCanceledException.
+            if (ex is ControlFlowException) throw ex
             logger.error(ex)
             null
         }
     }
 
-    override fun createFieldAnnotation(
-        field: IJavaField,
+    /** Creates a new field annotation and adds it to the field. */
+    fun createFieldAnnotation(
+        field: PsiField,
         fullyQualifiedName: String,
         parameters: Map<String, String>
-    ): IJavaAnnotation? {
+    ): PsiAnnotation? {
         val annotationText = StringBuilder("@").append(fullyQualifiedName)
         if (parameters.isNotEmpty()) {
             annotationText.append(
@@ -70,16 +73,14 @@ open class IntellijJavaTypeCreator(private val module: Module) : IJavaTypeCreato
             )
         }
 
-        val psiField = (field as IntellijJavaField).psiField
-
         return try {
             val annotation: PsiAnnotation = JavaPsiFacade.getInstance(module.project).elementFactory
-                .createAnnotationFromText(annotationText.toString(), psiField)
-            psiField.modifierList?.addBefore(annotation, psiField.modifierList?.firstChild)
+                .createAnnotationFromText(annotationText.toString(), field)
+            field.modifierList?.addBefore(annotation, field.modifierList?.firstChild)
 
-            CodeStyleManager.getInstance(module.project).reformat(psiField)
+            CodeStyleManager.getInstance(module.project).reformat(field)
 
-            IntellijJavaAnnotation(annotation)
+            annotation
         }
         catch (ex: IncorrectOperationException) {
             logger.error(ex)
@@ -87,9 +88,14 @@ open class IntellijJavaTypeCreator(private val module: Module) : IJavaTypeCreato
         }
     }
 
-    override fun ensureClassImport(baseClass: IJavaClassType, type: IJavaClassType): Boolean {
-        val baseFile = (baseClass as IntellijJavaClassType).psiClass?.containingFile ?: return false
-        val typeFqn = type.fullyQualifiedName ?: return false
+    /**
+     * Ensures that a type is in the import list of a class.
+     *
+     * @return `true` if the import was insured, `false` otherwise.
+     */
+    fun ensureClassImport(baseClass: PsiClass, type: PsiClass): Boolean {
+        val baseFile = baseClass.containingFile ?: return false
+        val typeFqn = type.qualifiedName ?: return false
 
         if (!ImportUtils.nameCanBeImported(typeFqn, baseFile)) return false
 
@@ -99,9 +105,7 @@ open class IntellijJavaTypeCreator(private val module: Module) : IJavaTypeCreato
             // JavaCodeStyleManager.addImport internally decides whether a java.lang class actually
             // needs an explicit import (i.e. only on an on-demand import conflict).
             IdeaUtils.runWriteCommand(null) {
-                (type as IntellijJavaClassType).psiClass?.let {
-                    JavaCodeStyleManager.getInstance(module.project).addImport(baseFile, it)
-                }
+                JavaCodeStyleManager.getInstance(module.project).addImport(baseFile, type)
             }
             return true
         }
@@ -109,7 +113,7 @@ open class IntellijJavaTypeCreator(private val module: Module) : IJavaTypeCreato
         if (importList.findSingleClassImportStatement(typeFqn) == null) {
             IdeaUtils.runWriteCommand(null) {
                 try {
-                    (type as IntellijJavaClassType).psiClass?.let { addImport(importList, it) }
+                    addImport(importList, type)
                 }
                 catch (ex: IncorrectOperationException) {
                     logger.error(ex)
@@ -139,6 +143,6 @@ open class IntellijJavaTypeCreator(private val module: Module) : IJavaTypeCreato
     }
 
     private companion object {
-        val logger = Logger.getInstance(IntellijJavaTypeCreator::class.java)
+        val logger = Logger.getInstance(JavaTypeCreator::class.java)
     }
 }

@@ -1,7 +1,7 @@
 package com.github.rar91279.plugin.tapestry.core.model.presentation.valueresolvers.property.specialcases
 
-import com.github.rar91279.plugin.tapestry.core.java.IJavaClassType
-import com.github.rar91279.plugin.tapestry.core.mocks.JavaClassTypeMock
+import com.github.rar91279.plugin.tapestry.core.mocks.psiClassMock
+import com.github.rar91279.plugin.tapestry.core.model.presentation.valueresolvers.property.resolvedName
 import com.github.rar91279.plugin.tapestry.core.model.presentation.valueresolvers.ValueResolverContext
 import com.github.rar91279.plugin.tapestry.core.model.presentation.valueresolvers.property.SpecialCaseMocks
 import io.kotest.core.spec.style.FreeSpec
@@ -14,15 +14,15 @@ class SpecialCaseThisResolverTest : FreeSpec({
 
     "can_resolve" {
         for (value in listOf("prop:this", " THIS ")) {
-            val ctx = ValueResolverContext(m.tapestryProject, JavaClassTypeMock("myComponentName"), value, null)
-            resolver.execute(ctx) shouldBe true
-            (ctx.resultType as IJavaClassType).fullyQualifiedName shouldBe "myComponentName"
+            val ctx = ValueResolverContext(m.tapestryProject, psiClassMock("myComponentName"), value, null)
+            resolver.resolve(ctx) shouldBe true
+            ctx.resultType.resolvedName shouldBe "myComponentName"
         }
     }
 
     "cant_resolve" {
         val ctx = ValueResolverContext(m.tapestryProject, null, "this1", null)
-        resolver.execute(ctx) shouldBe false
+        resolver.resolve(ctx) shouldBe false
         ctx.resultType shouldBe null
     }
 })

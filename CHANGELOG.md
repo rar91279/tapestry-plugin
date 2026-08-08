@@ -4,6 +4,37 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- No longer freezes the IDE after a Maven/Gradle reimport: the Tapestry module scan that
+  ran on the write thread on every roots change (re-reading each module's `pom.xml` and every dependency
+  jar's `MANIFEST.MF`) now runs in the background.
+- Selecting a class or template in the Tapestry view pane no longer resolves the element model on the UI
+  thread, and waits for indexing to finish instead of silently resolving to nothing during it.
+- Live documentation and the project view no longer refresh on every keystroke; content changes are debounced.
+- Creating a new page, component or mixin is now a single undoable command, and an error is reported after the
+  write action rather than opening a modal dialog while the write lock is held.
+- Cancellation (`ProcessCanceledException`) is no longer swallowed during reference resolution, completion,
+  drag-and-drop and action updates.
+- Fixed a crash when generating documentation for an element whose description had no space in its first 100
+  characters.
+- `pom.xml` generated for a new Tapestry facet is no longer written twice, with the second (less complete)
+  write clobbering the first — it now keeps the file-template output and its real source-root path.
+
+- `@SupportsInformalParameters` is no longer cached without invalidation: adding or removing the annotation is
+  picked up instead of keeping the verdict from when the component was first inspected.
+- Values bound to a component parameter declared with an unnamed annotation value (`@Component("id")`) are read
+  again; the attribute was previously filed under a key nothing looked up.
+
+### Changed
+
+- The per-module persisted state component was renamed from `Loomy` to `TapestrySupport`. The directories last
+  used for new pages/components/mixins reset once as a result.
+- Removed the last of the IDE-portability layer the plugin inherited from the standalone Tapestry model: the
+  `IJava*` interfaces and their `Intellij*` implementations are gone, and the model works on IntelliJ PSI
+  (`PsiClass`, `PsiType`, `PsiField`, `PsiMethod`, `PsiAnnotation`) directly. Long-lived model objects now hold
+  their class through a `SmartPsiElementPointer` instead of re-resolving it from a stored file URL.
+
 ## [1.0.0] - 2026-08-05
 
 First release of the maintained port of the Tapestry plugin JetBrains retired into

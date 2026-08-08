@@ -1,6 +1,6 @@
 package com.github.rar91279.plugin.tapestry.core.model.presentation.valueresolvers
 
-import com.github.rar91279.plugin.tapestry.core.java.IJavaType
+import com.intellij.psi.PsiType
 
 /** The resolved value. */
-class ResolvedValue(val type: IJavaType?, val codeBind: Any?)
+class ResolvedValue(val type: PsiType?, val codeBind: Any?)

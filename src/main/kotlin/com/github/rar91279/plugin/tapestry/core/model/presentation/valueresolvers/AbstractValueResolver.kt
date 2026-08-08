@@ -1,35 +1,40 @@
 package com.github.rar91279.plugin.tapestry.core.model.presentation.valueresolvers
 
-import com.github.rar91279.plugin.tapestry.core.java.IJavaType
-import com.github.rar91279.plugin.tapestry.core.util.chain.Command
-import com.github.rar91279.plugin.tapestry.core.util.chain.Context
+import com.intellij.psi.PsiType
 
 /**
- * Base class for all value resolver commands.
+ * Base class for all value resolvers.
+ *
+ * Resolvers are combined by plain `List<AbstractValueResolver>` + [resolveWith]; there used to be a
+ * four-type chain-of-responsibility framework here, whose only effect was to erase the context type and
+ * force every resolver to cast it back.
  */
-abstract class AbstractValueResolver : Command {
+abstract class AbstractValueResolver {
 
+    /** @return `true` if this resolver handled the value and the search should stop. */
     @Throws(Exception::class)
-    final override fun execute(context: Context): Boolean = resolve(context as ValueResolverContext)
-
-    @Throws(Exception::class)
-    protected abstract fun resolve(context: ValueResolverContext): Boolean
+    abstract fun resolve(context: ValueResolverContext): Boolean
 
     /** Resolves to [type] when the context value carries exactly [prefix]. */
-    protected fun ValueResolverContext.resolveIfPrefix(prefix: String, type: () -> IJavaType?): Boolean {
+    protected fun ValueResolverContext.resolveIfPrefix(prefix: String, type: () -> PsiType?): Boolean {
         if (getPrefix(value, defaultPrefix) != prefix) return false
 
         resultType = type()
         return true
     }
 
-    protected fun ValueResolverContext.findType(fullyQualifiedName: String): IJavaType? =
-        project.javaTypeFinder.findType(fullyQualifiedName, true)
+    protected fun ValueResolverContext.findType(fullyQualifiedName: String): PsiType? =
+        project.findClassType(fullyQualifiedName)
 
     /** The clean value, trimmed and lowercased, as the special case resolvers match on it. */
     protected fun ValueResolverContext.cleanValueLowercased(): String? = getCleanValue(value)?.trim()?.lowercase()
 
     companion object {
+
+        /** Runs the resolvers in order, stopping at the first one that handles [context]. */
+        @Throws(Exception::class)
+        fun List<AbstractValueResolver>.resolveWith(context: ValueResolverContext): Boolean =
+            any { it.resolve(context) }
 
         /**
          * Trims and removes the prefix of the value.

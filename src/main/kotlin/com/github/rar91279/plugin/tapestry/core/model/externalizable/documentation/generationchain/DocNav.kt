@@ -1,6 +1,6 @@
 package com.github.rar91279.plugin.tapestry.core.model.externalizable.documentation.generationchain
 
-import com.github.rar91279.plugin.tapestry.core.resource.IResource
+import com.intellij.psi.PsiFile
 
 /**
  * Velocity helper for building navigation tokens consumed by the doc tab's `tapestryNav` bridge.
@@ -9,8 +9,8 @@ import com.github.rar91279.plugin.tapestry.core.resource.IResource
 object DocNav {
 
     /** `file/<path>` token opening the resource's file, or `""` if it has no local file. */
-    fun fileToken(resource: IResource?): String {
-        val file = resource?.file ?: return ""
+    fun fileToken(resource: PsiFile?): String {
+        val file = resource?.virtualFile ?: return ""
         // Forward slashes accepted by the local file system on all platforms; js() handles quoting.
         return "file/" + file.path.replace('\\', '/')
     }

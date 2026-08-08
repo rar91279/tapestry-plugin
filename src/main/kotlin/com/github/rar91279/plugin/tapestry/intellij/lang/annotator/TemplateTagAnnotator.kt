@@ -10,12 +10,12 @@ import com.intellij.psi.XmlRecursiveElementVisitor
 import com.intellij.psi.xml.XmlAttribute
 import com.intellij.psi.xml.XmlTag
 import com.github.rar91279.plugin.tapestry.core.TapestryProject
-import com.github.rar91279.plugin.tapestry.core.java.coercion.TypeCoercionValidator
+import com.intellij.psi.PsiClass
+import com.github.rar91279.plugin.tapestry.core.util.TypeCoercionValidator
 import com.github.rar91279.plugin.tapestry.core.model.presentation.TapestryParameter
 import com.github.rar91279.plugin.tapestry.core.model.presentation.valueresolvers.AbstractValueResolver
 import com.github.rar91279.plugin.tapestry.core.model.presentation.valueresolvers.ValueResolverChain
 import com.github.rar91279.plugin.tapestry.intellij.TapestryModuleSupportLoader
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaClassType
 import com.github.rar91279.plugin.tapestry.intellij.lang.TemplateColorSettingsPage
 import com.github.rar91279.plugin.tapestry.intellij.util.IdeaUtils
 import com.github.rar91279.plugin.tapestry.intellij.util.TapestryUtils
@@ -48,7 +48,7 @@ class TemplateTagAnnotator : XmlRecursiveElementVisitor(), Annotator {
             if (component != null) {
                 val tapestryProject = TapestryModuleSupportLoader.getTapestryProject(tag)
                 val element = tapestryProject?.findElementByTemplate(tag.containingFile)
-                val elementClass = element?.elementClass as? IntellijJavaClassType
+                val elementClass = element?.elementClass
 
                 // annotate the tag parameters
                 for (parameter in component.parameters.values) {
@@ -67,7 +67,7 @@ class TemplateTagAnnotator : XmlRecursiveElementVisitor(), Annotator {
 
     private fun annotateAttributeValue(
         tapestryProject: TapestryProject,
-        elementClass: IntellijJavaClassType,
+        elementClass: PsiClass,
         parameter: TapestryParameter,
         attribute: XmlAttribute
     ) {
@@ -85,7 +85,7 @@ class TemplateTagAnnotator : XmlRecursiveElementVisitor(), Annotator {
         } ?: return
 
         val resolvedType = resolvedValue.type ?: return
-        val parameterType = parameter.parameterField.type
+        val parameterType = parameter.type
         val holder = annotationHolder ?: return
 
         if (!TypeCoercionValidator.canCoerce(
@@ -95,7 +95,7 @@ class TemplateTagAnnotator : XmlRecursiveElementVisitor(), Annotator {
         ) {
             holder.newAnnotation(
                 HighlightSeverity.ERROR,
-                "Can't coerce a ${resolvedType.name} to a ${parameterType?.name ?: "undefined"}"
+                "Can't coerce a ${resolvedType.presentableText} to a ${parameterType?.presentableText ?: "undefined"}"
             ).range(value).create()
         }
     }

@@ -1,6 +1,6 @@
 package com.github.rar91279.plugin.tapestry.core.events
 
-import com.github.rar91279.plugin.tapestry.core.resource.IResource
+import com.intellij.psi.PsiFile
 import java.util.EventListener
 
 /**
@@ -33,7 +33,7 @@ interface FileSystemListener : EventListener {
      *
      * @param changedFile the resource representing the file whose contents have changed
      */
-    fun fileContentsChanged(changedFile: IResource) {}
+    fun fileContentsChanged(changedFile: PsiFile) {}
 
     /**
      * Called when a new class is created in the project.

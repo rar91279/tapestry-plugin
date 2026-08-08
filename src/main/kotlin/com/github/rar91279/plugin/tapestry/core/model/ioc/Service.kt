@@ -1,16 +1,16 @@
 package com.github.rar91279.plugin.tapestry.core.model.ioc
 
-import com.github.rar91279.plugin.tapestry.core.ioc.ServiceBinding
-import com.github.rar91279.plugin.tapestry.core.java.IJavaClassType
+import com.intellij.psi.PsiClass
 
 /**
  * A Tapestry IoC service.
  */
-class Service(serviceBinding: ServiceBinding, val serviceClass: IJavaClassType?) {
-
-    val id: String = serviceBinding.id.orEmpty()
-    val scope: String = serviceBinding.scope.orEmpty()
-    val isEagerLoad: Boolean = serviceBinding.isEagerLoad
+class Service(
+    val id: String,
+    val scope: String,
+    val isEagerLoad: Boolean,
+    val serviceClass: PsiClass?,
+) {
 
     override fun toString(): String = id
 }

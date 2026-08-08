@@ -7,14 +7,12 @@ import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClassOwner
 import com.intellij.psi.PsiDirectory
 import com.github.rar91279.plugin.tapestry.core.exceptions.NotTapestryElementException
-import com.github.rar91279.plugin.tapestry.core.java.IJavaClassType
 import com.github.rar91279.plugin.tapestry.core.model.TapestryLibrary
 import com.github.rar91279.plugin.tapestry.core.model.presentation.Page
 import com.github.rar91279.plugin.tapestry.core.model.presentation.PresentationLibraryElement
 import com.github.rar91279.plugin.tapestry.core.model.presentation.Mixin
 import com.github.rar91279.plugin.tapestry.core.model.presentation.TapestryComponent
 import com.github.rar91279.plugin.tapestry.intellij.TapestryModuleSupportLoader
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaClassType
 import com.github.rar91279.plugin.tapestry.intellij.util.IdeaUtils
 import com.github.rar91279.plugin.tapestry.intellij.view.TapestryProjectViewPane
 import com.github.rar91279.plugin.tapestry.lang.TmlFileType
@@ -40,35 +38,32 @@ open class PackageNode(private val library: TapestryLibrary?, psiDirectory: PsiD
 
         for (psiFile in directory.files) {
             if (psiFile is PsiClassOwner) {
-                try {
-                    val psiClass = IdeaUtils.findPublicClass(psiFile)
-                    if (psiClass == null || !TapestryProjectViewPane.getInstance(myProject).isGroupElementFiles) {
-                        throw NotTapestryElementException("")
-                    }
+                // A class that is not a Tapestry element — or element grouping being switched off — shows as
+                // a plain class node. That used to be signalled by throwing NotTapestryElementException with
+                // an empty message purely to reach the catch below; the real exception, thrown out of
+                // createElementInstance, still has to be caught.
+                val psiClass =
+                    if (TapestryProjectViewPane.getInstance(myProject).isGroupElementFiles) IdeaUtils.findPublicClass(psiFile)
+                    else null
 
-                    val tapestryProject = TapestryModuleSupportLoader.getTapestryProject(module)!!
-                    val element: PresentationLibraryElement = if (library == null) {
-                        PresentationLibraryElement.createProjectElementInstance(
-                            IdeaUtils.createJavaTypeFromPsiType(
-                                module,
-                                JavaPsiFacade.getInstance(module.project).elementFactory.createType(psiClass)
-                            ) as IJavaClassType,
-                            tapestryProject)!!
-                    } else {
-                        PresentationLibraryElement.createElementInstance(
-                            library,
-                            IntellijJavaClassType(module, psiClass.containingFile),
-                            tapestryProject)!!
+                val element = psiClass?.let {
+                    try {
+                        val tapestryProject = TapestryModuleSupportLoader.getTapestryProject(module)!!
+                        if (library == null) {
+                            PresentationLibraryElement.createProjectElementInstance(it, tapestryProject)
+                        } else {
+                            PresentationLibraryElement.createElementInstance(library, it, tapestryProject)
+                        }
+                    } catch (e: NotTapestryElementException) {
+                        null
                     }
+                }
 
-                    when (element.elementType) {
-                        PresentationLibraryElement.ElementType.PAGE -> children.add(PageNode(element, module))
-                        PresentationLibraryElement.ElementType.COMPONENT -> children.add(ComponentNode(element, module))
-                        PresentationLibraryElement.ElementType.MIXIN -> children.add(MixinNode(element, module))
-                        else -> {}
-                    }
-                } catch (e: NotTapestryElementException) {
-                    children.add(ClassNode(psiFile, module))
+                when (element?.elementType) {
+                    PresentationLibraryElement.ElementType.PAGE -> children.add(PageNode(element, module))
+                    PresentationLibraryElement.ElementType.COMPONENT -> children.add(ComponentNode(element, module))
+                    PresentationLibraryElement.ElementType.MIXIN -> children.add(MixinNode(element, module))
+                    null -> children.add(ClassNode(psiFile, module))
                 }
             }
 

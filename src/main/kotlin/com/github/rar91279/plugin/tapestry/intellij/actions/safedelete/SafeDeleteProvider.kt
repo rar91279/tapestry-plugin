@@ -10,7 +10,6 @@ import com.intellij.psi.util.PsiUtilCore
 import com.intellij.refactoring.RefactoringFactory
 import com.github.rar91279.plugin.tapestry.core.TapestryProject
 import com.github.rar91279.plugin.tapestry.core.model.presentation.PresentationLibraryElement
-import com.github.rar91279.plugin.tapestry.intellij.core.resource.IntellijResource
 import com.github.rar91279.plugin.tapestry.intellij.util.IdeaUtils
 import com.github.rar91279.plugin.tapestry.intellij.view.TapestryProjectViewPane
 import com.github.rar91279.plugin.tapestry.intellij.view.nodes.LibrariesNode
@@ -64,11 +63,10 @@ class SafeDeleteProvider : DeleteProvider {
 
             // The selected node is a presentation element
             if (element is PresentationLibraryElement) {
-                val elementClass = (element.elementClass.file as IntellijResource).psiFile
-                totalElementsToDelete.add(elementClass)
+                element.elementClass?.containingFile?.let { totalElementsToDelete.add(it) }
 
-                for (template in element.template) totalElementsToDelete.add((template as IntellijResource).psiFile)
-                for (catalog in element.messageCatalog) totalElementsToDelete.add((catalog as IntellijResource).psiFile)
+                for (template in element.template) totalElementsToDelete.add(template)
+                for (catalog in element.messageCatalog) totalElementsToDelete.add(catalog)
             }
 
             // The selected node is a package
@@ -164,11 +162,11 @@ class SafeDeleteProvider : DeleteProvider {
      */
     private fun addElementToDelete(child: DefaultMutableTreeNode, elementsList: MutableList<PsiElement>) {
         val element = (child.userObject as TapestryNode).getValue() as PresentationLibraryElement
-        val elementClass = (element.elementClass.file as IntellijResource).psiFile
+        // A node whose class file is gone has nothing to delete on the class side; its templates and
+        // catalogs, if any are still around, are still worth collecting.
+        IdeaUtils.findPublicClass(element.elementClass?.containingFile)?.let { elementsList.add(it) }
 
-        elementsList.add(IdeaUtils.findPublicClass(elementClass)!!)
-
-        for (template in element.template) elementsList.add((template as IntellijResource).psiFile)
-        for (catalog in element.messageCatalog) elementsList.add((catalog as IntellijResource).psiFile)
+        for (template in element.template) elementsList.add(template)
+        for (catalog in element.messageCatalog) elementsList.add(catalog)
     }
 }

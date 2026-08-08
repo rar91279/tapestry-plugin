@@ -9,7 +9,7 @@ class SpecialCaseThisResolver : AbstractValueResolver() {
     override fun resolve(context: ValueResolverContext): Boolean {
         if (context.cleanValueLowercased() != "this") return false
 
-        context.resultType = context.contextClass
+        context.resultType = context.contextClass?.let { context.project.classTypeOf(it) }
         return true
     }
 }

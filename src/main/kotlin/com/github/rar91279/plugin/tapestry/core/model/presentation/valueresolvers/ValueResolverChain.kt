@@ -3,18 +3,20 @@ package com.github.rar91279.plugin.tapestry.core.model.presentation.valueresolve
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.github.rar91279.plugin.tapestry.core.TapestryProject
-import com.github.rar91279.plugin.tapestry.core.java.IJavaClassType
+import com.intellij.psi.PsiClass
+import com.github.rar91279.plugin.tapestry.core.model.presentation.valueresolvers.AbstractValueResolver.Companion.resolveWith
 import com.github.rar91279.plugin.tapestry.core.model.presentation.valueresolvers.property.PropResolver
-import com.github.rar91279.plugin.tapestry.core.util.chain.ChainBase
 
 /**
- * The starting point of the resolvers chain.
+ * The starting point of value resolution: the first resolver that handles the value wins.
  */
-object ValueResolverChain : ChainBase(
-    arrayOf(PropResolver(), LiteralResolver(), ComponentResolver(), ValidateResolver(), MessageResolver())
-) {
+object ValueResolverChain {
 
     private val logger = Logger.getInstance(ValueResolverChain::class.java)
+
+    private val resolvers = listOf(
+        PropResolver(), LiteralResolver(), ComponentResolver(), ValidateResolver(), MessageResolver()
+    )
 
     /**
      * Resolves a value.
@@ -25,14 +27,14 @@ object ValueResolverChain : ChainBase(
     @Throws(Exception::class)
     fun resolve(
         project: TapestryProject,
-        contextClass: IJavaClassType?,
+        contextClass: PsiClass?,
         value: String?,
         defaultPrefix: String?
     ): ResolvedValue? {
         val context = ValueResolverContext(project, contextClass, value, defaultPrefix)
 
         try {
-            execute(context)
+            resolvers.resolveWith(context)
         } catch (ex: Exception) {
             if (ex !is ProcessCanceledException) logger.error(ex)
             throw ex

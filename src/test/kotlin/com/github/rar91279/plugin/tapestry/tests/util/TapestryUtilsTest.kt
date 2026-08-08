@@ -5,7 +5,6 @@ import com.intellij.psi.xml.XmlAttribute
 import com.intellij.psi.xml.XmlTag
 import com.github.rar91279.plugin.tapestry.core.TapestryConstants
 import com.github.rar91279.plugin.tapestry.core.util.ComponentUtils
-import com.github.rar91279.plugin.tapestry.intellij.core.resource.xml.IntellijXmlTag
 import com.github.rar91279.plugin.tapestry.intellij.util.TapestryUtils
 import com.github.rar91279.plugin.tapestry.tests.core.EmptyFixtureSpec
 import io.kotest.matchers.shouldBe
@@ -33,7 +32,7 @@ class TapestryUtilsTest : EmptyFixtureSpec({
             val tapestryTagMock = mockk<XmlTag>(relaxed = true)
             every { tapestryTagMock.namespace } returns TapestryConstants.TEMPLATE_NAMESPACE
 
-            ComponentUtils.isComponentTag(IntellijXmlTag(tapestryTagMock)) shouldBe true
+            ComponentUtils.isComponentTag(tapestryTagMock) shouldBe true
 
             val attributeMock = mockk<XmlAttribute>(relaxed = true)
             every { attributeMock.localName } returns "att1"
@@ -42,7 +41,7 @@ class TapestryUtilsTest : EmptyFixtureSpec({
             every { tapestryTagMock.namespace } returns ""
             every { tapestryTagMock.attributes } returns arrayOf(attributeMock)
 
-            ComponentUtils.isComponentTag(IntellijXmlTag(tapestryTagMock)) shouldBe true
+            ComponentUtils.isComponentTag(tapestryTagMock) shouldBe true
         }
     }
 
@@ -63,7 +62,7 @@ class TapestryUtilsTest : EmptyFixtureSpec({
             every { tapestryTagMock.namespace } returns ""
             every { tapestryTagMock.attributes } returns arrayOf(attributeMock)
 
-            ComponentUtils.isComponentTag(IntellijXmlTag(tapestryTagMock)) shouldBe false
+            ComponentUtils.isComponentTag(tapestryTagMock) shouldBe false
         }
     }
 

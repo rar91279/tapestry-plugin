@@ -26,6 +26,9 @@
       with Apache Tapestry and is not affiliated with or endorsed by the ASF.</small></p>
   ]]></description>
 
+  <!-- Java PSI (JavaPsiFacade, the Java stub indexes, the JAVA line-marker provider) is used throughout.
+       It was previously only reachable transitively through com.intellij.javaee — an implicit guarantee. -->
+  <depends>com.intellij.modules.java</depends>
   <depends>com.intellij.javaee</depends>
   <depends>com.intellij.properties</depends>
   <depends>com.intellij.modules.jcef</depends>
@@ -104,7 +107,9 @@
                      groupKey="tapestry.inspections.group" enabledByDefault="true" level="WARNING"
                      implementationClass="com.github.rar91279.plugin.tapestry.intellij.inspections.TelReferencesInspection"/>
     <moduleService serviceImplementation="com.github.rar91279.plugin.tapestry.intellij.TapestryModuleSupportLoader"/>
-    <psi.treeChangeListener implementation="com.github.rar91279.plugin.tapestry.intellij.TapestryPsiTreeChangeListener"/>
+    <!-- Registered per project by the activity below rather than through the application-level
+         psi.treeChangeListener EP, which fired for every keystroke in every open project. -->
+    <postStartupActivity implementation="com.github.rar91279.plugin.tapestry.intellij.TapestryProjectListenerActivity"/>
   </extensions>
 
   <actions>

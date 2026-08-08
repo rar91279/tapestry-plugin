@@ -23,6 +23,12 @@ intellijPlatform {
     pluginConfiguration {
         version = project.version.toString()
 
+        // Pinned rather than inherited from whatever platform the build happens to target, so raising the
+        // compatibility floor is a deliberate decision and not a side effect of a platform bump.
+        ideaVersion {
+            sinceBuild = "262"
+        }
+
         // The plugin's "What's new" comes from CHANGELOG.md: the section of the version being built,
         // falling back to [Unreleased] for snapshot builds.
         changeNotes = providers.provider {
@@ -34,6 +40,14 @@ intellijPlatform {
                     Changelog.OutputType.HTML
                 )
             }
+        }
+    }
+
+    // `verifyPlugin` (run by CI) otherwise checks whatever IPGP defaults to. Declare the target set so the
+    // verified IDEs are an intentional matrix.
+    pluginVerification {
+        ides {
+            recommended()
         }
     }
 
@@ -56,10 +70,6 @@ dependencies {
     testImplementation(libs.kotest.assertions)
     testImplementation(libs.mockk)
     testRuntimeOnly(libs.junit.vintage.engine)
-    // MavenUtils (production) uses Apache maven-model (MavenXpp3Writer) to write pom.xml. In 2026.2
-    // this jar no longer sits on the core platform classpath the fast `kotest` task builds, so declare
-    // the library explicitly for tests. Version matches the 3.x the IDE bundles.
-    testImplementation("org.apache.maven:maven-model:3.8.1")
 
     // IntelliJ Platform Gradle Plugin Dependencies Extension - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-dependencies-extension.html
     intellijPlatform {
@@ -104,7 +114,9 @@ val platformRuntime = configurations["intellijPlatformClasspath"]
 tasks.register<Test>("kotest") {
     useJUnitPlatform()
     testClassesDirs = testSourceSet.output.classesDirs
-    classpath = testSourceSet.runtimeClasspath + platformRuntime
+    // compileClasspath as well as runtimeClasspath: the bundled-plugin jars (java PSI, in particular)
+    // are only on the compile side, and the specs mock those PSI interfaces.
+    classpath = testSourceSet.runtimeClasspath + testSourceSet.compileClasspath + platformRuntime
 
     include("com/github/rar91279/plugin/tapestry/core/**")
 }

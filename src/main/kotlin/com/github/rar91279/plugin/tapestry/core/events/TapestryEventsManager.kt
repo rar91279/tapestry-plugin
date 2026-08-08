@@ -1,6 +1,6 @@
 package com.github.rar91279.plugin.tapestry.core.events
 
-import com.github.rar91279.plugin.tapestry.core.resource.IResource
+import com.intellij.psi.PsiFile
 import com.intellij.openapi.Disposable
 import com.intellij.util.EventDispatcher
 import org.jetbrains.annotations.TestOnly
@@ -69,7 +69,7 @@ class TapestryEventsManager : FileSystemListener, TapestryModelChangeListener {
     override fun classDeleted(classFqn: String?) = fileSystemListeners.multicaster.classDeleted(classFqn)
 
     /** Broadcasts file content change event to all registered file system listeners. */
-    override fun fileContentsChanged(changedFile: IResource) =
+    override fun fileContentsChanged(changedFile: PsiFile) =
         fileSystemListeners.multicaster.fileContentsChanged(changedFile)
 
     /** Broadcasts Tapestry model change event to all registered model change listeners. */

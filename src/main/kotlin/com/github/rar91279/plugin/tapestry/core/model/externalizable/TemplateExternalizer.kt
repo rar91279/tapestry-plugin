@@ -20,7 +20,7 @@ object TemplateExternalizer {
     @Throws(Exception::class)
     fun externalize(element: Any, namespacePrefix: String?): String? = when (element) {
         is TapestryComponent -> {
-            val name = element.qualifiedElementName(separator = ".") { PathUtils.pathIntoPackage(it.lowercase(Locale.getDefault()), false) }
+            val name = element.qualifiedElementName(separator = ".") { PathUtils.pathIntoPackage(it.lowercase(), false) }
             val requiredParameters = element.parameters.values
                 .filter { it.isRequired }
                 .joinToString("") { " ${it.name}=\"\"" }
@@ -29,7 +29,7 @@ object TemplateExternalizer {
         }
 
         is Page -> {
-            if (element.elementClass.file == null) throw RuntimeException("The page is invalid!!")
+            if (element.elementClass?.containingFile == null) throw RuntimeException("The page is invalid!!")
 
             val name = element.qualifiedElementName(separator = "/") { it }
             "<$namespacePrefix:pagelink page=\"$name\">Link to $name</$namespacePrefix:pagelink>"

@@ -10,9 +10,6 @@ object PathUtils {
     /** The Tapestry path separator character. */
     const val TAPESTRY_PATH_SEPARATOR = "/"
 
-    /** The file path separator character. */
-    val SYSTEM_PATH_SEPARATOR: String = File.separator
-
     /** The unix file path separator character. */
     const val UNIX_PATH_SEPARATOR = "/"
 
@@ -77,17 +74,6 @@ object PathUtils {
     }
 
     /**
-     * Computes the first element of a path.
-     * Example: `admin/Login` -> `admin`
-     */
-    fun getFirstPathElement(path: String?): String {
-        if (path.isNullOrEmpty()) return ""
-        if (!path.contains(TAPESTRY_PATH_SEPARATOR)) return path
-
-        return path.removePrefix(TAPESTRY_PATH_SEPARATOR).substringBefore(TAPESTRY_PATH_SEPARATOR)
-    }
-
-    /**
      * Removes the last path element.
      * Example: `admin/Login` -> `admin`
      *
@@ -100,12 +86,6 @@ object PathUtils {
 
         return path.substringBeforeLast(separator)
     }
-
-    /**
-     * Computes the component file name from the component name.
-     * Example: `admin/Login` -> `Login`
-     */
-    fun getComponentFileName(componentName: String?): String = getLastPathElement(componentName)
 
     /**
      * Returns a given path in UNIX format.

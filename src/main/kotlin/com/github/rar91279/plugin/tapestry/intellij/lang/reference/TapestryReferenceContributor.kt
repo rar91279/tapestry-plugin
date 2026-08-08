@@ -1,6 +1,9 @@
 package com.github.rar91279.plugin.tapestry.intellij.lang.reference
 
+import com.intellij.psi.PsiField
+import com.intellij.psi.PsiMethod
 import com.intellij.lang.properties.references.PropertyReference
+import com.intellij.openapi.diagnostic.ControlFlowException
 import com.intellij.openapi.paths.PathReferenceManager
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.TextRange
@@ -22,10 +25,6 @@ import com.github.rar91279.plugin.tapestry.core.model.presentation.TapestryCompo
 import com.github.rar91279.plugin.tapestry.core.model.presentation.TapestryParameter
 import com.github.rar91279.plugin.tapestry.core.model.presentation.valueresolvers.ValueResolverChain
 import com.github.rar91279.plugin.tapestry.intellij.TapestryModuleSupportLoader
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaClassType
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaField
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaMethod
-import com.github.rar91279.plugin.tapestry.intellij.core.resource.IntellijResource
 import com.github.rar91279.plugin.tapestry.intellij.lang.descriptor.TapestryXmlExtension
 import com.github.rar91279.plugin.tapestry.intellij.util.TapestryUtils
 import com.github.rar91279.plugin.tapestry.psi.TmlFile
@@ -186,18 +185,21 @@ class TapestryReferenceContributor : PsiReferenceContributor() {
         parameter: TapestryParameter
     ): Array<PsiReference> {
         val element = project.findElementByTemplate(attrValue.containingFile) ?: return PsiReference.EMPTY_ARRAY
-        val elementClass = element.elementClass as? IntellijJavaClassType ?: return PsiReference.EMPTY_ARRAY
+        val elementClass = element.elementClass ?: return PsiReference.EMPTY_ARRAY
 
         val resolvedValue = try {
             ValueResolverChain.resolve(project, elementClass, attrValue.value, parameter.defaultPrefix)
         }
-        catch (_: Exception) {
+        catch (e: Exception) {
+            // Reference resolution runs under highlighting; swallowing a cancellation here would make the
+            // whole pass ignore it.
+            if (e is ControlFlowException) throw e
             return PsiReference.EMPTY_ARRAY
         } ?: return PsiReference.EMPTY_ARRAY
 
         return when (val codeBind = resolvedValue.codeBind) {
-            is IntellijJavaMethod -> arrayOf(PsiAttributeValueReference(attrValue, codeBind.psiMethod))
-            is IntellijJavaField -> arrayOf(PsiAttributeValueReference(attrValue, codeBind.psiField))
+            is PsiMethod -> arrayOf(PsiAttributeValueReference(attrValue, codeBind))
+            is PsiField -> arrayOf(PsiAttributeValueReference(attrValue, codeBind))
             else -> PsiReference.EMPTY_ARRAY
         }
     }
@@ -215,11 +217,11 @@ class TapestryReferenceContributor : PsiReferenceContributor() {
         if (range == null) return PsiReference.EMPTY_ARRAY
 
         val tag = parentTag(attributeValue) ?: return PsiReference.EMPTY_ARRAY
-        val elementClass = TapestryUtils.getTypeOfTag(tag)?.elementClass as? IntellijJavaClassType
+        val elementClass = TapestryUtils.getTypeOfTag(tag)?.elementClass
 
         return arrayOf(object : TapestryPsiReferenceBase<PsiElement>(attributeValue, range) {
 
-            override fun resolve(): PsiElement? = elementClass?.psiClass
+            override fun resolve(): PsiElement? = elementClass
 
             override fun getVariants(): Array<Any> =
                 TapestryModuleSupportLoader.getTapestryProject(tag)?.availableComponentNames?.toList()?.toTypedArray() ?: emptyArray()
@@ -239,11 +241,11 @@ class TapestryReferenceContributor : PsiReferenceContributor() {
         if (range == null) return PsiReference.EMPTY_ARRAY
 
         val tag = parentTag(attr) ?: return PsiReference.EMPTY_ARRAY
-        val field = TapestryUtils.findIdentifyingField(tag) as? IntellijJavaField
+        val field = TapestryUtils.findIdentifyingField(tag)
 
         return arrayOf(object : TapestryPsiReferenceBase<PsiElement>(attr, range) {
 
-            override fun resolve(): PsiElement? = field?.psiField
+            override fun resolve(): PsiElement? = field
 
             override fun getVariants(): Array<Any> = TapestryUtils.getEmbeddedComponentIds(tag).toTypedArray()
         })
@@ -283,7 +285,7 @@ class TapestryReferenceContributor : PsiReferenceContributor() {
         return arrayOf(object : TapestryPsiReferenceBase<PsiElement>(pageAttrValue, range) {
 
             override fun resolve(): PsiElement? =
-                (page?.template?.firstOrNull() as? IntellijResource)?.psiFile
+                page?.template?.firstOrNull()
 
             override fun getVariants(): Array<Any> = component.project.availablePageNames.toList().toTypedArray()
         })

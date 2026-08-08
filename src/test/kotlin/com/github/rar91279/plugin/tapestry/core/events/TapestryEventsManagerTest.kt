@@ -1,6 +1,6 @@
 package com.github.rar91279.plugin.tapestry.core.events
 
-import com.github.rar91279.plugin.tapestry.core.resource.TestableResource
+import com.github.rar91279.plugin.tapestry.core.mocks.psiFileMock
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import io.kotest.core.spec.style.FreeSpec
@@ -40,7 +40,7 @@ class TapestryEventsManagerTest : FreeSpec({
     }
 
     "fileContentsChanged" {
-        val resource = TestableResource("", "")
+        val resource = psiFileMock("Home.tml")
 
         eventsManager.addFileSystemListener(fileListener, parent)
         eventsManager.fileContentsChanged(resource)

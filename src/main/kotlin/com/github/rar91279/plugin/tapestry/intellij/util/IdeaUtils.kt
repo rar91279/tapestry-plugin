@@ -1,5 +1,8 @@
 package com.github.rar91279.plugin.tapestry.intellij.util
 
+import com.intellij.psi.PsiManager
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.facet.FacetManager
 import com.intellij.javaee.web.WebRoot
 import com.intellij.javaee.web.facet.WebFacet
@@ -30,10 +33,6 @@ import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.util.PsiUtil
 import com.intellij.psi.xml.XmlElement
 import com.intellij.psi.xml.XmlTag
-import com.github.rar91279.plugin.tapestry.core.java.IJavaType
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaArrayType
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaClassType
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaPrimitiveType
 import com.intellij.util.IncorrectOperationException
 import javax.swing.tree.DefaultMutableTreeNode
 
@@ -113,33 +112,6 @@ object IdeaUtils {
     }
 
     /**
-     * Creates a JavaType instance from a PsiType.
-     *
-     * @return the corresponding JavaType instance, or `null` if the type can't be converted into a JavaType.
-     */
-    fun createJavaTypeFromPsiType(module: Module, type: PsiType?): IJavaType? {
-        when (type) {
-            is PsiClassType -> {
-                val psiClass = try {
-                    val resolved = type.resolve()
-                    if (resolved is PsiTypeParameter) { // let's consider generic type T as Object
-                        JavaPsiFacade.getInstance(module.project)
-                            .findClass("java.lang.Object", GlobalSearchScope.moduleWithLibrariesScope(module))
-                    } else resolved
-                } catch (ex: ProcessCanceledException) {
-                    throw ex
-                }
-
-                return psiClass?.let { IntellijJavaClassType(module, it.containingFile) }
-            }
-
-            is PsiPrimitiveType -> return IntellijJavaPrimitiveType(type)
-            is PsiArrayType -> return IntellijJavaArrayType(module, type)
-            else -> return null
-        }
-    }
-
-    /**
      * @return the web facet of the given module, or `null` if the module doesn't have one.
      */
     fun getWebFacet(module: Module): WebFacet? = FacetManager.getInstance(module).getFacetByType(WebFacet.ID)
@@ -163,4 +135,17 @@ object IdeaUtils {
     private fun PsiElement?.nextSiblings(): Sequence<PsiElement> = generateSequence(this) { it.nextSibling }.drop(1)
 
     private fun PsiElement?.prevSiblings(): Sequence<PsiElement> = generateSequence(this) { it.prevSibling }.drop(1)
+}
+
+/**
+ * The PSI file open in the project's selected editor, or `null` if there is no editor, no file behind its
+ * document, or no PSI for that file.
+ *
+ * Replaces three copies of the same `selectedTextEditor!!.document` → `getFile(...)!!` → `findFile(...)!!`
+ * chain, each of which threw a NullPointerException rather than degrading when any link was absent.
+ */
+fun currentPsiFileInEditor(project: Project): PsiFile? {
+    val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return null
+    val virtualFile = FileDocumentManager.getInstance().getFile(editor.document) ?: return null
+    return PsiManager.getInstance(project).findFile(virtualFile)
 }

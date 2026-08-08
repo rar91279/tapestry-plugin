@@ -4,6 +4,7 @@ import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.diagnostic.ControlFlowException
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.module.Module
@@ -16,11 +17,9 @@ import com.intellij.psi.PsiClassOwner
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.github.rar91279.plugin.tapestry.core.events.FileSystemListener
-import com.github.rar91279.plugin.tapestry.core.java.IJavaClassType
+import com.intellij.psi.PsiClass
 import com.github.rar91279.plugin.tapestry.core.model.presentation.PresentationLibraryElement
-import com.github.rar91279.plugin.tapestry.core.resource.IResource
 import com.github.rar91279.plugin.tapestry.intellij.TapestryModuleSupportLoader
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaClassType
 import com.github.rar91279.plugin.tapestry.intellij.util.IdeaUtils
 import com.github.rar91279.plugin.tapestry.intellij.util.TapestryUtils
 import com.github.rar91279.plugin.tapestry.lang.TmlFileType
@@ -41,7 +40,7 @@ class TapestryToolWindow(private val project: Project) : FileSystemListener, Dis
     val documentationTab = DocumentationTab(project)
     val dependenciesTab = DependenciesTab()
 
-    private val updateOnChangeFiles = mutableListOf<IJavaClassType>()
+    private val updateOnChangeFiles = mutableListOf<PsiClass>()
     private var module: Module? = null
     private var element: Any? = null
 
@@ -108,12 +107,14 @@ class TapestryToolWindow(private val project: Project) : FileSystemListener, Dis
             if (psiFile is PsiClassOwner) {
                 val psiClass = IdeaUtils.findPublicClass(psiFile) ?: return null
                 return PresentationLibraryElement.createProjectElementInstance(
-                    IntellijJavaClassType(module, psiClass.containingFile), tapestryProject)
+                    psiClass, tapestryProject)
             }
             if (psiFile.fileType == TmlFileType) {
                 return tapestryProject.findElementByTemplate(psiFile)
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            // Runs inside a non-blocking read action — swallowing cancellation would defeat its own expiry.
+            if (e is ControlFlowException) throw e
             // Not a Tapestry element — leave the current view untouched.
         }
         return null
@@ -125,12 +126,12 @@ class TapestryToolWindow(private val project: Project) : FileSystemListener, Dis
         documentationTab.setElement(element)
     }
 
-    override fun fileContentsChanged(changedFile: IResource) {
+    override fun fileContentsChanged(changedFile: PsiFile) {
         if (element == null || module == null) return
-        val changedPath = changedFile.file?.absolutePath ?: return
+        val changedPath = changedFile.virtualFile?.path ?: return
         for (classType in updateOnChangeFiles) {
-            val resourceFile = classType.file?.file ?: continue
-            if (resourceFile.absolutePath.endsWith(changedPath)) {
+            val resourceFile = classType.containingFile?.virtualFile ?: continue
+            if (resourceFile.path.endsWith(changedPath)) {
                 documentationTab.showDocumentation(element)
                 documentationTab.setElement(element)
             }
@@ -138,7 +139,7 @@ class TapestryToolWindow(private val project: Project) : FileSystemListener, Dis
     }
 
     /** Updates the toolwindow state for the given module/element. */
-    fun update(module: Module?, element: Any?, updateOnChangeFiles: List<IJavaClassType>) {
+    fun update(module: Module?, element: Any?, updateOnChangeFiles: List<PsiClass>) {
         this.module = module
         this.element = element
 

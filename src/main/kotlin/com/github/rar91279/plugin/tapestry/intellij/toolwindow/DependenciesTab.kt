@@ -6,6 +6,7 @@ import com.intellij.ide.DefaultTreeExpander
 import com.intellij.ide.setToolTipText
 import com.intellij.ide.util.EditSourceUtil
 import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
@@ -19,10 +20,6 @@ import com.intellij.psi.PsiField
 import com.intellij.psi.PsiFile
 import com.github.rar91279.plugin.tapestry.core.model.presentation.InjectedElement
 import com.github.rar91279.plugin.tapestry.core.model.presentation.PresentationLibraryElement
-import com.github.rar91279.plugin.tapestry.core.resource.IResource
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaClassType
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaField
-import com.github.rar91279.plugin.tapestry.intellij.core.resource.IntellijResource
 import com.github.rar91279.plugin.tapestry.intellij.toolwindow.nodes.*
 import com.intellij.ui.DoubleClickListener
 import com.intellij.ui.PopupHandler
@@ -68,7 +65,7 @@ class DependenciesTab {
                 val selected = dependenciesTree.selectionPath
                 if (selected != null) {
                     val selectedObject = (selected.lastPathComponent as DefaultMutableTreeNode).userObject
-                    if (selectedObject is InjectedElement || selectedObject is PresentationLibraryElement || selectedObject is IResource) {
+                    if (selectedObject is InjectedElement || selectedObject is PresentationLibraryElement || selectedObject is PsiFile) {
                         val actions = DefaultActionGroup.createPopupGroup { "NavigateToGroup" }
                         actions.add(navigateToElementAction)
                         actions.add(navigateToUsageAction)
@@ -94,15 +91,15 @@ class DependenciesTab {
                 val selectedObject = (selected.lastPathComponent as DefaultMutableTreeNode).userObject
                 // Embedded component / injected page leaves navigate to the element class.
                 if (selectedObject is InjectedElement) {
-                    navigate((selectedObject.element?.elementClass as? IntellijJavaClassType)?.psiClass)
+                    navigate(selectedObject.element?.elementClass)
                 }
                 // "Used By" leaves navigate to the referencing element's class.
                 if (selectedObject is PresentationLibraryElement) {
-                    navigate((selectedObject.elementClass as IntellijJavaClassType).psiClass)
+                    navigate(selectedObject.elementClass)
                 }
                 // Template / message-catalog resource leaves navigate to their file.
-                if (selectedObject is IntellijResource) {
-                    navigate(selectedObject.psiFile)
+                if (selectedObject is PsiFile) {
+                    navigate(selectedObject)
                 }
                 return true
             }
@@ -177,7 +174,7 @@ class DependenciesTab {
             val userObject = node.userObject
             canNavigateToElement = userObject is PresentationLibraryElement
                     || userObject is InjectedElement
-                    || userObject is IntellijResource
+                    || userObject is PsiFile
             canNavigateToUsage = node is EmbeddedComponentNode || node is InjectedPageNode
         }
 
@@ -191,15 +188,18 @@ class DependenciesTab {
             val path = dependenciesTree.selectionPath ?: return
             val selectedObject = (path.lastPathComponent as DefaultMutableTreeNode).userObject
             if (selectedObject is PresentationLibraryElement) {
-                navigate((selectedObject.elementClass as IntellijJavaClassType).psiClass)
+                navigate(selectedObject.elementClass)
             }
             if (selectedObject is InjectedElement) {
-                navigate((selectedObject.element?.elementClass as? IntellijJavaClassType)?.psiClass)
+                navigate(selectedObject.element?.elementClass)
             }
-            if (selectedObject is IntellijResource) {
-                navigate(selectedObject.psiFile)
+            if (selectedObject is PsiFile) {
+                navigate(selectedObject)
             }
         }
+
+        // No update() of its own — enablement is driven by the tab — so nothing to compute.
+        override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
     }
 
     private inner class NavigateToUsageAction :
@@ -214,20 +214,23 @@ class DependenciesTab {
 
                 if (selectedNode is EmbeddedComponentNode) {
                     val elementField = selectedNode.injected.field
-                    if (elementField != null) field = (elementField as IntellijJavaField).psiField
-                    else file = ((selectedNode.parent as EmbeddedTemplateNode).userObject as IntellijResource).psiFile
+                    if (elementField != null) field = elementField
+                    else file = (selectedNode.parent as EmbeddedTemplateNode).userObject as PsiFile
                 }
 
                 if (selectedNode is InjectedPageNode) {
                     val elementField = selectedNode.injected.field
-                    if (elementField != null) field = (elementField as IntellijJavaField).psiField
-                    else file = ((selectedNode.parent as EmbeddedTemplateNode).userObject as IntellijResource).psiFile
+                    if (elementField != null) field = elementField
+                    else file = (selectedNode.parent as EmbeddedTemplateNode).userObject as PsiFile
                 }
 
                 navigate(field)
                 navigate(file)
             }
         }
+
+        // No update() of its own — enablement is driven by the tab — so nothing to compute.
+        override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
     }
 
     /**

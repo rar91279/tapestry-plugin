@@ -3,7 +3,6 @@ package com.github.rar91279.plugin.tapestry.tests
 import com.intellij.facet.FacetManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.module.Module
-import com.intellij.openapi.util.Computable
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess
@@ -80,7 +79,7 @@ abstract class TapestryBaseTestCase : UsefulTestCase() {
     }
 
     protected fun createFacet(): TapestryFacet {
-        return WriteCommandAction.runWriteCommandAction(myFixture.project, Computable {
+        return WriteCommandAction.writeCommandAction(myFixture.project).compute<TapestryFacet, Throwable> {
             val facetType = TapestryFacetType.getInstance()
             val facetManager = FacetManager.getInstance(myModule!!)
             val facet = facetManager.addFacet(facetType, facetType.presentableName, null)
@@ -93,7 +92,7 @@ abstract class TapestryBaseTestCase : UsefulTestCase() {
             Assert.assertNotNull(tapestryProject!!.applicationRootPackage)
             Assert.assertNotNull(tapestryProject.applicationLibrary)
             facet
-        })
+        }
     }
 
     protected open fun configureModule(moduleBuilder: JavaModuleFixtureBuilder<*>) {

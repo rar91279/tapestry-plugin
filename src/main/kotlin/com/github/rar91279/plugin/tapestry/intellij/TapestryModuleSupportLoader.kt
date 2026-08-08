@@ -7,20 +7,21 @@ import com.intellij.openapi.module.ModuleUtilCore
 import com.intellij.psi.PsiElement
 import com.intellij.psi.xml.XmlElement
 import com.github.rar91279.plugin.tapestry.core.TapestryProject
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaTypeCreator
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaTypeFinder
+import com.github.rar91279.plugin.tapestry.intellij.util.JavaTypeCreator
 import com.github.rar91279.plugin.tapestry.intellij.core.resource.IntellijResourceFinder
 import com.github.rar91279.plugin.tapestry.lang.TmlFileType
 
-@State(name = "Loomy")
+// Renamed from "Loomy" (a leftover unrelated to this plugin). A @State name is effectively permanent once
+// shipped, so this was the moment to fix it: the only cost is that the remembered new-element directories
+// below reset once, and the install base is still small.
+@State(name = "TapestrySupport")
 class TapestryModuleSupportLoader(module: Module) :
     PersistentStateComponent<TapestryModuleSupportLoader.ModuleConfiguration> {
 
     val tapestryProject: TapestryProject = TapestryProject(
         module,
         IntellijResourceFinder(module),
-        IntellijJavaTypeFinder(module),
-        IntellijJavaTypeCreator(module)
+        JavaTypeCreator(module)
     )
 
     private var configuration = ModuleConfiguration()

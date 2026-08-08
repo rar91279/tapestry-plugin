@@ -3,7 +3,7 @@ package com.github.rar91279.plugin.tapestry.intellij.actions.createnew.action
 import com.intellij.CommonBundle
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformCoreDataKeys
-import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.ui.DialogBuilder
 import com.intellij.openapi.ui.Messages
 import com.intellij.psi.PsiManager
@@ -68,19 +68,30 @@ class AddNewComponentAction : AddNewElementAction<ComponentsNode>(ComponentsNode
             state.newComponentsClassesSourceDirectory = dialog.classSourceDirectory.path
             state.newComponentsTemplatesSourceDirectory = dialog.templateSourceDirectory.path
 
-            ApplicationManager.getApplication().runWriteAction(Runnable {
-                try {
-                    val classSourceDirectory = PsiManager.getInstance(module.project).findDirectory(dialog.classSourceDirectory) ?: return@Runnable
-                    val templateSourceDirectory = PsiManager.getInstance(module.project).findDirectory(dialog.templateSourceDirectory)
-                    if (dialog.isNotCreatingTemplate) {
-                        TapestryUtils.createComponent(module, classSourceDirectory, null, componentName, dialog.isReplaceExistingFiles)
-                    } else {
-                        TapestryUtils.createComponent(module, classSourceDirectory, templateSourceDirectory, componentName, dialog.isReplaceExistingFiles)
+            // A command, so the new class and template land as one undoable unit and one Local History entry.
+            var failure: String? = null
+            WriteCommandAction.writeCommandAction(module.project)
+                .withName("New Tapestry Component")
+                .run<RuntimeException> {
+                    val psiManager = PsiManager.getInstance(module.project)
+                    val classSourceDirectory = psiManager.findDirectory(dialog.classSourceDirectory)
+                    if (classSourceDirectory != null) {
+                        val templateSourceDirectory =
+                            if (dialog.isNotCreatingTemplate) null
+                            else psiManager.findDirectory(dialog.templateSourceDirectory)
+                        try {
+                            TapestryUtils.createComponent(
+                                module, classSourceDirectory, templateSourceDirectory, componentName,
+                                dialog.isReplaceExistingFiles
+                            )
+                        } catch (ex: IllegalStateException) {
+                            failure = ex.message
+                        }
                     }
-                } catch (ex: IllegalStateException) {
-                    Messages.showWarningDialog(module.project, ex.message, "Error Creating Page")
                 }
-            })
+
+            // Reported after the write action: showing a modal dialog while holding the write lock is not allowed.
+            failure?.let { Messages.showWarningDialog(module.project, it, "Error Creating Component") }
             builder.window.dispose()
         }
 

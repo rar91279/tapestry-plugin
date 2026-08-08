@@ -11,10 +11,8 @@ import com.intellij.openapi.project.DumbAware
 import com.intellij.psi.PsiClassOwner
 import com.github.rar91279.plugin.tapestry.core.exceptions.NotTapestryElementException
 import com.github.rar91279.plugin.tapestry.core.model.presentation.PresentationLibraryElement
-import com.github.rar91279.plugin.tapestry.core.resource.IResource
+import com.intellij.psi.PsiFile
 import com.github.rar91279.plugin.tapestry.intellij.TapestryModuleSupportLoader
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaClassType
-import com.github.rar91279.plugin.tapestry.intellij.core.resource.IntellijResource
 import com.github.rar91279.plugin.tapestry.intellij.util.IdeaUtils
 import com.github.rar91279.plugin.tapestry.intellij.util.TapestryUtils
 
@@ -41,7 +39,7 @@ class TemplatesNavigation : ActionGroup(), DumbAware {
                 val psiClass = IdeaUtils.findPublicClass(psiFile) ?: return EMPTY_ARRAY
                 val module = event.getData(PlatformCoreDataKeys.MODULE) ?: return EMPTY_ARRAY
                 tapestryElement = PresentationLibraryElement.createProjectElementInstance(
-                    IntellijJavaClassType(module, psiClass.containingFile),
+                    psiClass,
                     TapestryModuleSupportLoader.getTapestryProject(module))
             } catch (ex: NotTapestryElementException) {
                 return EMPTY_ARRAY
@@ -54,7 +52,7 @@ class TemplatesNavigation : ActionGroup(), DumbAware {
         return EMPTY_ARRAY
     }
 
-    private class TemplateNavigate(private val tapestryElement: PresentationLibraryElement, template: IResource) :
+    private class TemplateNavigate(private val tapestryElement: PresentationLibraryElement, template: PsiFile) :
         AnAction(template.name.replace("_", "__"), template.name, null) {
 
         override fun actionPerformed(event: AnActionEvent) {
@@ -62,7 +60,7 @@ class TemplatesNavigation : ActionGroup(), DumbAware {
             for (template in tapestryElement.template) {
                 if (template.name == event.presentation.description) {
                     FileEditorManager.getInstance(project)
-                        .openFile((template as IntellijResource).psiFile.virtualFile, true)
+                        .openFile(template.virtualFile, true)
                     return
                 }
             }

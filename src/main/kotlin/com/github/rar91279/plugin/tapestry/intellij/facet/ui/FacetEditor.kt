@@ -46,7 +46,7 @@ class FacetEditor(facet: TapestryFacet, private val configuration: TapestryFacet
 
     init {
         if (configuration.filterName == null) {
-            configuration.filterName = StringUtil.toLowerCase(facet.module.name)
+            configuration.filterName = facet.module.name.lowercase()
         }
 
         reset()

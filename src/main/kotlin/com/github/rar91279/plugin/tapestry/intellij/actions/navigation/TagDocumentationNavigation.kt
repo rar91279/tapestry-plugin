@@ -38,7 +38,7 @@ class TagDocumentationNavigation : AnAction() {
             toolWindow.show(null)
         }
 
-        metatoolWindow.update(module, component, listOf(component.elementClass))
+        metatoolWindow.update(module, component, listOfNotNull(component.elementClass))
     }
 
     companion object {

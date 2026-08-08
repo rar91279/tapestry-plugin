@@ -1,31 +1,46 @@
 package com.github.rar91279.plugin.tapestry.core.model.presentation
 
+import com.github.rar91279.plugin.tapestry.core.util.attributeValues
+import com.github.rar91279.plugin.tapestry.core.util.erasedIfTypeVariable
+import com.github.rar91279.plugin.tapestry.core.util.javadocDescription
+import com.github.rar91279.plugin.tapestry.core.util.tapestryMethods
 import com.intellij.openapi.util.text.StringUtil.capitalize
 import com.intellij.openapi.util.text.StringUtil.notNullize
 import com.github.rar91279.plugin.tapestry.core.TapestryConstants
-import com.github.rar91279.plugin.tapestry.core.java.IJavaAnnotation
-import com.github.rar91279.plugin.tapestry.core.java.IJavaClassType
-import com.github.rar91279.plugin.tapestry.core.java.IJavaField
+import com.intellij.psi.PsiAnnotation
+import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiField
+import com.intellij.psi.PsiType
 
 /**
  * A Tapestry parameter.
+ *
+ * [parameterField] is `null` for the built-in components' parameters, which have no class and so no
+ * declaring field; [DummyTapestryParameter] overrides everything that would read one.
  */
 open class TapestryParameter(
-    private val elementClass: IJavaClassType?,
-    val parameterField: IJavaField
+    private val elementClass: PsiClass?,
+    val parameterField: PsiField?
 ) : Comparable<TapestryParameter> {
 
-    private val paramAnnotation: IJavaAnnotation?
-        get() = parameterField.annotations[PresentationLibraryElement.PARAMETER_ANNOTATION]
+    private val validField: PsiField?
+        get() = parameterField?.takeIf { it.isValid }
+
+    private val paramAnnotation: PsiAnnotation?
+        get() = parameterField?.getAnnotation(PresentationLibraryElement.PARAMETER_ANNOTATION)
+
+    /** The declared type of the parameter. */
+    open val type: PsiType?
+        get() = parameterField?.type?.erasedIfTypeVariable()
 
     /**
      * The parameter name, either defined in the parameter annotation or taken from the field name.
      */
     open val name: String
         get() {
-            if (!parameterField.isValid) return ""
+            val field = validField ?: return ""
 
-            val name = paramAnnotation?.parameters?.get(PARAMETER_NAME)?.get(0) ?: parameterField.name ?: ""
+            val name = paramAnnotation?.attributeValues(PARAMETER_NAME)?.firstOrNull() ?: field.name
 
             return name.removePrefix("$").removePrefix("_")
         }
@@ -34,16 +49,16 @@ open class TapestryParameter(
      * The parameter description.
      */
     open val description: String?
-        get() = if (parameterField.isValid) parameterField.documentation else ""
+        get() = validField?.javadocDescription() ?: ""
 
     /**
      * `true` if the parameter is required.
      */
     open val isRequired: Boolean
         get() {
-            if (!parameterField.isValid) return false
+            validField ?: return false
 
-            val required = paramAnnotation?.parameters?.get("required")?.get(0) == true.toString()
+            val required = paramAnnotation?.attributeValues("required")?.firstOrNull() == true.toString()
 
             return required && !hasMethod(elementClass, name)
         }
@@ -53,9 +68,9 @@ open class TapestryParameter(
      */
     open val defaultPrefix: String
         get() {
-            if (!parameterField.isValid) return ""
+            validField ?: return ""
 
-            return paramAnnotation?.parameters?.get("defaultPrefix")?.get(0) ?: "prop"
+            return paramAnnotation?.attributeValues("defaultPrefix")?.firstOrNull() ?: "prop"
         }
 
     /**
@@ -63,9 +78,9 @@ open class TapestryParameter(
      */
     open val defaultValue: String
         get() {
-            if (!parameterField.isValid) return ""
+            validField ?: return ""
 
-            return paramAnnotation?.parameters?.get("value")?.get(0) ?: ""
+            return paramAnnotation?.attributeValues("value")?.firstOrNull() ?: ""
         }
 
     override fun compareTo(other: TapestryParameter): Int = name.compareTo(other.name)
@@ -78,10 +93,12 @@ open class TapestryParameter(
 
         const val PARAMETER_NAME = "name"
 
-        fun hasMethod(clazz: IJavaClassType?, methodName: String): Boolean {
+        fun hasMethod(clazz: PsiClass?, methodName: String): Boolean {
             val defaultMethod = TapestryConstants.DEFAULT_PARAMETER_METHOD_PREFIX + capitalize(notNullize(methodName))
 
-            return clazz?.getAllMethods(true)?.any { it.name == defaultMethod && it.parameters.isEmpty() } == true
+            return clazz?.tapestryMethods(true)?.any {
+                it.name == defaultMethod && it.parameterList.isEmpty
+            } == true
         }
     }
 }

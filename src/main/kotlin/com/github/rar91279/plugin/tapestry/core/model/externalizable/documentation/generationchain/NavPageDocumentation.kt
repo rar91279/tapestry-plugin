@@ -13,9 +13,6 @@ object NavPageDocumentation {
     fun render(title: String?, sections: List<Section>): String =
         render(title, "", "", sections)
 
-    fun render(title: String?, subtitle: String?, sections: List<Section>): String =
-        render(title, subtitle, "", sections)
-
     /**
      * [subtitle] is shown right-aligned in the page header (e.g. Maven coordinates). If
      * [subtitleToken] is non-empty the subtitle is a clickable navigation link.

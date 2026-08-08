@@ -1,14 +1,13 @@
 package com.github.rar91279.plugin.tapestry.core.model.externalizable.documentation
 
-import com.github.rar91279.plugin.tapestry.core.model.externalizable.ExternalizableToDocumentation
 import com.github.rar91279.plugin.tapestry.core.model.externalizable.documentation.generationchain.DocumentationGenerator
 
 /**
  * The documentation home: the project modules and the Tapestry IoC services they contribute.
  */
-class Home(val modules: List<ModuleDoc>) : ExternalizableToDocumentation {
+class Home(val modules: List<ModuleDoc>) {
 
-    override val documentation: String?
+    val documentation: String?
         get() = DocumentationGenerator.generate(this)
 
     /** A project module and the Tapestry IoC services it contributes (empty for non-Tapestry modules). */

@@ -2,44 +2,43 @@ package com.github.rar91279.plugin.tapestry.core.util
 
 import com.intellij.openapi.util.text.StringUtil
 import com.github.rar91279.plugin.tapestry.core.TapestryConstants
-import com.github.rar91279.plugin.tapestry.core.java.IJavaClassType
+import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiTypes
 
 /**
  * Utility methods for manipulating classes.
  */
 object ClassUtils {
 
-    fun instanceOf(items: Array<Any>, aClass: Class<*>): Boolean = items.all { aClass.isInstance(it) }
-
     /**
      * Finds every property declared in a class and its super classes.
      *
      * @return the property name mapped to the place in the code where that property is bound to.
      */
-    fun getClassProperties(javaClassType: IJavaClassType?): Map<String, Any> {
+    fun getClassProperties(javaClassType: PsiClass?): Map<String, Any> {
         if (javaClassType == null) return HashMap()
 
         val properties = HashMap<String, Any>()
 
-        for (method in javaClassType.getPublicMethods(true)) {
-            val methodName = method.name ?: continue
+        for (method in javaClassType.publicMethods(true)) {
+            val methodName = method.name
             val returnType = method.returnType ?: continue
 
             val propertyName = when {
                 methodName.startsWith("get") -> methodName.removePrefix("get")
-                methodName.startsWith("is") && returnType.name == "boolean" -> methodName.removePrefix("is")
+                methodName.startsWith("is") && returnType == PsiTypes.booleanType() -> methodName.removePrefix("is")
                 else -> continue
             }
 
-            if (StringUtil.isNotEmpty(propertyName)) {
+            if (propertyName.isNotEmpty()) {
                 properties[StringUtil.decapitalize(propertyName)] = method
             }
         }
 
-        for ((fieldName, field) in javaClassType.getFields(true)) {
-            val annotation = field.annotations[TapestryConstants.PROPERTY_ANNOTATION] ?: continue
+        for ((fieldName, field) in javaClassType.tapestryFields(true)) {
+            val annotation = field.getAnnotation(TapestryConstants.PROPERTY_ANNOTATION) ?: continue
 
-            if (annotation.parameters["read"]?.get(0) == "false") continue
+            if (annotation.attributeValues("read").firstOrNull() == "false") continue
 
             properties[getName(fieldName)] = field
         }

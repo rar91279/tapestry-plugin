@@ -7,7 +7,6 @@ import com.intellij.psi.xml.XmlFile
 import com.intellij.psi.xml.XmlTag
 import com.github.rar91279.plugin.tapestry.core.TapestryConstants
 import com.github.rar91279.plugin.tapestry.intellij.TapestryModuleSupportLoader
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaClassType
 import com.github.rar91279.plugin.tapestry.intellij.util.TapestryUtils
 import com.github.rar91279.plugin.tapestry.psi.TmlFile
 import com.intellij.xml.DefaultXmlExtension
@@ -57,7 +56,7 @@ class TapestryXmlExtension : DefaultXmlExtension() {
         if (tag.getAttribute(attrName, getTapestryNamespace(tag)) != null) return true
 
         val element = tapestryProject.findElementByTemplate(tag.containingFile) ?: return false
-        val elementClass = element.elementClass as? IntellijJavaClassType ?: return false
+        val elementClass = element.elementClass ?: return false
 
         return TapestryUtils.parameterDefinedInClass(attrName, elementClass, tag)
     }

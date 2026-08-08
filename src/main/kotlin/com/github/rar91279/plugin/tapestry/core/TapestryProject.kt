@@ -3,16 +3,18 @@ package com.github.rar91279.plugin.tapestry.core
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringUtil
+import com.intellij.psi.JavaPsiFacade
+import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassObjectAccessExpression
+import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiPackage
 import com.intellij.psi.impl.java.stubs.index.JavaAnnotationIndex
 import com.intellij.psi.impl.java.stubs.index.JavaMethodNameIndex
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.util.PsiModificationTracker
+import com.github.rar91279.plugin.tapestry.core.util.classType
 import com.github.rar91279.plugin.tapestry.core.events.TapestryEventsManager
-import com.github.rar91279.plugin.tapestry.core.java.IJavaClassType
-import com.github.rar91279.plugin.tapestry.core.java.IJavaTypeCreator
-import com.github.rar91279.plugin.tapestry.core.java.IJavaTypeFinder
 import com.github.rar91279.plugin.tapestry.core.model.TapestryLibrary
 import com.github.rar91279.plugin.tapestry.core.resource.IResourceFinder
 import com.github.rar91279.plugin.tapestry.core.model.presentation.Mixin
@@ -24,8 +26,8 @@ import com.github.rar91279.plugin.tapestry.core.util.LocalizationUtils
 import com.github.rar91279.plugin.tapestry.intellij.TapestryModuleSupportLoader
 import com.github.rar91279.plugin.tapestry.intellij.facet.TapestryFacet
 import com.github.rar91279.plugin.tapestry.intellij.util.CachedUserDataCache
+import com.github.rar91279.plugin.tapestry.intellij.util.JavaTypeCreator
 import com.github.rar91279.plugin.tapestry.intellij.util.TapestryUtils
-import java.io.File
 
 /**
  * A Tapestry project. Every IDE implementation must hold a reference to an instance of this class for each project.
@@ -33,25 +35,74 @@ import java.io.File
 class TapestryProject(
     private val module: Module,
     val resourceFinder: IResourceFinder,
-    val javaTypeFinder: IJavaTypeFinder,
-    val javaTypeCreator: IJavaTypeCreator
+    val javaTypeCreator: JavaTypeCreator
 ) {
+
+    // --- Java types ---------------------------------------------------------------------------------
+    // These wrap JavaPsiFacade rather than being a separate `IJavaTypeFinder` collaborator: there is one
+    // implementation, and putting them here keeps them mockable from the fast core specs.
+
+    /** @return the class with the given fully qualified name, `null` if none is found. */
+    fun findType(fullyQualifiedName: String, includeDependencies: Boolean): PsiClass? =
+        JavaPsiFacade.getInstance(module.project).findClass(fullyQualifiedName, scope(includeDependencies))
+
+    /** @return the type denoting the class with the given fully qualified name. */
+    fun findClassType(fullyQualifiedName: String): PsiClassType? =
+        findType(fullyQualifiedName, true)?.classType()
+
+    /** @return the type denoting [psiClass]. */
+    fun classTypeOf(psiClass: PsiClass): PsiClassType = psiClass.classType()
+
+    /** @return all the classes declared in the given package. */
+    fun findTypesInPackage(packageName: String, includeDependencies: Boolean): Collection<PsiClass> =
+        findPackage(packageName)?.getClasses(scope(includeDependencies))?.toList() ?: emptyList()
+
+    /** @return all the classes declared in the given package and its sub-packages. */
+    fun findTypesInPackageRecursively(basePackageName: String, includeDependencies: Boolean): Collection<PsiClass> {
+        val psiPackage = findPackage(basePackageName) ?: return emptyList()
+        val scope = scope(includeDependencies)
+
+        val types = mutableListOf<PsiClass>()
+        types.addAll(psiPackage.getClasses(scope))
+        for (subPackage in psiPackage.getSubPackages(scope)) {
+            types.addAll(findTypesInPackageRecursively(subPackage.qualifiedName, includeDependencies))
+        }
+
+        return types
+    }
+
+    private fun findPackage(packageName: String): PsiPackage? =
+        JavaPsiFacade.getInstance(module.project).findPackage(packageName)
+
+    private fun scope(includeDependencies: Boolean): GlobalSearchScope =
+        if (includeDependencies) GlobalSearchScope.moduleWithDependenciesAndLibrariesScope(module, false)
+        else GlobalSearchScope.moduleScope(module)
 
     val eventsManager: TapestryEventsManager = TapestryEventsManager()
 
     private val coreLibrary = TapestryLibrary(CORE_LIBRARY_ID, TapestryConstants.CORE_LIBRARY_PACKAGE, this)
-    private var cachedLibraries: Collection<TapestryLibrary>? = null
-    private var cachedLibraryMapping: Map<String, List<String>>? = null
+
+    /**
+     * One consistent, immutable view of [libraries] and the inputs it was computed from. Published
+     * through a single volatile write so a concurrent reader either sees a complete snapshot or none —
+     * the previous four separate fields could publish the guard before the payload and hand a reader a
+     * stale or empty library set.
+     */
+    private class LibrarySnapshot(
+        val applicationPackage: String,
+        val filterName: String?,
+        val modificationCount: Long,
+        val libraries: List<TapestryLibrary>,
+    )
 
     @Volatile
-    private var lastApplicationPackage: String? = null
-    private var lastApplicationFilterName: String? = null
+    private var librarySnapshot: LibrarySnapshot? = null
 
     /** The application root package. */
     val applicationRootPackage: String?
         get() {
             val facetPackage = TapestryFacet.findFacetConfiguration(module)?.applicationPackage
-            if (StringUtil.isNotEmpty(facetPackage)) return facetPackage
+            if (!facetPackage.isNullOrEmpty()) return facetPackage
 
             // No facet (or empty package): fall back to the root package declared via Tapestry-Module-Classes.
             return TapestryUtils.getModuleClassesRootPackage(module)
@@ -83,37 +134,36 @@ class TapestryProject(
         get() {
             val applicationRootPackage = applicationRootPackage ?: return emptyList()
             val applicationFilterName = applicationFilterName
-            val libraryMapping = findLibraryMapping()
+            // The library mapping is derived purely from PSI (stub indexes + MappingDataCache), so the
+            // modification count stands in for it. The two facet fields are not PSI and are compared
+            // directly. All three are cheap — unlike findLibraryMapping(), which the previous guard ran
+            // on every access just to decide whether it could skip the work it had already done.
+            val modificationCount = PsiModificationTracker.getInstance(module.project).modificationCount
 
-            // volatile read
-            val lastPackage = lastApplicationPackage
-            if (StringUtil.isNotEmpty(lastPackage) && StringUtil.isNotEmpty(lastApplicationFilterName)) {
-                cachedLibraries?.let {
-                    if (lastPackage == applicationRootPackage &&
-                        lastApplicationFilterName == applicationFilterName &&
-                        libraryMapping == cachedLibraryMapping
-                    ) {
-                        return it
+            librarySnapshot?.let {
+                if (it.applicationPackage == applicationRootPackage &&
+                    it.filterName == applicationFilterName &&
+                    it.modificationCount == modificationCount
+                ) {
+                    return it.libraries
+                }
+            }
+
+            val libraries = buildList {
+                add(TapestryLibrary(APPLICATION_LIBRARY_ID, applicationRootPackage, this@TapestryProject))
+                add(TapestryLibrary(APPLICATION_LIBRARY_ID, "$applicationRootPackage.$applicationFilterName", this@TapestryProject))
+                add(coreLibrary)
+
+                for ((libraryShortName, basePackages) in findLibraryMapping()) {
+                    for (basePackage in basePackages) {
+                        val shortName = if (libraryShortName == CORE_LIBRARY_ID) null else libraryShortName
+                        add(TapestryLibrary(APPLICATION_LIBRARY_ID, basePackage, this@TapestryProject, shortName))
                     }
                 }
             }
 
-            val libraries = ArrayList<TapestryLibrary>()
-            libraries.add(TapestryLibrary(APPLICATION_LIBRARY_ID, applicationRootPackage, this))
-            libraries.add(TapestryLibrary(APPLICATION_LIBRARY_ID, "$applicationRootPackage.$applicationFilterName", this))
-            libraries.add(coreLibrary)
-
-            for ((libraryShortName, basePackages) in libraryMapping) {
-                for (basePackage in basePackages) {
-                    val shortName = if (libraryShortName == CORE_LIBRARY_ID) null else libraryShortName
-                    libraries.add(TapestryLibrary(APPLICATION_LIBRARY_ID, basePackage, this, shortName))
-                }
-            }
-
-            cachedLibraries = libraries
-            cachedLibraryMapping = libraryMapping
-            lastApplicationFilterName = applicationFilterName
-            lastApplicationPackage = applicationRootPackage // volatile write
+            // Single volatile publish, after the payload is fully built.
+            librarySnapshot = LibrarySnapshot(applicationRootPackage, applicationFilterName, modificationCount, libraries)
 
             return libraries
         }
@@ -126,13 +176,13 @@ class TapestryProject(
      * @return the page with the given name, or `null` if the page isn't found.
      */
     fun findPage(pageName: String?): Page? =
-        ourNameToPageMap.get(module)[StringUtil.toLowerCase(pageName)] as Page?
+        ourNameToPageMap.get(module)[pageName?.lowercase()] as Page?
 
     /**
      * @return the page of the given class, or `null` if the page isn't found.
      */
-    fun findPage(pageClass: IJavaClassType): Page? =
-        ourFqnToPageMap.get(module)[pageClass.fullyQualifiedName] as Page?
+    fun findPage(pageClass: PsiClass): Page? =
+        ourFqnToPageMap.get(module)[pageClass.qualifiedName] as Page?
 
     val availablePageNames: Array<String>
         get() = ourNameToPageMap.get(module).keys.toTypedArray()
@@ -142,19 +192,19 @@ class TapestryProject(
      */
     fun findComponent(componentName: String): TapestryComponent? =
         // Templates separate subpackages with '.', but element names are stored with '/'.
-        ourNameToComponentMap.get(module)[StringUtil.toLowerCase(componentName).replace('.', '/')] as TapestryComponent?
+        ourNameToComponentMap.get(module)[componentName.lowercase().replace('.', '/')] as TapestryComponent?
 
     /**
      * @return the component of the given class, or `null` if the component isn't found.
      */
-    fun findComponent(componentClass: IJavaClassType): TapestryComponent? =
-        ourFqnToComponentMap.get(module)[componentClass.fullyQualifiedName] as TapestryComponent?
+    fun findComponent(componentClass: PsiClass): TapestryComponent? =
+        ourFqnToComponentMap.get(module)[componentClass.qualifiedName] as TapestryComponent?
 
     /**
      * @return the mixin with the given name, or `null` if the mixin isn't found.
      */
     fun findMixin(mixinName: String?): Mixin? =
-        ourNameToMixinMap.get(module)[StringUtil.toLowerCase(mixinName).replace('.', '/')] as Mixin?
+        ourNameToMixinMap.get(module)[mixinName?.lowercase()?.replace('.', '/')] as Mixin?
 
     val availableComponentNames: Array<String>
         get() = ourNameToComponentMap.get(module).keys.toTypedArray()
@@ -167,14 +217,17 @@ class TapestryProject(
      *
      * @return either the page or component the given class belongs to, or `null` if the element isn't found.
      */
-    fun findElement(elementClass: IJavaClassType): PresentationLibraryElement? =
+    fun findElement(elementClass: PsiClass): PresentationLibraryElement? =
         findComponent(elementClass) ?: findPage(elementClass)
 
     /**
      * @return the element the given template belongs to, or `null` if it isn't found.
      */
     fun findElementByTemplate(template: PsiFile): PresentationLibraryElement? {
-        val templatePath = File(template.originalFile.viewProvider.virtualFile.path).absolutePath
+        // Keyed on the VFS path, which `ourTemplateToElementMap` also builds from — both sides must derive
+        // the key the same way. Don't route either through java.io.File: it yields platform separators
+        // (backslashes on Windows) where VFS paths are always forward-slashed.
+        val templatePath = template.originalFile.viewProvider.virtualFile.path
         return ourTemplateToElementMap.get(module)[LocalizationUtils.unlocalizeFileName(templatePath)]
     }
 
@@ -191,7 +244,7 @@ class TapestryProject(
      * Finds the project elements (pages/components) that embed or inject the given element.
      */
     fun findUsages(element: PresentationLibraryElement): List<Usage> =
-        ourUsagesMap.get(module)[element.elementClass.fullyQualifiedName] ?: emptyList()
+        ourUsagesMap.get(module)[element.elementClass?.qualifiedName] ?: emptyList()
 
     private fun findLibraryMapping(): Map<String, List<String>> {
         val result = HashMap<String, MutableList<String>>()
@@ -231,29 +284,29 @@ class TapestryProject(
         const val CORE_LIBRARY_ID: String = "core"
 
         private val ourNameToPageMap = ElementsCachedMap("ourNameToPageMap", pages = true) {
-            StringUtil.toLowerCase(it.name)
+            it.name?.lowercase()
         }
 
         private val ourFqnToPageMap = ElementsCachedMap("ourFqnToPageMap", pages = true) {
-            it.elementClass.fullyQualifiedName
+            it.elementClass?.qualifiedName
         }
 
         private val ourNameToComponentMap = ElementsCachedMap("ourNameToComponentMap", components = true) {
-            StringUtil.toLowerCase(it.name)
+            it.name?.lowercase()
         }
 
         private val ourFqnToComponentMap = ElementsCachedMap("ourFqnToComponentMap", components = true) {
-            it.elementClass.fullyQualifiedName
+            it.elementClass?.qualifiedName
         }
 
         private val ourNameToMixinMap = ElementsCachedMap("ourNameToMixinMap", mixins = true) {
-            StringUtil.toLowerCase(it.name)
+            it.name?.lowercase()
         }
 
         private val ourTemplateToElementMap = ElementsCachedMap(
             "ourTemplateToElementMap", components = true, pages = true, abstractComponents = true
         ) { element ->
-            element.template.firstOrNull()?.file?.absolutePath?.let { LocalizationUtils.unlocalizeFileName(it) }
+            element.template.firstOrNull()?.virtualFile?.path?.let { LocalizationUtils.unlocalizeFileName(it) }
         }
 
         // Reverse-dependency map: target class FQN -> project elements that embed/inject it.
@@ -271,7 +324,7 @@ class TapestryProject(
                 candidates.addAll(application.pages.values)
 
                 for (user in candidates) {
-                    if (user.elementClass.file == null) continue
+                    if (user.elementClass == null) continue
 
                     for (embedded in user.embeddedComponents) {
                         usages.addUsage(embedded.element?.element, user, UsageKind.INJECTED)
@@ -296,7 +349,7 @@ class TapestryProject(
             user: PresentationLibraryElement,
             kind: UsageKind
         ) {
-            val fqn = target?.elementClass?.fullyQualifiedName ?: return
+            val fqn = target?.elementClass?.qualifiedName ?: return
             computeIfAbsent(fqn) { ArrayList() }.add(Usage(user, kind))
         }
     }
@@ -343,7 +396,7 @@ private class ElementsCachedMap(
     ) {
         for (element in elements) {
             val key = computeKey(element) ?: continue
-            put(if (StringUtil.isEmpty(libraryShortName)) key else "$libraryShortName/$key", element)
+            put(if (libraryShortName.isNullOrEmpty()) key else "$libraryShortName/$key", element)
         }
     }
 }

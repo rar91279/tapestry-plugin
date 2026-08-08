@@ -27,8 +27,6 @@ object TapestryConstants {
     const val PAGE_CLASS_TEMPLATE_NAME: String = "Tapestry Page Class.java"
     const val PAGE_TEMPLATE_TEMPLATE_NAME: String = "Tapestry Page Template.html"
     const val MIXIN_CLASS_TEMPLATE_NAME: String = "Tapestry Mixin Class.java"
-    const val START_PAGE_TEMPLATE_TEMPLATE_NAME: String = "Tapestry Start Page Template.html"
-    const val START_PAGE_CLASS_TEMPLATE_NAME: String = "Tapestry Start Page Class.java"
     const val POM_TEMPLATE_NAME: String = "Tapestry Project Pom.xml"
 
     /** Base packages for the Tapestry elements. */
@@ -52,9 +50,6 @@ object TapestryConstants {
     /** The base package for the Tapestry core library. */
     const val CORE_LIBRARY_PACKAGE: String = "org.apache.tapestry5.corelib"
 
-    /** The base package for the Tapestry ioc library. */
-    const val IOC_LIBRARY_PACKAGE: String = "org.apache.tapestry5.ioc"
-
     /** Tapestry core annotations. */
     const val CORE_INJECT_ANNOTATION: String = "org.apache.tapestry5.annotations.Inject"
     const val PROPERTY_ANNOTATION: String = "org.apache.tapestry5.annotations.Property"
@@ -62,15 +57,6 @@ object TapestryConstants {
     const val EVENT_ANNOTATION: String = "org.apache.tapestry5.annotations.OnEvent"
     const val INJECT_PAGE_ANNOTATION: String = "org.apache.tapestry5.annotations.InjectPage"
     const val MIXIN_ANNOTATION: String = "org.apache.tapestry5.annotations.Mixin"
-
-    /** Provided module id. */
-    const val BUILTIN_MODULE_ID: String = "tapestry.ioc"
-
-    /** The Tapestry filter class. */
-    const val FILTER_CLASS: String = "org.apache.tapestry5.TapestryFilter"
-
-    /** The Tapestry Home page. */
-    const val HOME_PAGE: String = "Start"
 
     /** The prefix of the default parameter methods. */
     const val DEFAULT_PARAMETER_METHOD_PREFIX: String = "default"

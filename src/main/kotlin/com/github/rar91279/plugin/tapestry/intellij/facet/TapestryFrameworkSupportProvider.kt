@@ -76,8 +76,8 @@ class TapestryFrameworkSupportProvider : FacetBasedFrameworkSupportProvider<Tape
 
         fun setupConfiguration(conf: TapestryFacetConfiguration, module: Module, version: TapestryVersion?) {
             conf.version = version
-            if (StringUtil.isEmpty(conf.filterName)) conf.filterName = StringUtil.toLowerCase(module.name)
-            if (StringUtil.isEmpty(conf.applicationPackage)) conf.applicationPackage = "com.app"
+            if (conf.filterName.isNullOrEmpty()) conf.filterName = module.name.lowercase()
+            if (conf.applicationPackage.isNullOrEmpty()) conf.applicationPackage = "com.app"
         }
     }
 }

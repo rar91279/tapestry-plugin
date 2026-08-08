@@ -1,9 +1,9 @@
 package com.github.rar91279.plugin.tapestry.core.model.presentation
 
-import com.intellij.openapi.util.text.StringUtil
+import com.github.rar91279.plugin.tapestry.core.util.attributeValues
 import com.github.rar91279.plugin.tapestry.core.TapestryConstants
-import com.github.rar91279.plugin.tapestry.core.java.IJavaField
-import com.github.rar91279.plugin.tapestry.core.resource.xml.XmlTag
+import com.intellij.psi.PsiField
+import com.intellij.psi.xml.XmlTag
 import com.github.rar91279.plugin.tapestry.core.util.ClassUtils
 
 /**
@@ -19,7 +19,7 @@ import com.github.rar91279.plugin.tapestry.core.util.ClassUtils
 class InjectedElement : Comparable<InjectedElement> {
 
     /** The Java field representing this injected element, or null if this is a tag-based element. */
-    val field: IJavaField?
+    val field: PsiField?
 
     /** The XML tag representing this injected element, or null if this is a field-based element. */
     val tag: XmlTag?
@@ -33,7 +33,7 @@ class InjectedElement : Comparable<InjectedElement> {
      * @param field the Java field annotated with `@Component` or `@InjectPage`, or null
      * @param element the presentation library element associated with this field, or null
      */
-    constructor(field: IJavaField?, element: PresentationLibraryElement?) {
+    constructor(field: PsiField?, element: PresentationLibraryElement?) {
         this.field = field
         this.tag = null
         this.element = element
@@ -64,11 +64,11 @@ class InjectedElement : Comparable<InjectedElement> {
     val parameters: Map<String, String?>
         get() {
             if (tag != null) {
-                return tag.attributes.associate { it.localName.orEmpty() to it.value }
+                return tag.attributes.associate { it.localName to it.value }
             }
 
-            val componentParameters = this.field?.annotations?.get(TapestryConstants.COMPONENT_ANNOTATION)
-                ?.parameters?.get("parameters") ?: return emptyMap()
+            val componentParameters = this.field?.getAnnotation(TapestryConstants.COMPONENT_ANNOTATION)
+                ?.attributeValues("parameters")?.ifEmpty { null } ?: return emptyMap()
 
             return componentParameters
                 .map { it.split("=") }
@@ -100,7 +100,7 @@ class InjectedElement : Comparable<InjectedElement> {
                     parameters["id"]?.let { return it }
                 }
 
-                if (StringUtil.toUpperCase(tag.localName ?: "") != StringUtil.toUpperCase(element.name ?: "")) {
+                if (!tag.localName.equals(element.name.orEmpty(), ignoreCase = true)) {
                     return element.name
                 }
 
@@ -151,7 +151,7 @@ class InjectedElement : Comparable<InjectedElement> {
      * @return the field ID, or null if the field is null
      */
     private fun getFieldId(): String? {
-        val id = field?.annotations?.get(TapestryConstants.COMPONENT_ANNOTATION)?.parameters?.get("id")
+        val id = field?.getAnnotation(TapestryConstants.COMPONENT_ANNOTATION)?.attributeValues("id")
 
         return if (id != null && id.isNotEmpty()) id[0] else ClassUtils.getName(field?.name ?: return null)
     }

@@ -13,7 +13,7 @@ import com.intellij.psi.xml.XmlFile
 import com.github.rar91279.plugin.tapestry.core.exceptions.NotTapestryElementException
 import com.github.rar91279.plugin.tapestry.core.model.presentation.PresentationLibraryElement
 import com.github.rar91279.plugin.tapestry.intellij.TapestryModuleSupportLoader
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaClassType
+import com.github.rar91279.plugin.tapestry.intellij.util.currentPsiFileInEditor
 import com.github.rar91279.plugin.tapestry.intellij.util.IdeaUtils
 import com.github.rar91279.plugin.tapestry.intellij.util.TapestryUtils
 import com.github.rar91279.plugin.tapestry.intellij.view.nodes.ComponentNode
@@ -67,9 +67,7 @@ internal class ViewMouseListener(private val viewPane: TapestryProjectViewPane) 
         // If there's no file opened don't drag
         if (FileEditorManager.getInstance(viewPane.project).selectedFiles.isEmpty()) return false
 
-        val fileInEditor = PsiManager.getInstance(viewPane.project)
-            .findFile(FileDocumentManager.getInstance().getFile(FileEditorManager.getInstance(viewPane.project).selectedTextEditor!!.document)!!)
-            ?: return false
+        val fileInEditor = currentPsiFileInEditor(viewPane.project) ?: return false
         val typeFileInEditor = fileInEditor.fileType
 
         // If the file in editor isn't either JAVA or TML don't drag
@@ -122,7 +120,7 @@ internal class ViewMouseListener(private val viewPane: TapestryProjectViewPane) 
             try {
                 val psiClass = IdeaUtils.findPublicClass(psiClassOwner) ?: return@nonBlocking null
                 PresentationLibraryElement.createProjectElementInstance(
-                    IntellijJavaClassType(module, psiClass.containingFile),
+                    psiClass,
                     TapestryModuleSupportLoader.getTapestryProject(module)!!)
             } catch (e: NotTapestryElementException) {
                 null

@@ -6,7 +6,7 @@ import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiManager
 import com.intellij.psi.search.GlobalSearchScope
-import com.github.rar91279.plugin.tapestry.core.resource.IResource
+import com.intellij.psi.PsiFile
 import com.github.rar91279.plugin.tapestry.core.resource.IResourceFinder
 import com.github.rar91279.plugin.tapestry.core.util.LocalizationUtils
 import com.github.rar91279.plugin.tapestry.core.util.PathUtils
@@ -15,36 +15,33 @@ import com.github.rar91279.plugin.tapestry.intellij.util.IdeaUtils
 /** [IResourceFinder] that searches a module's classpath and web roots. */
 class IntellijResourceFinder(private val module: Module) : IResourceFinder {
 
-    override fun findClasspathResource(path: String, includeDependencies: Boolean): Collection<IResource> {
+    override fun findClasspathResource(path: String, includeDependencies: Boolean): Collection<PsiFile> {
         val filename = PathUtils.getLastPathElement(path)
 
         return findPackageDirectories(path, includeDependencies)
             .mapNotNull { it.findFile(filename) }
-            .map { IntellijResource(it) }
             .toList()
     }
 
-    override fun findLocalizedClasspathResource(path: String, includeDependencies: Boolean): Collection<IResource> {
+    override fun findLocalizedClasspathResource(path: String, includeDependencies: Boolean): Collection<PsiFile> {
         val filename = PathUtils.getLastPathElement(path)
 
         return findPackageDirectories(path, includeDependencies)
             .flatMap { it.files.asSequence() }
             .filter { LocalizationUtils.unlocalizeFileName(it.name) == filename }
-            .map { IntellijResource(it) }
             .toList()
     }
 
-    override fun findContextResource(path: String): IResource? =
+    override fun findContextResource(path: String): PsiFile? =
         webRoots().firstNotNullOfOrNull { webRoot ->
             webRoot.file
                 ?.findFileByRelativePath(relativeTo(webRoot, path))
                 ?.let { PsiManager.getInstance(module.project).findFile(it) }
-                ?.let { IntellijResource(it) }
         }
 
-    override fun findLocalizedContextResource(path: String): Collection<IResource> {
+    override fun findLocalizedContextResource(path: String): Collection<PsiFile> {
         val filename = PathUtils.getLastPathElement(path)
-        val resources = ArrayList<IResource>()
+        val resources = ArrayList<PsiFile>()
 
         for (webRoot in webRoots()) {
             val parentPath = PathUtils.removeLastFilePathElement(relativeTo(webRoot, path), true)
@@ -56,7 +53,7 @@ class IntellijResourceFinder(private val module: Module) : IResourceFinder {
             parentVirtualFile?.children
                 ?.filter { LocalizationUtils.unlocalizeFileName(it.name) == filename }
                 ?.mapNotNull { PsiManager.getInstance(module.project).findFile(it) }
-                ?.forEach { resources.add(IntellijResource(it)) }
+                ?.forEach { resources.add(it) }
         }
 
         return resources

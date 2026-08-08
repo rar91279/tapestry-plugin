@@ -2,13 +2,13 @@ package com.github.rar91279.plugin.tapestry.intellij
 
 import com.intellij.codeInsight.AnnotationUtil
 import com.intellij.codeInsight.daemon.ImplicitUsageProvider
+import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.module.ModuleUtilCore
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
 import com.github.rar91279.plugin.tapestry.core.TapestryConstants
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaClassType
 import com.github.rar91279.plugin.tapestry.intellij.util.TapestryUtils
 
 private const val ANNOTATIONS = "org.apache.tapestry5.annotations."
@@ -103,7 +103,7 @@ private fun isIocMethodName(name: String) =
 private fun isInTapestryElementClass(psiClass: PsiClass): Boolean {
     val module = ModuleUtilCore.findModuleForPsiElement(psiClass) ?: return false
     val project = TapestryModuleSupportLoader.getTapestryProject(module) ?: return false
-    if (project.findElement(IntellijJavaClassType(module, psiClass.containingFile)) != null) return true
+    if (project.findElement(psiClass) != null) return true
     // Mixins are looked up by name, not by class, so check the mixins package directly.
     val fqn = psiClass.qualifiedName ?: return false
     val mixinsPackage = project.mixinsRootPackage ?: return false
@@ -112,6 +112,12 @@ private fun isInTapestryElementClass(psiClass: PsiClass): Boolean {
 
 private fun isTapestryModuleClass(psiClass: PsiClass): Boolean {
     if (psiClass.name?.endsWith("Module") != true) return false
-    val module = ModuleUtilCore.findModuleForPsiElement(psiClass) ?: return false
+
+    // A framework or library module class — org.apache.tapestry5.modules.TapestryModule and friends —
+    // lives in a jar, and jar contents belong to no module, so findModuleForPsiElement is null for it.
+    // Refusing on null is what kept the reverse "Injected At" marker off library code entirely.
+    val module = ModuleUtilCore.findModuleForPsiElement(psiClass)
+        ?: return ModuleManager.getInstance(psiClass.project).modules.any { TapestryUtils.isTapestryModule(it) }
+
     return TapestryUtils.isTapestryModule(module)
 }

@@ -1,11 +1,12 @@
 package com.github.rar91279.plugin.tapestry.core.model.presentation
 
 import com.github.rar91279.plugin.tapestry.core.TapestryProject
-import com.github.rar91279.plugin.tapestry.core.mocks.JavaClassTypeMock
+import com.github.rar91279.plugin.tapestry.core.mocks.psiClassMock
+import com.intellij.psi.PsiClass
 import com.github.rar91279.plugin.tapestry.core.model.TapestryLibrary
-import com.github.rar91279.plugin.tapestry.core.resource.IResource
+import com.intellij.psi.PsiFile
 import com.github.rar91279.plugin.tapestry.core.resource.IResourceFinder
-import com.github.rar91279.plugin.tapestry.core.resource.TestableResource
+import com.github.rar91279.plugin.tapestry.core.mocks.psiFileMock
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
@@ -13,13 +14,13 @@ import io.mockk.mockk
 
 class PageTest : FreeSpec({
 
-    lateinit var classInRootPagesPackageMock: JavaClassTypeMock
+    lateinit var classInRootPagesPackageMock: PsiClass
     lateinit var tapestryProjectMock: TapestryProject
     lateinit var resourceFinderMock: IResourceFinder
     lateinit var libraryMock: TapestryLibrary
 
     beforeTest {
-        classInRootPagesPackageMock = JavaClassTypeMock("com.app.pages.SomeClass").setPublic(true).setDefaultConstructor(true)
+        classInRootPagesPackageMock = psiClassMock("com.app.pages.SomeClass", isPublic = true)
 
         resourceFinderMock = mockk(relaxed = true)
         tapestryProjectMock = mockk(relaxed = true)
@@ -39,7 +40,7 @@ class PageTest : FreeSpec({
     }
 
     "getTemplate_template_in_classpath" {
-        val web1: Collection<IResource> = listOf(TestableResource("SomeClass.tml", "web1.xml"))
+        val web1: Collection<PsiFile> = listOf(psiFileMock("SomeClass.tml"))
         every { resourceFinderMock.findLocalizedClasspathResource("com/app/pages/SomeClass.tml", true) } returns web1
         every { resourceFinderMock.findLocalizedContextResource("SomeClass.tml") } returns emptyList()
 
@@ -49,14 +50,14 @@ class PageTest : FreeSpec({
     "getTemplate_template_in_context" {
         every { resourceFinderMock.findLocalizedClasspathResource("com/app/pages/SomeClass.tml", true) } returns emptyList()
 
-        val templates: Collection<IResource> = listOf(TestableResource("SomeClass.tml", "web2.xml"))
+        val templates: Collection<PsiFile> = listOf(psiFileMock("SomeClass.tml"))
         every { resourceFinderMock.findLocalizedContextResource("SomeClass.tml") } returns templates
 
         Page(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).template[0].name shouldBe "SomeClass.tml"
     }
 
     "getTemplate_template_in_both" {
-        val web1: Collection<IResource> = listOf(TestableResource("SomeClass.tml", "web1.xml"))
+        val web1: Collection<PsiFile> = listOf(psiFileMock("SomeClass.tml"))
         every { resourceFinderMock.findLocalizedClasspathResource("com/app/pages/SomeClass.tml", true) } returns web1
         every { resourceFinderMock.findLocalizedContextResource("SomeClass.tml") } returns web1
 

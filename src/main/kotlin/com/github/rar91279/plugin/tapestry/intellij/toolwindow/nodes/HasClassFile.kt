@@ -4,4 +4,4 @@ import com.github.rar91279.plugin.tapestry.core.model.presentation.PresentationL
 
 /** Nothing to show for an element whose class file is gone. */
 internal val PresentationLibraryElement.hasClassFile: Boolean
-    get() = elementClass.file != null
+    get() = elementClass?.containingFile != null

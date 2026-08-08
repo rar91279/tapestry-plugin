@@ -38,8 +38,8 @@ object DocumentationGenerator {
     }
 
     private fun renderPresentationElement(element: PresentationLibraryElement, kind: String, iconPath: String): String {
-        if (element.elementClass.file == null)
-            logger.error("Couldn't find file for class \"${element.elementClass.fullyQualifiedName}\"")
+        if (element.elementClass?.containingFile == null)
+            logger.error("Couldn't find file for class \"${element.elementClass?.qualifiedName}\"")
 
         val context = DocAssets.baseContext()
         context["element"] = element
@@ -69,9 +69,7 @@ object DocumentationGenerator {
             for (resource in resources) {
                 if (!resource.url.toExternalForm().endsWith(".xml")) continue
                 val description = PresentationElementDocumentationWrapper(resource.url).description
-                val summary = if (description.length <= 100) description
-                else description.substring(0, description.substring(0, 100).lastIndexOf(' ')) + "…"
-                descriptors[resource.className] = summary
+                descriptors[resource.className] = NavPageDocumentation.summary(description)
             }
             context[elementType] = descriptors
         }

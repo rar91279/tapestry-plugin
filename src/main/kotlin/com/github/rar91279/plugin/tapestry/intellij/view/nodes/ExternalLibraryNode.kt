@@ -19,19 +19,19 @@ class ExternalLibraryNode(library: TapestryLibrary, module: Module) : TapestryNo
         val children = ArrayList<SimpleNode>()
         val library = getValue() as TapestryLibrary
 
-        if (library.pages.size > 0) {
+        if (library.pages.isNotEmpty()) {
             children.add(PagesNode(library,
                 JavaPsiFacade.getInstance(myProject).findPackage(library.basePackage + "." + TapestryConstants.PAGES_PACKAGE)!!
                     .getDirectories(GlobalSearchScope.moduleWithLibrariesScope(module))[0], module))
         }
 
-        if (library.components.size > 0) {
+        if (library.components.isNotEmpty()) {
             children.add(ComponentsNode(library,
                 JavaPsiFacade.getInstance(myProject).findPackage(library.basePackage + "." + TapestryConstants.COMPONENTS_PACKAGE)!!
                     .getDirectories(GlobalSearchScope.moduleWithLibrariesScope(module))[0], module))
         }
 
-        if (library.mixins.size > 0) {
+        if (library.mixins.isNotEmpty()) {
             children.add(MixinsNode(library,
                 JavaPsiFacade.getInstance(myProject).findPackage(library.basePackage + "." + TapestryConstants.MIXINS_PACKAGE)!!
                     .getDirectories(GlobalSearchScope.moduleWithLibrariesScope(module))[0], module))

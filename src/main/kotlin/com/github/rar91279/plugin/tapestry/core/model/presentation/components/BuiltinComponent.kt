@@ -1,7 +1,7 @@
 package com.github.rar91279.plugin.tapestry.core.model.presentation.components
 
 import com.github.rar91279.plugin.tapestry.core.TapestryProject
-import com.github.rar91279.plugin.tapestry.core.java.IJavaClassType
+import com.intellij.psi.PsiClass
 import com.github.rar91279.plugin.tapestry.core.model.presentation.TapestryComponent
 import com.github.rar91279.plugin.tapestry.core.model.presentation.TapestryParameter
 
@@ -10,7 +10,7 @@ import com.github.rar91279.plugin.tapestry.core.model.presentation.TapestryParam
  * parameters are hard-coded rather than derived from a class.
  */
 class BuiltinComponent private constructor(
-    componentClass: IJavaClassType,
+    componentClass: PsiClass,
     project: TapestryProject,
     override val name: String,
     override val parameters: Map<String, TapestryParameter>
@@ -34,7 +34,7 @@ class BuiltinComponent private constructor(
             tokenClassName: String,
             parameters: Map<String, TapestryParameter> = emptyMap()
         ): BuiltinComponent? =
-            project.javaTypeFinder.findType("org.apache.tapestry5.internal.parser.$tokenClassName", true)
+            project.findType("org.apache.tapestry5.internal.parser.$tokenClassName", true)
                 ?.let { BuiltinComponent(it, project, name, parameters) }
     }
 }

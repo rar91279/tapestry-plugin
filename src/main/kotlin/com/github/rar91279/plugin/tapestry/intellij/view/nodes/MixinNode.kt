@@ -5,7 +5,6 @@ import com.intellij.openapi.module.Module
 import com.intellij.psi.PsiClassOwner
 import com.github.rar91279.plugin.tapestry.core.model.presentation.Mixin
 import com.github.rar91279.plugin.tapestry.core.model.presentation.PresentationLibraryElement
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaClassType
 import com.intellij.ui.treeStructure.SimpleNode
 import icons.TapestryIcons
 
@@ -20,6 +19,7 @@ class MixinNode(mixin: PresentationLibraryElement, module: Module) : TapestryNod
 
     override fun getChildren(): Array<SimpleNode> {
         val mixin = getValue() as Mixin
-        return arrayOf(ClassNode((mixin.elementClass as IntellijJavaClassType).psiClass!!.containingFile as PsiClassOwner, module))
+        val classFile = mixin.elementClass?.containingFile as? PsiClassOwner ?: return emptyArray()
+        return arrayOf(ClassNode(classFile, module))
     }
 }

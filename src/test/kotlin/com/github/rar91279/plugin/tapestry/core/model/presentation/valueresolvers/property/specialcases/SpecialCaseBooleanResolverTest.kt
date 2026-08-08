@@ -1,7 +1,6 @@
 package com.github.rar91279.plugin.tapestry.core.model.presentation.valueresolvers.property.specialcases
 
-import com.github.rar91279.plugin.tapestry.core.java.IJavaClassType
-import com.github.rar91279.plugin.tapestry.core.mocks.JavaClassTypeMock
+import com.github.rar91279.plugin.tapestry.core.model.presentation.valueresolvers.property.resolvedName
 import com.github.rar91279.plugin.tapestry.core.model.presentation.valueresolvers.ValueResolverContext
 import com.github.rar91279.plugin.tapestry.core.model.presentation.valueresolvers.property.SpecialCaseMocks
 import io.kotest.core.spec.style.FreeSpec
@@ -13,18 +12,18 @@ class SpecialCaseBooleanResolverTest : FreeSpec({
     beforeTest { m = SpecialCaseMocks() }
 
     "can_resolve" {
-        m.expectToFindType("java.lang.Boolean", JavaClassTypeMock("java.lang.Boolean"))
+        m.expectToFindType("java.lang.Boolean")
 
         for (value in listOf("true", "prop:false", " FALSE ")) {
             val ctx = ValueResolverContext(m.tapestryProject, null, value, null)
-            resolver.execute(ctx) shouldBe true
-            (ctx.resultType as IJavaClassType).fullyQualifiedName shouldBe "java.lang.Boolean"
+            resolver.resolve(ctx) shouldBe true
+            ctx.resultType.resolvedName shouldBe "java.lang.Boolean"
         }
     }
 
     "cant_resolve" {
         val ctx = ValueResolverContext(m.tapestryProject, null, "true1", null)
-        resolver.execute(ctx) shouldBe false
+        resolver.resolve(ctx) shouldBe false
         ctx.resultType shouldBe null
     }
 })

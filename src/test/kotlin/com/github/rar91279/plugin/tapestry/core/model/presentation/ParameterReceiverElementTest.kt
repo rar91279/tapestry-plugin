@@ -1,43 +1,38 @@
 package com.github.rar91279.plugin.tapestry.core.model.presentation
 
 import com.github.rar91279.plugin.tapestry.core.TapestryProject
-import com.github.rar91279.plugin.tapestry.core.java.IJavaTypeFinder
-import com.github.rar91279.plugin.tapestry.core.mocks.JavaAnnotationMock
-import com.github.rar91279.plugin.tapestry.core.mocks.JavaClassTypeMock
-import com.github.rar91279.plugin.tapestry.core.mocks.JavaFieldMock
+import com.github.rar91279.plugin.tapestry.core.mocks.psiAnnotationMock
+import com.github.rar91279.plugin.tapestry.core.mocks.psiClassMock
+import com.github.rar91279.plugin.tapestry.core.mocks.psiFieldMock
+import com.github.rar91279.plugin.tapestry.core.mocks.psiFileMock
+import com.github.rar91279.plugin.tapestry.core.mocks.stubFields
 import com.github.rar91279.plugin.tapestry.core.model.TapestryLibrary
-import com.github.rar91279.plugin.tapestry.core.resource.IResource
+import com.intellij.psi.PsiClass
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
-import java.io.File
 
 class ParameterReceiverElementTest : FreeSpec({
 
-    lateinit var classInSubComponentsPackageMock: JavaClassTypeMock
-    lateinit var classInRootComponentsPackageMock: JavaClassTypeMock
+    lateinit var classInSubComponentsPackageMock: PsiClass
+    lateinit var classInRootComponentsPackageMock: PsiClass
     lateinit var libraryMock: TapestryLibrary
     lateinit var tapestryProjectMock: TapestryProject
 
     beforeTest {
-        val builderClassFileMock = mockk<File>(relaxed = true)
-        every { builderClassFileMock.lastModified() } returns Long.MAX_VALUE
+        val builderClassResourceMock = psiFileMock("Builder.java", timeStamp = Long.MAX_VALUE)
 
-        val builderClassResourceMock = mockk<IResource>(relaxed = true)
-        every { builderClassResourceMock.file } returns builderClassFileMock
+        classInRootComponentsPackageMock =
+            psiClassMock("com.app.components.SomeClass", isPublic = true, containingFile = builderClassResourceMock)
 
-        classInRootComponentsPackageMock = JavaClassTypeMock("com.app.components.SomeClass").setPublic(true).setDefaultConstructor(true).setFile(builderClassResourceMock)
-
-        classInSubComponentsPackageMock = JavaClassTypeMock("com.app.components.folder1.SomeClass").setPublic(true).setDefaultConstructor(true).setFile(builderClassResourceMock)
+        classInSubComponentsPackageMock =
+            psiClassMock("com.app.components.folder1.SomeClass", isPublic = true, containingFile = builderClassResourceMock)
 
         tapestryProjectMock = mockk(relaxed = true)
         every { tapestryProjectMock.applicationRootPackage } returns "com.app"
-
         // getParameters() always adds a builtin "mixins" parameter, whose creation resolves java.lang.String.
-        val javaTypeFinderMock = mockk<IJavaTypeFinder>(relaxed = true)
-        every { javaTypeFinderMock.findType("java.lang.String", true) } returns null
-        every { tapestryProjectMock.javaTypeFinder } returns javaTypeFinderMock
+        every { tapestryProjectMock.findClassType("java.lang.String") } returns null
 
         libraryMock = mockk(relaxed = true)
         every { libraryMock.basePackage } returns "com.app"
@@ -47,52 +42,65 @@ class ParameterReceiverElementTest : FreeSpec({
     "getParameters_no_parameters" {
         TapestryComponent(libraryMock, classInRootComponentsPackageMock, tapestryProjectMock).parameters.size shouldBe 1
 
-        val publicField = JavaFieldMock("publicField", false).addAnnotation(JavaAnnotationMock("org.apache.tapestry5.annotations.Parameter"))
-        val privateField = JavaFieldMock("privateField", true)
+        val publicField = psiFieldMock(
+            "publicField", isPrivate = false,
+            annotations = listOf(psiAnnotationMock("org.apache.tapestry5.annotations.Parameter"))
+        )
+        val privateField = psiFieldMock("privateField")
 
-        classInSubComponentsPackageMock.addField(publicField).addField(privateField)
+        classInSubComponentsPackageMock.stubFields(publicField, privateField)
 
         TapestryComponent(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).parameters.size shouldBe 1
     }
 
     "getParameters_with_parameters" {
-        val privateField = JavaFieldMock("field1", true).addAnnotation(JavaAnnotationMock("org.apache.tapestry5.annotations.Parameter"))
+        val privateField = psiFieldMock(
+            "field1", annotations = listOf(psiAnnotationMock("org.apache.tapestry5.annotations.Parameter"))
+        )
 
-        classInSubComponentsPackageMock.addField(privateField)
+        classInSubComponentsPackageMock.stubFields(privateField)
 
         TapestryComponent(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).parameters.size shouldBe 2
     }
 
     "getRequiredParameters_no_parameters" {
-        val privateField = JavaFieldMock("field1", true).addAnnotation(JavaAnnotationMock("org.apache.tapestry5.annotations.Parameter"))
+        val privateField = psiFieldMock(
+            "field1", annotations = listOf(psiAnnotationMock("org.apache.tapestry5.annotations.Parameter"))
+        )
 
-        classInSubComponentsPackageMock.addField(privateField)
+        classInSubComponentsPackageMock.stubFields(privateField)
 
         TapestryComponent(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).requiredParameters.size shouldBe 0
     }
 
     "getRequiredParameters_with_parameters" {
-        val privateField = JavaFieldMock("field1", true)
-            .addAnnotation(JavaAnnotationMock("org.apache.tapestry5.annotations.Parameter").addParameter("required", "true"))
+        val privateField = psiFieldMock(
+            "field1",
+            annotations = listOf(psiAnnotationMock("org.apache.tapestry5.annotations.Parameter", "required" to listOf("true")))
+        )
 
-        classInSubComponentsPackageMock.addField(privateField)
+        classInSubComponentsPackageMock.stubFields(privateField)
 
         TapestryComponent(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).requiredParameters.size shouldBe 1
     }
 
     "getOptionalParameters_with_parameters" {
-        val privateField = JavaFieldMock("field1", true).addAnnotation(JavaAnnotationMock("org.apache.tapestry5.annotations.Parameter"))
+        val privateField = psiFieldMock(
+            "field1", annotations = listOf(psiAnnotationMock("org.apache.tapestry5.annotations.Parameter"))
+        )
 
-        classInSubComponentsPackageMock.addField(privateField)
+        classInSubComponentsPackageMock.stubFields(privateField)
 
         TapestryComponent(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).optionalParameters.size shouldBe 2
     }
 
     "getOptionalParameters_no_parameters" {
-        val privateField = JavaFieldMock("field1", true)
-            .addAnnotation(JavaAnnotationMock("org.apache.tapestry5.annotations.Parameter").addParameter("required", "true"))
+        val privateField = psiFieldMock(
+            "field1",
+            annotations = listOf(psiAnnotationMock("org.apache.tapestry5.annotations.Parameter", "required" to listOf("true")))
+        )
 
-        classInSubComponentsPackageMock.addField(privateField)
+        classInSubComponentsPackageMock.stubFields(privateField)
 
         TapestryComponent(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).optionalParameters.size shouldBe 1
     }

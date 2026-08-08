@@ -4,8 +4,6 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.xml.XmlTag
 import com.github.rar91279.plugin.tapestry.core.model.presentation.TapestryComponent
 import com.github.rar91279.plugin.tapestry.core.model.presentation.TapestryParameter
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaClassType
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaField
 import com.intellij.xml.XmlAttributeDescriptor
 
 /** Descriptor of a `p:`-namespaced tag that passes a block to a component parameter. */
@@ -24,9 +22,9 @@ class TapestryParameterDescriptor(
 
     override fun getDeclaration(): PsiElement? {
         // the class field name may be different from the tag name
-        (parameter.parameterField as? IntellijJavaField)?.let { return it.psiField }
+        parameter.parameterField?.let { return it }
 
-        val psiClass = (component?.elementClass as? IntellijJavaClassType)?.psiClass ?: return null
+        val psiClass = component?.elementClass ?: return null
         return psiClass.findFieldByName(parameter.name, true)
     }
 }

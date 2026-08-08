@@ -2,6 +2,7 @@ package com.github.rar91279.plugin.tapestry.intellij.toolwindow
 
 import com.intellij.icons.AllIcons
 import com.intellij.ide.ui.LafManagerListener
+import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.impl.ActionButton
@@ -26,7 +27,8 @@ import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.GlobalSearchScope
 import com.github.rar91279.plugin.tapestry.core.TapestryProject
-import com.github.rar91279.plugin.tapestry.core.java.IJavaClassType
+import com.intellij.psi.PsiClass
+import com.github.rar91279.plugin.tapestry.core.util.javadocDescription
 import com.github.rar91279.plugin.tapestry.core.model.TapestryLibrary
 import com.github.rar91279.plugin.tapestry.core.model.externalizable.documentation.Home
 import com.github.rar91279.plugin.tapestry.core.model.externalizable.documentation.generationchain.DocAssets
@@ -37,7 +39,6 @@ import com.github.rar91279.plugin.tapestry.core.model.externalizable.documentati
 import com.github.rar91279.plugin.tapestry.core.model.ioc.ModuleBuilder
 import com.github.rar91279.plugin.tapestry.core.model.presentation.PresentationLibraryElement
 import com.github.rar91279.plugin.tapestry.intellij.TapestryModuleSupportLoader
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaClassType
 import com.github.rar91279.plugin.tapestry.intellij.util.TapestryUtils
 import com.intellij.ui.JBColor
 import com.intellij.ui.jcef.JBCefBrowserBase
@@ -136,6 +137,9 @@ class DocumentationTab(private val project: Project) {
     private inner class NavigateToElementAction :
         AnAction("Navigate to Element", "Navigate to the selected element class", AllIcons.Actions.PreviousOccurence) {
         override fun actionPerformed(e: AnActionEvent) = navigateToClass()
+
+        // No update() of its own — enablement is driven by setNavigateEnabled — so nothing to compute.
+        override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
     }
 
     /** Sets a listener notified with the shown element (or `null`) whenever the view changes. */
@@ -151,7 +155,7 @@ class DocumentationTab(private val project: Project) {
     private fun navigateToClass() {
         val current = element
         if (current is PresentationLibraryElement) {
-            val psiClass = (current.elementClass as IntellijJavaClassType).psiClass ?: return
+            val psiClass = current.elementClass ?: return
             FileEditorManager.getInstance(project).openFile(psiClass.containingFile.virtualFile, true)
         } else if (classFqn != null) {
             openClass(classFqn!!)
@@ -552,9 +556,9 @@ class DocumentationTab(private val project: Project) {
             val tapestryProject = TapestryModuleSupportLoader.getTapestryProject(module)
             val root = tapestryProject?.applicationRootPackage ?: return services
 
-            for (builder in tapestryProject.javaTypeFinder.findTypesInPackageRecursively("$root.services", true)) {
-                if (builder.fullyQualifiedName?.endsWith("Module") != true) continue
-                addServiceDocs(builder, tapestryProject, services)
+            for (builder in tapestryProject.findTypesInPackageRecursively("$root.services", true)) {
+                if (builder.qualifiedName?.endsWith("Module") != true) continue
+                addServiceDocs(builder, services)
             }
         } catch (canceled: ProcessCanceledException) {
             throw canceled
@@ -574,8 +578,8 @@ class DocumentationTab(private val project: Project) {
 
         val services = ArrayList<Home.ServiceDoc>()
         try {
-            val builder = tapestryProject.javaTypeFinder.findType(moduleClass, true)
-            if (builder != null) addServiceDocs(builder, tapestryProject, services)
+            val builder = tapestryProject.findType(moduleClass, true)
+            if (builder != null) addServiceDocs(builder, services)
         } catch (canceled: ProcessCanceledException) {
             throw canceled
         } catch (ex: Exception) {
@@ -650,16 +654,15 @@ class DocumentationTab(private val project: Project) {
         breadcrumbHtml = sb.append("</nav>").toString()
     }
 
-    private fun addServiceDocs(builder: IJavaClassType, tapestryProject: TapestryProject,
-                               out: MutableList<Home.ServiceDoc>) {
-        for (service in ModuleBuilder(builder, tapestryProject).services) {
+    private fun addServiceDocs(builder: PsiClass, out: MutableList<Home.ServiceDoc>) {
+        for (service in ModuleBuilder(builder).services) {
             val serviceClass = service.serviceClass
             out.add(Home.ServiceDoc(
                 service.id,
-                serviceClass?.fullyQualifiedName ?: "",
+                serviceClass?.qualifiedName ?: "",
                 service.scope,
                 service.isEagerLoad,
-                serviceClass?.documentation ?: ""))
+                serviceClass?.javadocDescription() ?: ""))
         }
     }
 

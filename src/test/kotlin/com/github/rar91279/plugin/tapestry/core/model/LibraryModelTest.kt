@@ -1,9 +1,8 @@
 package com.github.rar91279.plugin.tapestry.core.model
 
 import com.github.rar91279.plugin.tapestry.core.TapestryProject
-import com.github.rar91279.plugin.tapestry.core.java.IJavaClassType
-import com.github.rar91279.plugin.tapestry.core.java.IJavaTypeFinder
-import com.github.rar91279.plugin.tapestry.core.mocks.JavaClassTypeMock
+import com.github.rar91279.plugin.tapestry.core.mocks.psiClassMock
+import com.intellij.psi.PsiClass
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
@@ -27,37 +26,34 @@ class LibraryModelTest : FreeSpec({
         (library11.compareTo(library2) < 0) shouldBe true
     }
 
-    "getComponents" {
-        val javaTypeFinderMock = mockk<IJavaTypeFinder>(relaxed = true)
-        every { javaTypeFinderMock.findTypesInPackageRecursively("com.app.components", true) } returns
-            arrayListOf<IJavaClassType>(JavaClassTypeMock("com.app.components.Component1").setPublic(true).setDefaultConstructor(true))
-
+    fun projectFinding(packageName: String, type: PsiClass): TapestryProject {
         val tapestryProjectMock = mockk<TapestryProject>(relaxed = true)
-        every { tapestryProjectMock.javaTypeFinder } returns javaTypeFinderMock
+        every { tapestryProjectMock.findTypesInPackageRecursively(packageName, true) } returns listOf(type)
+        return tapestryProjectMock
+    }
+
+    "getComponents" {
+        val tapestryProjectMock = projectFinding(
+            "com.app.components", psiClassMock("com.app.components.Component1", isPublic = true)
+        )
 
         val library = TapestryLibrary("application", "com.app", tapestryProjectMock)
         library.components.size shouldBe 1
     }
 
     "getPages" {
-        val javaTypeFinderMock = mockk<IJavaTypeFinder>(relaxed = true)
-        every { javaTypeFinderMock.findTypesInPackageRecursively("com.app.pages", true) } returns
-            arrayListOf<IJavaClassType>(JavaClassTypeMock("com.app.pages.Page1").setPublic(true).setDefaultConstructor(true))
-
-        val tapestryProjectMock = mockk<TapestryProject>(relaxed = true)
-        every { tapestryProjectMock.javaTypeFinder } returns javaTypeFinderMock
+        val tapestryProjectMock = projectFinding(
+            "com.app.pages", psiClassMock("com.app.pages.Page1", isPublic = true)
+        )
 
         val library = TapestryLibrary("application", "com.app", tapestryProjectMock)
         library.pages.size shouldBe 1
     }
 
     "getMixins" {
-        val javaTypeFinderMock = mockk<IJavaTypeFinder>(relaxed = true)
-        every { javaTypeFinderMock.findTypesInPackageRecursively("com.app.mixins", true) } returns
-            arrayListOf<IJavaClassType>(JavaClassTypeMock("com.app.mixins.Mixin1").setPublic(true).setDefaultConstructor(true))
-
-        val tapestryProjectMock = mockk<TapestryProject>(relaxed = true)
-        every { tapestryProjectMock.javaTypeFinder } returns javaTypeFinderMock
+        val tapestryProjectMock = projectFinding(
+            "com.app.mixins", psiClassMock("com.app.mixins.Mixin1", isPublic = true)
+        )
 
         val library = TapestryLibrary("application", "com.app", tapestryProjectMock)
         library.mixins.size shouldBe 1

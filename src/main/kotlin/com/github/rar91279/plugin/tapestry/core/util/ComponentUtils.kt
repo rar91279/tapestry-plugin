@@ -1,8 +1,8 @@
 package com.github.rar91279.plugin.tapestry.core.util
 
 import com.github.rar91279.plugin.tapestry.core.TapestryConstants
-import com.github.rar91279.plugin.tapestry.core.resource.xml.XmlAttribute
-import com.github.rar91279.plugin.tapestry.core.resource.xml.XmlTag
+import com.intellij.psi.xml.XmlAttribute
+import com.intellij.psi.xml.XmlTag
 import com.github.rar91279.plugin.tapestry.intellij.lang.descriptor.TapestryXmlExtension
 
 /**
@@ -17,7 +17,7 @@ object ComponentUtils {
         isTapestryNamespace(tag.namespace) || hasTapestryNamespaceAttribute(tag.attributes)
 
     private fun hasTapestryNamespaceAttribute(attributes: Array<XmlAttribute>): Boolean =
-        attributes.any { !it.localName.isNullOrEmpty() && isTapestryNamespace(it.namespace) }
+        attributes.any { it.localName.isNotEmpty() && isTapestryNamespace(it.namespace) }
 
     private fun isTapestryNamespace(namespace: String?): Boolean =
         TapestryXmlExtension.isTapestryTemplateNamespace(namespace) || namespace == TapestryConstants.PARAMETERS_NAMESPACE

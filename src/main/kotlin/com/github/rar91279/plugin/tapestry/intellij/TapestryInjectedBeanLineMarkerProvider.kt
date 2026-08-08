@@ -8,7 +8,9 @@ import com.intellij.java.ultimate.icons.JavaUltimateIcons
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleUtilCore
 import com.intellij.psi.JavaPsiFacade
+import com.intellij.psi.PsiArrayInitializerMemberValue
 import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiClassObjectAccessExpression
 import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
@@ -50,10 +52,52 @@ private val QUALIFIER_ANNOTATIONS = setOf(
     "org.apache.tapestry5.ioc.annotations.Service", INJECT_SERVICE_ANNOTATION)
 
 private const val SERVICE_ID_ANNOTATION = "org.apache.tapestry5.ioc.annotations.ServiceId"
+private const val IMPORT_MODULE_ANNOTATION = "org.apache.tapestry5.ioc.annotations.ImportModule"
+
+/**
+ * Packages holding the framework's own IoC modules.
+ *
+ * A third-party library advertises its modules in the manifest — `tapestry-json` declares
+ * `Tapestry-Module-Classes`, and [TapestryUtils.getClasspathLibraryModules] picks it up. `tapestry-core`,
+ * `tapestry-ioc` and `tapestry-http` advertise nothing at all (their manifests carry only
+ * `Automatic-Module-Name`), because Tapestry hardwires those modules in its own bootstrap. Without this
+ * list, every service they `bind(...)` — `SelectModelFactory` and the rest of core — has no findable source.
+ */
+private val FRAMEWORK_MODULE_PACKAGES = listOf(
+    "org.apache.tapestry5.modules",
+    "org.apache.tapestry5.ioc.modules",
+    "org.apache.tapestry5.http.modules",
+)
+
+/** Where tapestry-core kept its module class before the 5.4 move to `org.apache.tapestry5.modules`. */
+private const val LEGACY_CORE_MODULE_CLASS = "org.apache.tapestry5.services.TapestryModule"
+
+private const val COMMON_RESOURCES_PROVIDER =
+    "org.apache.tapestry5.internal.services.CommonResourcesInjectionProvider"
+
+/**
+ * Component-level values supplied by an `InjectionProvider2` rather than by a service binding.
+ *
+ * Tapestry hands these to each component instance, so there is no `bind(...)` or `build*` anywhere to
+ * point at — `@Inject Messages` would otherwise look unprovided. Mapped to the provider that supplies
+ * them, read off tapestry-core's own provider classes.
+ */
+private val INJECTION_PROVIDER_TYPES = mapOf(
+    "org.apache.tapestry5.commons.Messages" to COMMON_RESOURCES_PROVIDER,
+    // Messages moved out of the ioc package in 5.8; keep the old name for older projects.
+    "org.apache.tapestry5.ioc.Messages" to COMMON_RESOURCES_PROVIDER,
+    "org.apache.tapestry5.ComponentResources" to COMMON_RESOURCES_PROVIDER,
+    "org.apache.tapestry5.services.pageload.ComponentResourceSelector" to COMMON_RESOURCES_PROVIDER,
+    "java.util.Locale" to COMMON_RESOURCES_PROVIDER,
+    "org.slf4j.Logger" to COMMON_RESOURCES_PROVIDER,
+    "org.apache.tapestry5.Asset" to "org.apache.tapestry5.internal.services.AssetInjectionProvider",
+    "org.apache.tapestry5.Block" to "org.apache.tapestry5.internal.services.BlockInjectionProvider",
+)
+
 private const val WITH_ID_METHOD = "withId"
 private const val GET_SIMPLE_NAME_METHOD = "getSimpleName"
 
-/** A place a service of the injected type comes from: a `build*` method or a `bind(...)` call. */
+/** Where an injected value comes from: a `build*` method, a `bind(...)` call, or an injection provider. */
 private class ServiceSource(val id: String, val element: PsiElement)
 
 /**
@@ -78,8 +122,8 @@ class TapestryInjectedBeanLineMarkerProvider : RelatedItemLineMarkerProvider() {
                 result.add(
                     NavigationGutterIconBuilder.create(JavaUltimateIcons.Cdi.Gutter.ShowAutowiredCandidates)
                         .setTargets(sources.map { it.element })
-                        .setTooltipText("Tapestry IoC service source")
-                        .setPopupTitle("Service Sources")
+                        .setTooltipText("Tapestry injection source")
+                        .setPopupTitle("Injection Sources")
                         .createLineMarkerInfo(element))
             }
             return
@@ -104,8 +148,7 @@ class TapestryInjectedBeanLineMarkerProvider : RelatedItemLineMarkerProvider() {
 
         val boundType = (call.valueArguments.firstOrNull() as? UClassLiteralExpression)?.type ?: return
         val serviceClass = PsiUtil.resolveClassInType(boundType) ?: return
-        val module = ModuleUtilCore.findModuleForPsiElement(anchor) ?: return
-        val points = injectionPoints(serviceClass, module)
+        val points = injectionPoints(serviceClass, anchor)
         if (points.isEmpty()) return
 
         result.add(
@@ -127,8 +170,7 @@ class TapestryInjectedBeanLineMarkerProvider : RelatedItemLineMarkerProvider() {
         if (frameworkMethodKind(psiMethod) != FrameworkMethodKind.IOC) return
 
         val serviceClass = PsiUtil.resolveClassInType(psiMethod.returnType) ?: return
-        val module = ModuleUtilCore.findModuleForPsiElement(anchor) ?: return
-        val points = injectionPoints(serviceClass, module)
+        val points = injectionPoints(serviceClass, anchor)
         if (points.isEmpty()) return
 
         result.add(
@@ -140,10 +182,18 @@ class TapestryInjectedBeanLineMarkerProvider : RelatedItemLineMarkerProvider() {
     }
 
     /** Every `@Inject` field and constructor parameter of the service's type, anywhere it can be seen. */
-    private fun injectionPoints(serviceClass: PsiClass, module: Module): List<PsiElement> {
+    private fun injectionPoints(serviceClass: PsiClass, anchor: PsiElement): List<PsiElement> {
+        // A framework or library module class lives in a jar, and jar contents belong to no module, so
+        // findModuleForPsiElement comes back null there — fall back to the whole project rather than drop
+        // the reverse marker, which is what made it a project-sources-only feature.
+        //
         // ponytail: walks all references to the service type; fine for a slow line marker, but a very
-        // widely used type pays for it — narrow the scope if that ever bites.
-        val scope = GlobalSearchScope.moduleWithDependentsScope(module)
+        // widely used type pays for it — and in library code that is now a project-wide search per
+        // bind(...) call. Gate it on the reference count, or skip library anchors, if that ever bites.
+        val scope = ModuleUtilCore.findModuleForPsiElement(anchor)
+            ?.let { GlobalSearchScope.moduleWithDependentsScope(it) }
+            ?: GlobalSearchScope.projectScope(anchor.project)
+
         return ReferencesSearch.search(serviceClass, scope).asIterable()
             .mapNotNull { enclosingVariable(it.element) }
             .filter { injectionPoint(it) != null && PsiUtil.resolveClassInType(it.type) == serviceClass }
@@ -183,11 +233,27 @@ class TapestryInjectedBeanLineMarkerProvider : RelatedItemLineMarkerProvider() {
         val moduleClasses = moduleClasses(module)
 
         val sources = (buildMethodSources(module, moduleClasses, fieldType) +
-                moduleClasses.flatMap { bindSources(it, fieldType) })
+                moduleClasses.flatMap { bindSources(it, fieldType) } +
+                injectionProviderSource(module, fieldType))
             .distinctBy { it.element }
 
         val wantedId = requestedId(injectionPoint) ?: return sources
         return sources.filter { it.id.equals(wantedId, ignoreCase = true) }.ifEmpty { sources }
+    }
+
+    /**
+     * The `InjectionProvider2` supplying this type, for the component-level values that are not services.
+     * Empty for everything else, which is the overwhelming majority of injection points.
+     */
+    private fun injectionProviderSource(module: Module, fieldType: PsiClassType): List<ServiceSource> {
+        val serviceClass = fieldType.resolve() ?: return emptyList()
+        val providerName = INJECTION_PROVIDER_TYPES[serviceClass.qualifiedName] ?: return emptyList()
+
+        val provider = JavaPsiFacade.getInstance(module.project)
+            .findClass(providerName, module.getModuleWithDependenciesAndLibrariesScope(false))
+            ?: return emptyList()
+
+        return listOf(ServiceSource(serviceClass.name.orEmpty(), provider))
     }
 
     /** The service id the injection point asks for by name, if any. */
@@ -225,8 +291,14 @@ class TapestryInjectedBeanLineMarkerProvider : RelatedItemLineMarkerProvider() {
      * call whose service type fits the field, with the id from a chained `withId(...)` when given.
      */
     private fun bindSources(moduleClass: PsiClass, fieldType: PsiClassType): List<ServiceSource> {
-        val binder = moduleClass.findMethodsByName(TapestryConstants.SERVICE_AUTOBUILDER_METHOD_NAME, false)
+        val declaration = moduleClass.findMethodsByName(TapestryConstants.SERVICE_AUTOBUILDER_METHOD_NAME, false)
             .firstOrNull() ?: return emptyList()
+
+        // For a compiled module class the stub only renders `{ /* compiled code */ }`; the real body lives
+        // in the attached sources jar, which is what navigationElement resolves to. With no sources attached
+        // there is no body to read, and the services that class binds stay unmarked — a hard limit of
+        // reading bindings out of PSI.
+        val binder = declaration.navigationElement as? PsiMethod ?: declaration
         val body = binder.toUElementOfType<UMethod>()?.uastBody ?: return emptyList()
 
         val sources = mutableListOf<ServiceSource>()
@@ -312,6 +384,50 @@ class TapestryInjectedBeanLineMarkerProvider : RelatedItemLineMarkerProvider() {
             ?.filter { it.name?.endsWith(TapestryConstants.MODULE_BUILDER_SUFIX) == true }
             .orEmpty()
 
-        return declared.mapNotNull { facade.findClass(it, scope) } + conventional
+        // ponytail: three small package scans per marker pass; cache alongside getClasspathLibraryModules
+        // if it ever shows up in a freeze report.
+        val framework = FRAMEWORK_MODULE_PACKAGES
+            .mapNotNull { facade.findPackage(it) }
+            .flatMap { it.getClasses(scope).asList() }
+            .filter { it.name?.endsWith(TapestryConstants.MODULE_BUILDER_SUFIX) == true } +
+                listOfNotNull(facade.findClass(LEGACY_CORE_MODULE_CLASS, scope))
+
+        return withImportedModules(
+            declared.mapNotNull { facade.findClass(it, scope) } + conventional + framework
+        )
+    }
+
+    /**
+     * [roots] plus every module class they pull in with `@ImportModule`, transitively.
+     *
+     * This is how an application adds a module that is neither named in a manifest nor sitting in
+     * `<applicationRootPackage>.services` — typically `@ImportModule(DAOModule.class)` on `AppModule`.
+     * Without following it, services those modules `bind(...)` have no visible source at all: unlike
+     * `build*` methods, which [byConventionalName] finds through the index whether or not their module class
+     * was discovered, `bind(...)` calls are only ever read out of the module classes collected here.
+     */
+    private fun withImportedModules(roots: List<PsiClass>): List<PsiClass> {
+        val seen = LinkedHashSet<PsiClass>()
+        val pending = ArrayDeque(roots)
+
+        while (pending.isNotEmpty()) {
+            val moduleClass = pending.removeFirst()
+            // The visited set also breaks the cycle two modules importing each other would otherwise form.
+            if (seen.add(moduleClass)) pending.addAll(importedModules(moduleClass))
+        }
+
+        return seen.toList()
+    }
+
+    /** The module classes a module class lists in its `@ImportModule`, one or many. */
+    private fun importedModules(moduleClass: PsiClass): List<PsiClass> {
+        val value = AnnotationUtil.findAnnotation(moduleClass, IMPORT_MODULE_ANNOTATION)
+            ?.findAttributeValue("value") ?: return emptyList()
+
+        val classLiterals = if (value is PsiArrayInitializerMemberValue) value.initializers.asList() else listOf(value)
+
+        return classLiterals.mapNotNull {
+            PsiUtil.resolveClassInType((it as? PsiClassObjectAccessExpression)?.operand?.type)
+        }
     }
 }

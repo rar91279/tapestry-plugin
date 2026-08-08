@@ -1,7 +1,9 @@
 package com.github.rar91279.plugin.tapestry.core.model.presentation
 
 import com.github.rar91279.plugin.tapestry.core.TapestryProject
-import com.github.rar91279.plugin.tapestry.core.java.IJavaClassType
+import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiModifier
+import com.github.rar91279.plugin.tapestry.core.util.tapestryFields
 import com.github.rar91279.plugin.tapestry.core.model.TapestryLibrary
 import com.github.rar91279.plugin.tapestry.core.model.presentation.components.DummyTapestryParameter
 
@@ -10,7 +12,7 @@ import com.github.rar91279.plugin.tapestry.core.model.presentation.components.Du
  */
 abstract class ParameterReceiverElement internal constructor(
     library: TapestryLibrary?,
-    elementClass: IJavaClassType,
+    elementClass: PsiClass,
     project: TapestryProject
 ) : PresentationLibraryElement(library, elementClass, project) {
 
@@ -22,15 +24,15 @@ abstract class ParameterReceiverElement internal constructor(
      */
     open val parameters: Map<String, TapestryParameter>
         get() {
-            val lastModified = elementClass.file?.file?.lastModified() ?: 0
+            val lastModified = elementClass?.containingFile?.virtualFile?.timeStamp ?: 0L
             parametersCache?.let { if (lastModified <= parametersCacheTimestamp) return it }
 
             val parameters = HashMap<String, TapestryParameter>()
             parameters["mixins"] = DummyTapestryParameter(project, "mixins", false)
             parametersCacheTimestamp = lastModified
 
-            for (field in elementClass.getFields(true).values) {
-                if (field.isPrivate && field.isValid && field.annotations.containsKey(PARAMETER_ANNOTATION)) {
+            for (field in elementClass?.tapestryFields(true).orEmpty().values) {
+                if (field.hasModifierProperty(PsiModifier.PRIVATE) && field.isValid && field.hasAnnotation(PARAMETER_ANNOTATION)) {
                     val parameter = TapestryParameter(elementClass, field)
                     parameters[parameter.name] = parameter
                 }

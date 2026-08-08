@@ -1,5 +1,6 @@
 package com.github.rar91279.plugin.tapestry.psi
 
+import com.intellij.psi.util.PsiTypesUtil
 import com.intellij.codeInsight.completion.util.SimpleMethodCallLookupElement
 import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.LookupElementBuilder
@@ -25,7 +26,6 @@ import com.intellij.psi.scope.PsiScopeProcessor
 import com.intellij.psi.util.PsiUtil
 import com.intellij.psi.util.TypeConversionUtil
 import com.github.rar91279.plugin.tapestry.TapestryBundle
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaClassType
 import com.github.rar91279.plugin.tapestry.intellij.util.TapestryUtils
 import com.github.rar91279.plugin.tapestry.lang.TelLanguage
 
@@ -138,7 +138,7 @@ abstract class TelQualifiedReference(private val myElement: TelReferenceQualifie
         val qualifier = getReferenceQualifier()
 
         if (qualifier == null) {
-            val psiClass = getPsiClassTypeForContainingTmlFile()?.psiClass ?: return
+            val psiClass = getPsiClassTypeForContainingTmlFile() ?: return
             psiClass.processDeclarations(processor, ResolveState.initial(), null, myElement)
             return
         }
@@ -157,7 +157,7 @@ abstract class TelQualifiedReference(private val myElement: TelReferenceQualifie
         }
     }
 
-    private fun getPsiClassTypeForContainingTmlFile(): IntellijJavaClassType? {
+    private fun getPsiClassTypeForContainingTmlFile(): PsiClass? {
         var file: PsiFile = myElement.containingFile
 
         if (file.language === TelLanguage.INSTANCE) {
@@ -167,7 +167,7 @@ abstract class TelQualifiedReference(private val myElement: TelReferenceQualifie
         val project = TapestryUtils.getTapestryProject(file) ?: return null
         val libraryElement = project.findElementByTemplate(file) ?: return null
 
-        return libraryElement.elementClass as? IntellijJavaClassType
+        return libraryElement.elementClass
     }
 
     private fun getSubstitutedType(method: PsiMethod?, result: PsiType?): PsiType? {
@@ -184,7 +184,7 @@ abstract class TelQualifiedReference(private val myElement: TelReferenceQualifie
     private fun getQualifierClassType(): PsiType? {
         getReferenceQualifier()?.let { return it.getPsiType() }
 
-        return getPsiClassTypeForContainingTmlFile()?.underlyingObject as? PsiClassType
+        return getPsiClassTypeForContainingTmlFile()?.let { PsiTypesUtil.getClassType(it) }
     }
 
     private fun lookupElementFor(element: PsiNamedElement): LookupElement {

@@ -66,18 +66,6 @@ class PathUtilsTest : FreeSpec({
         }
     }
 
-    "getFirstPathElement" - {
-        "empty" {
-            PathUtils.getFirstPathElement(null).shouldBe("")
-            PathUtils.getFirstPathElement("").shouldBe("")
-        }
-        "various" {
-            PathUtils.getFirstPathElement("admin/Login").shouldBe("admin")
-            PathUtils.getFirstPathElement("/admin/Login").shouldBe("admin")
-            PathUtils.getFirstPathElement("Login").shouldBe("Login")
-        }
-    }
-
     "removeLastFilePathElement" - {
         "empty" {
             PathUtils.removeLastFilePathElement(null, true).shouldBe("")
@@ -90,17 +78,6 @@ class PathUtilsTest : FreeSpec({
             PathUtils.removeLastFilePathElement("admin\\Login", false).shouldBe("admin")
             PathUtils.removeLastFilePathElement("Login", false).shouldBe("Login")
             PathUtils.removeLastFilePathElement("Login", true).shouldBe("")
-        }
-    }
-
-    "getComponentFileName" - {
-        "empty" {
-            PathUtils.getComponentFileName(null).shouldBe("")
-            PathUtils.getComponentFileName("").shouldBe("")
-        }
-        "various" {
-            PathUtils.getComponentFileName("admin/Login").shouldBe("Login")
-            PathUtils.getComponentFileName("Login").shouldBe("Login")
         }
     }
 

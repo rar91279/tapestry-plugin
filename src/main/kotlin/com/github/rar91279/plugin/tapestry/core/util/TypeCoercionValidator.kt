@@ -1,15 +1,14 @@
-package com.github.rar91279.plugin.tapestry.core.java.coercion
+package com.github.rar91279.plugin.tapestry.core.util
 
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
-import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.CommonClassNames
+import com.intellij.psi.PsiArrayType
+import com.intellij.psi.PsiClassType
+import com.intellij.psi.PsiPrimitiveType
+import com.intellij.psi.PsiType
+import com.intellij.psi.PsiTypes
 import com.github.rar91279.plugin.tapestry.core.TapestryProject
-import com.github.rar91279.plugin.tapestry.core.java.AssignableToAll
-import com.github.rar91279.plugin.tapestry.core.java.IJavaArrayType
-import com.github.rar91279.plugin.tapestry.core.java.IJavaClassType
-import com.github.rar91279.plugin.tapestry.core.java.IJavaPrimitiveType
-import com.github.rar91279.plugin.tapestry.core.java.IJavaType
 
 /**
  * Tries to validate if a type coercion is a valid one.
@@ -28,13 +27,16 @@ object TypeCoercionValidator {
 
     fun canCoerce(
         project: TapestryProject,
-        sourceType: IJavaType,
+        sourceType: PsiType,
         sourceValue: String?,
-        targetType: IJavaType?
+        targetType: PsiType?
     ): Boolean {
         if (targetType == null) return false
 
-        if (sourceType is AssignableToAll || targetType.isAssignableFrom(sourceType)) return true
+        // The null type stands in for "accepts anything", produced by the component and validate
+        // resolvers. Kept as an explicit check rather than relying on null-type assignability, which
+        // differs for primitive targets.
+        if (sourceType == PsiTypes.nullType() || targetType.isAssignableFrom(sourceType)) return true
 
         val context = CoercionContext(project, sourceType, sourceValue, targetType)
 
@@ -52,9 +54,9 @@ object TypeCoercionValidator {
 
     private class CoercionContext(
         val project: TapestryProject,
-        val sourceType: IJavaType,
+        val sourceType: PsiType,
         val sourceValue: String?,
-        val targetType: IJavaType
+        val targetType: PsiType
     )
 
     /**
@@ -99,32 +101,32 @@ object TypeCoercionValidator {
     )
 
     private fun validateClassType(context: CoercionContext): Boolean? {
-        if (context.sourceType !is IJavaClassType || context.targetType !is IJavaClassType) return null
+        if (context.sourceType !is PsiClassType || context.targetType !is PsiClassType) return null
 
-        val coercions = CLASS_COERCION_MAP[context.targetType.fullyQualifiedName] ?: return null
+        val coercions = CLASS_COERCION_MAP[context.targetType.resolve()?.qualifiedName] ?: return null
 
         return coercions.any { typeName ->
-            context.project.javaTypeFinder.findType(typeName, true)?.isAssignableFrom(context.sourceType) == true
+            context.project.findClassType(typeName)?.isAssignableFrom(context.sourceType) == true
         }
     }
 
     private fun validateArrayType(context: CoercionContext): Boolean? {
-        val typeFinder = context.project.javaTypeFinder
+        val project = context.project
 
-        if (context.sourceType !is IJavaArrayType) {
-            val componentType = (context.targetType as? IJavaArrayType)?.componentType ?: return null
-            val objectType = typeFinder.findType(CommonClassNames.JAVA_LANG_OBJECT, true)
+        if (context.sourceType !is PsiArrayType) {
+            val componentType = (context.targetType as? PsiArrayType)?.componentType ?: return null
+            val objectType = project.findClassType(CommonClassNames.JAVA_LANG_OBJECT) ?: return null
             return if (componentType.isAssignableFrom(objectType)) true else null
         }
 
         // coerce arrays to lists, booleans and grid data sources
-        return context.targetType.isAssignableFrom(typeFinder.findType(CommonClassNames.JAVA_UTIL_LIST, true)) ||
-               context.targetType.isAssignableFrom(typeFinder.findType("java.lang.Boolean", true)) ||
-               (context.targetType as? IJavaClassType)?.fullyQualifiedName == "org.apache.tapestry5.grid.GridDataSource"
+        return project.findClassType(CommonClassNames.JAVA_UTIL_LIST)?.let { context.targetType.isAssignableFrom(it) } == true ||
+               project.findClassType("java.lang.Boolean")?.let { context.targetType.isAssignableFrom(it) } == true ||
+               (context.targetType as? PsiClassType)?.resolve()?.qualifiedName == "org.apache.tapestry5.grid.GridDataSource"
     }
 
     private fun validatePrimitiveType(context: CoercionContext): Boolean? {
-        if (context.sourceType !is IJavaPrimitiveType && context.targetType !is IJavaPrimitiveType) return null
+        if (context.sourceType !is PsiPrimitiveType && context.targetType !is PsiPrimitiveType) return null
 
         return canCoerce(
             context.project,
@@ -134,20 +136,20 @@ object TypeCoercionValidator {
         )
     }
 
-    private fun IJavaType.boxed(project: TapestryProject): IJavaType? {
-        if (this !is IJavaPrimitiveType) return this
-        val boxedName = PRIMITIVE_COERCION_MAP[name] ?: return this
-        return project.javaTypeFinder.findType(boxedName, true)
+    private fun PsiType.boxed(project: TapestryProject): PsiType? {
+        if (this !is PsiPrimitiveType) return this
+        val boxedName = PRIMITIVE_COERCION_MAP[presentableText] ?: return this
+        return project.findClassType(boxedName)
     }
 
     private fun validateEnumType(context: CoercionContext): Boolean? {
-        val targetType = context.targetType
-        if (targetType !is IJavaClassType || !targetType.isEnum) return null
+        val targetClass = (context.targetType as? PsiClassType)?.resolve() ?: return null
+        if (!targetClass.isEnum) return null
 
         // this validator is only to coerce strings to enums
         val sourceValue = context.sourceValue ?: return null
-        if ((context.sourceType as? IJavaClassType)?.fullyQualifiedName != CommonClassNames.JAVA_LANG_STRING) return null
+        if ((context.sourceType as? PsiClassType)?.resolve()?.qualifiedName != CommonClassNames.JAVA_LANG_STRING) return null
 
-        return targetType.getFields(true).keys.any { StringUtil.toLowerCase(it) == StringUtil.toLowerCase(sourceValue) }
+        return targetClass.tapestryFields(true).keys.any { it.lowercase() == sourceValue.lowercase() }
     }
 }

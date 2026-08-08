@@ -5,6 +5,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.PlatformCoreDataKeys
+import com.intellij.openapi.diagnostic.ControlFlowException
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.module.Module
@@ -15,8 +16,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.github.rar91279.plugin.tapestry.core.model.presentation.PresentationLibraryElement
 import com.github.rar91279.plugin.tapestry.intellij.TapestryModuleSupportLoader
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaClassType
-import com.github.rar91279.plugin.tapestry.intellij.core.resource.IntellijResource
+import com.github.rar91279.plugin.tapestry.intellij.util.currentPsiFileInEditor
 import com.github.rar91279.plugin.tapestry.intellij.util.IdeaUtils
 import com.github.rar91279.plugin.tapestry.intellij.util.TapestryUtils
 import com.github.rar91279.plugin.tapestry.lang.TmlFileType
@@ -32,6 +32,8 @@ class ClassTemplateNavigation : AnAction() {
         val module = try {
             event.getData(PlatformCoreDataKeys.MODULE)
         } catch (ex: Throwable) {
+            // Action update runs on the BGT and is routinely cancelled.
+            if (ex is ControlFlowException) throw ex
             presentation.setEnabledAndVisible(false)
             return
         }
@@ -75,20 +77,17 @@ class ClassTemplateNavigation : AnAction() {
             if (psiFile is PsiClassOwner && presentationText == "Class <-> Template Navigation") {
                 val psiClass = IdeaUtils.findPublicClass(psiFile) ?: return null
                 val tapestryElement = PresentationLibraryElement.createProjectElementInstance(
-                    IntellijJavaClassType(module, psiClass.containingFile), project) ?: return null
+                    psiClass, project) ?: return null
                 if (!tapestryElement.allowsTemplate()) return null
                 val templates = tapestryElement.templateConsiderSuperClass
                 return if (templates.isNotEmpty() && templates[0] != null)
-                    (templates[0] as IntellijResource).psiFile.virtualFile else null
+                    templates[0].virtualFile else null
             }
 
             if (psiFile.fileType == TmlFileType &&
                 (presentationText == "Class <-> Template Navigation" || presentationText == "Tapestry Class")) {
                 val template = project.findElementByTemplate(psiFile) ?: return null
-                val elementClass = template.elementClass
-                if (elementClass != null) {
-                    return (elementClass as IntellijJavaClassType).psiClass!!.containingFile.virtualFile
-                }
+                return template.elementClass?.containingFile?.virtualFile
             }
             return null
         }
@@ -96,9 +95,7 @@ class ClassTemplateNavigation : AnAction() {
         /** Finds the PsiFile on which the event occurred, or `null` if it couldn't be determined. */
         fun getEventPsiFile(event: AnActionEvent): PsiFile? {
             val project = event.getData(CommonDataKeys.PROJECT) ?: return null
-            val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return null
-            return PsiManager.getInstance(project)
-                .findFile(FileDocumentManager.getInstance().getFile(editor.document)!!)
+            return currentPsiFileInEditor(project)
         }
 
         fun showCantNavigateMessage() {

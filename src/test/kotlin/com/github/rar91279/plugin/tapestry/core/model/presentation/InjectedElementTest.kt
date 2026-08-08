@@ -2,13 +2,14 @@ package com.github.rar91279.plugin.tapestry.core.model.presentation
 
 import com.github.rar91279.plugin.tapestry.core.TapestryConstants
 import com.github.rar91279.plugin.tapestry.core.TapestryProject
-import com.github.rar91279.plugin.tapestry.core.mocks.JavaAnnotationMock
-import com.github.rar91279.plugin.tapestry.core.mocks.JavaClassTypeMock
-import com.github.rar91279.plugin.tapestry.core.mocks.JavaFieldMock
-import com.github.rar91279.plugin.tapestry.core.mocks.XmlAttributeMock
-import com.github.rar91279.plugin.tapestry.core.mocks.XmlTagMock
+import com.github.rar91279.plugin.tapestry.core.mocks.psiAnnotationMock
+import com.github.rar91279.plugin.tapestry.core.mocks.psiClassMock
+import com.github.rar91279.plugin.tapestry.core.mocks.psiFieldMock
+import com.github.rar91279.plugin.tapestry.core.mocks.xmlAttributeMock
+import com.github.rar91279.plugin.tapestry.core.mocks.xmlTagMock
 import com.github.rar91279.plugin.tapestry.core.model.TapestryLibrary
-import com.github.rar91279.plugin.tapestry.core.resource.xml.XmlTag
+import com.intellij.psi.PsiField
+import com.intellij.psi.xml.XmlTag
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.mockk
@@ -22,7 +23,7 @@ private fun <T> nullValue(): T = null as T
 class InjectedElementTest : FreeSpec({
 
     "constructor_with_field" {
-        val injectedElement = InjectedElement(nullValue<JavaFieldMock>(), null)
+        val injectedElement = InjectedElement(nullValue<PsiField>(), null)
 
         injectedElement.element shouldBe null
 
@@ -38,7 +39,7 @@ class InjectedElementTest : FreeSpec({
     }
 
     "getElementId_component_without_id_and_tag_null" {
-        val fieldMock = JavaFieldMock("field1", true).addAnnotation(JavaAnnotationMock(TapestryConstants.COMPONENT_ANNOTATION))
+        val fieldMock = psiFieldMock("field1", annotations = listOf(psiAnnotationMock(TapestryConstants.COMPONENT_ANNOTATION)))
 
         val componentMock = mockk<TapestryComponent>(relaxed = true)
         val injectedElement = InjectedElement(fieldMock, componentMock)
@@ -47,9 +48,9 @@ class InjectedElementTest : FreeSpec({
     }
 
     "getElementId_component_without_id_and_field_null" {
-        val tagMock = XmlTagMock("tag1")
+        val tagMock = xmlTagMock("tag1")
 
-        val componentClassMock = JavaClassTypeMock("com.app.components.SomeComponent").setPublic(true).setDefaultConstructor(true)
+        val componentClassMock = psiClassMock("com.app.components.SomeComponent", isPublic = true)
         val tapestryProjectMock = mockk<TapestryProject>(relaxed = true)
         val libraryMock = TapestryLibrary("id", "com.app", tapestryProjectMock)
 
@@ -59,7 +60,7 @@ class InjectedElementTest : FreeSpec({
 
         injectedElement.elementId shouldBe "SomeComponent"
 
-        val tagMock2 = XmlTagMock("someComponent")
+        val tagMock2 = xmlTagMock("someComponent")
 
         val injectedElement2 = InjectedElement(tagMock2, componentMock)
 
@@ -67,7 +68,7 @@ class InjectedElementTest : FreeSpec({
     }
 
     "getElementId_component_with_id_and_field_null" {
-        val tagMock = XmlTagMock("tag1").addAttribute(XmlAttributeMock("id", "tag2"))
+        val tagMock = xmlTagMock("tag1", attributes = arrayOf(xmlAttributeMock("id", "tag2")))
 
         val componentMock = mockk<TapestryComponent>(relaxed = true)
         val injectedElement = InjectedElement(tagMock, componentMock)
@@ -76,7 +77,7 @@ class InjectedElementTest : FreeSpec({
     }
 
     "getElementId_component_with_id_and_tag_null" {
-        val fieldMock = JavaFieldMock("field1", true).addAnnotation(JavaAnnotationMock(TapestryConstants.COMPONENT_ANNOTATION).addParameter("id", arrayOf("field2")))
+        val fieldMock = psiFieldMock("field1", annotations = listOf(psiAnnotationMock(TapestryConstants.COMPONENT_ANNOTATION, "id" to listOf("field2"))))
 
         val componentMock = mockk<TapestryComponent>(relaxed = true)
         val injectedElement = InjectedElement(fieldMock, componentMock)
@@ -85,7 +86,7 @@ class InjectedElementTest : FreeSpec({
     }
 
     "getElementId_null_values" {
-        val injectedElementWithField = InjectedElement(nullValue<JavaFieldMock>(), null)
+        val injectedElementWithField = InjectedElement(nullValue<PsiField>(), null)
 
         injectedElementWithField.elementId shouldBe null
 
@@ -97,7 +98,7 @@ class InjectedElementTest : FreeSpec({
     "getParameters_with_null_values" {
         val componentMock = mockk<TapestryComponent>(relaxed = true)
 
-        val injectedElement = InjectedElement(nullValue<JavaFieldMock>(), componentMock)
+        val injectedElement = InjectedElement(nullValue<PsiField>(), componentMock)
         injectedElement.parameters.size shouldBe 0
 
         val injectedElement2 = InjectedElement(nullValue<XmlTag>(), componentMock)
@@ -105,10 +106,10 @@ class InjectedElementTest : FreeSpec({
     }
 
     "getParameters_without_null_values" {
-        val values = arrayOf("id=field2")
-        val fieldMock = JavaFieldMock("field1", true).addAnnotation(JavaAnnotationMock(TapestryConstants.COMPONENT_ANNOTATION).addParameter("parameters", values))
+        val values = listOf("id=field2")
+        val fieldMock = psiFieldMock("field1", annotations = listOf(psiAnnotationMock(TapestryConstants.COMPONENT_ANNOTATION, "parameters" to values)))
 
-        val tagMock = XmlTagMock("tag1").addAttribute(XmlAttributeMock("id", "tag2"))
+        val tagMock = xmlTagMock("tag1", attributes = arrayOf(xmlAttributeMock("id", "tag2")))
         val componentMock = mockk<TapestryComponent>(relaxed = true)
 
         val injectedElement = InjectedElement(fieldMock, componentMock)
@@ -119,8 +120,8 @@ class InjectedElementTest : FreeSpec({
     }
 
     "compareTo" {
-        val fieldMock = JavaFieldMock("field1", true)
-        val fieldMock2 = JavaFieldMock("field2", true)
+        val fieldMock = psiFieldMock("field1")
+        val fieldMock2 = psiFieldMock("field2")
         val componentMock = mockk<TapestryComponent>(relaxed = true)
 
         InjectedElement(fieldMock, componentMock).compareTo(InjectedElement(fieldMock, componentMock)) shouldBe 0

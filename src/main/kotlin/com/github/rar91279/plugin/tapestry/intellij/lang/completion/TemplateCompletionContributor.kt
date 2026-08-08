@@ -1,11 +1,14 @@
 package com.github.rar91279.plugin.tapestry.intellij.lang.completion
 
+import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiClassType
 import com.intellij.codeInsight.completion.CompletionContributor
 import com.intellij.codeInsight.completion.CompletionInitializationContext
 import com.intellij.codeInsight.completion.CompletionParameters
 import com.intellij.codeInsight.completion.CompletionProvider
 import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.codeInsight.lookup.LookupElementBuilder
+import com.intellij.openapi.diagnostic.ControlFlowException
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleUtilCore
@@ -20,7 +23,6 @@ import com.github.rar91279.plugin.tapestry.core.model.presentation.TapestryParam
 import com.github.rar91279.plugin.tapestry.core.model.presentation.valueresolvers.ValueResolverChain
 import com.github.rar91279.plugin.tapestry.core.util.ClassUtils
 import com.github.rar91279.plugin.tapestry.intellij.TapestryModuleSupportLoader
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaClassType
 import com.github.rar91279.plugin.tapestry.intellij.lang.descriptor.TapestryXmlExtension
 import com.github.rar91279.plugin.tapestry.intellij.util.TapestryUtils
 import com.intellij.util.ProcessingContext
@@ -66,7 +68,7 @@ class TemplateCompletionContributor : CompletionContributor() {
 
                 val tapestryProject = TapestryModuleSupportLoader.getTapestryProject(module) ?: return
                 val element = tapestryProject.findElementByTemplate(parameters.originalFile) ?: return
-                val elementClass = element.elementClass as? IntellijJavaClassType ?: return
+                val elementClass = element.elementClass ?: return
 
                 for (parameter in component.parameters.values) {
                     if (!parameter.name.equals(attribute.localName, ignoreCase = true)) continue
@@ -84,7 +86,7 @@ class TemplateCompletionContributor : CompletionContributor() {
                 result: CompletionResultSet,
                 tapestryProject: TapestryProject,
                 module: Module,
-                elementClass: IntellijJavaClassType,
+                elementClass: PsiClass,
                 parameter: TapestryParameter,
                 tag: XmlTag,
                 attribute: XmlAttribute
@@ -109,18 +111,17 @@ class TemplateCompletionContributor : CompletionContributor() {
                             ValueResolverChain.resolve(tapestryProject, elementClass, qualifier, parameter.defaultPrefix)
                         }
                         catch (ex: Exception) {
-                            logger.error(ex)
+                            if (ex is ControlFlowException) throw ex
+                            logger.warn("Failed to resolve '$qualifier' for completion", ex)
                             return true
                         }
 
-                        val resolvedClass = resolvedValue?.type as? IntellijJavaClassType
-                        val resolvedFile = resolvedClass?.psiClass?.containingFile
-                        if (resolvedFile != null) {
-                            val qualifierClass = IntellijJavaClassType(module, resolvedFile)
-
+                        val resolvedClass = (resolvedValue?.type as? PsiClassType)?.resolve()
+                        // nothing further to complete when the qualifier does not resolve to a class
+                        if (resolvedClass != null) {
                             addVariants(
                                 result,
-                                ClassUtils.getClassProperties(qualifierClass).keys.map { qualifier + it }
+                                ClassUtils.getClassProperties(resolvedClass).keys.map { qualifier + it }
                             )
                             return true
                         }
@@ -128,8 +129,8 @@ class TemplateCompletionContributor : CompletionContributor() {
                 }
 
                 // Completion of a boolean parameter
-                val parameterTypeName = parameter.parameterField.type?.name
-                if (parameterTypeName?.lowercase(Locale.getDefault()) == "boolean") {
+                val parameterTypeName = parameter.type?.presentableText
+                if (parameterTypeName?.lowercase() == "boolean") {
                     val attributes = ClassUtils.getClassProperties(elementClass).keys.toMutableSet()
                     attributes.add("literal:true")
                     attributes.add("literal:false")

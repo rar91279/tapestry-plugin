@@ -6,7 +6,6 @@ import com.intellij.psi.xml.XmlAttribute
 import com.intellij.psi.xml.XmlTag
 import com.github.rar91279.plugin.tapestry.core.model.presentation.Mixin
 import com.github.rar91279.plugin.tapestry.core.model.presentation.TapestryComponent
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaClassType
 import com.github.rar91279.plugin.tapestry.intellij.util.TapestryUtils
 import com.intellij.util.ArrayUtil
 import com.intellij.xml.XmlAttributeDescriptor
@@ -162,7 +161,7 @@ class TapestryHtmlTagDescriptor(
      * @return the PSI class element for the component, or the HTML delegate's declaration
      */
     override fun getDeclaration(): PsiElement? =
-        if (component != null) (component.elementClass as? IntellijJavaClassType)?.psiClass
+        if (component != null) component.elementClass
         else htmlDelegate.declaration
 
     /**

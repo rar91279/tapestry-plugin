@@ -1,9 +1,11 @@
 package com.github.rar91279.plugin.tapestry.core.model.externalizable
 
+import com.intellij.openapi.diagnostic.ControlFlowException
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.text.StringUtil
 import com.github.rar91279.plugin.tapestry.core.TapestryConstants
-import com.github.rar91279.plugin.tapestry.core.java.IJavaClassType
+import com.intellij.psi.PsiClass
+import com.github.rar91279.plugin.tapestry.core.util.tapestryFields
 import com.github.rar91279.plugin.tapestry.core.model.presentation.Mixin
 import com.github.rar91279.plugin.tapestry.core.model.presentation.Page
 import com.github.rar91279.plugin.tapestry.core.model.presentation.PresentationLibraryElement
@@ -23,7 +25,7 @@ object ClassExternalizer {
      * @return the element representation, or `null` if the element can't be externalized to a class.
      */
     @Throws(Exception::class)
-    fun externalize(element: Any, targetClass: IJavaClassType): String? = try {
+    fun externalize(element: Any, targetClass: PsiClass): String? = try {
         when (element) {
             // a component field carries the required parameters of the component
             is TapestryComponent -> {
@@ -33,7 +35,7 @@ object ClassExternalizer {
 
                 element.externalizeAsField(
                     targetClass,
-                    fieldName = StringUtil.notNullize(element.elementClass.name),
+                    fieldName = StringUtil.notNullize(element.elementClass?.name),
                     annotation = TapestryConstants.COMPONENT_ANNOTATION,
                     annotationParameters = if (parameters.isEmpty()) emptyMap() else mapOf("parameters" to "{$parameters}")
                 )
@@ -55,35 +57,37 @@ object ClassExternalizer {
         }
     }
     catch (ex: Exception) {
-        logger.error(ex)
+        // Rethrown either way; logging a cancellation as an error would file a spurious fatal report.
+        if (ex !is ControlFlowException) logger.error(ex)
         throw ex
     }
 
     private fun PresentationLibraryElement.externalizeAsField(
-        targetClass: IJavaClassType,
+        targetClass: PsiClass,
         fieldName: String?,
         annotation: String,
         annotationParameters: Map<String, String> = emptyMap()
     ): String? {
         val typeCreator = project.javaTypeCreator
-        val takenNames = targetClass.getFields(false).keys
+        val elementClass = elementClass ?: return null
+        val takenNames = targetClass.tapestryFields(false).keys
 
         var field = typeCreator.createField(fieldName.orEmpty(), elementClass, true, true) ?: return null
-        val suggestedName = suggestName(field.name.orEmpty(), takenNames)
+        val suggestedName = suggestName(field.name, takenNames)
         if (suggestedName != field.name) {
             field = typeCreator.createField(suggestedName, elementClass, true, true) ?: return null
         }
 
         typeCreator.createFieldAnnotation(field, annotation, annotationParameters)
 
-        var serialized = field.stringRepresentation ?: return null
+        var serialized = field.text
 
         // use the short names of the classes that could be imported into the target class
         if (typeCreator.ensureClassImport(targetClass, elementClass)) {
-            elementClass.fullyQualifiedName?.let { fqn -> serialized = serialized.replace(fqn, elementClass.name.orEmpty()) }
+            elementClass.qualifiedName?.let { fqn -> serialized = serialized.replace(fqn, elementClass.name.orEmpty()) }
         }
 
-        val annotationType = project.javaTypeFinder.findType(annotation, true)
+        val annotationType = project.findType(annotation, true)
         if (annotationType != null && typeCreator.ensureClassImport(targetClass, annotationType)) {
             serialized = serialized.replace(annotation, annotation.substringAfterLast('.'))
         }

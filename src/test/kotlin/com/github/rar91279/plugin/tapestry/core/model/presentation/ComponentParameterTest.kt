@@ -1,80 +1,61 @@
 package com.github.rar91279.plugin.tapestry.core.model.presentation
 
-import com.github.rar91279.plugin.tapestry.core.mocks.JavaAnnotationMock
-import com.github.rar91279.plugin.tapestry.core.mocks.JavaFieldMock
+import com.github.rar91279.plugin.tapestry.core.mocks.psiAnnotationMock
+import com.github.rar91279.plugin.tapestry.core.mocks.psiFieldMock
+import com.intellij.psi.PsiField
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 
+private const val PARAMETER = "org.apache.tapestry5.annotations.Parameter"
+
 class ComponentParameterTest : FreeSpec({
 
-    fun newField(): JavaFieldMock {
-        val field = JavaFieldMock().setPrivate(true)
-        field.addAnnotation(JavaAnnotationMock("org.apache.tapestry5.annotations.Parameter"))
-        return field
-    }
-
-    lateinit var fieldMock: JavaFieldMock
-
-    beforeTest {
-        fieldMock = newField()
-    }
+    fun field(
+        name: String = "field1",
+        javadoc: String? = null,
+        vararg attributes: Pair<String, List<String>>,
+    ): PsiField = psiFieldMock(name, javadoc = javadoc, annotations = listOf(psiAnnotationMock(PARAMETER, *attributes)))
 
     "getName" {
-        fieldMock.setName("_field1")
-        TapestryParameter(null, fieldMock).name shouldBe "field1"
+        TapestryParameter(null, field("_field1")).name shouldBe "field1"
 
-        fieldMock = newField()
-        fieldMock.setName("\$field1")
-        TapestryParameter(null, fieldMock).name shouldBe "field1"
+        TapestryParameter(null, field("\$field1")).name shouldBe "field1"
 
-        fieldMock = newField()
-        fieldMock.setName("field1")
-        TapestryParameter(null, fieldMock).name shouldBe "field1"
+        TapestryParameter(null, field("field1")).name shouldBe "field1"
 
-        fieldMock = newField()
-        fieldMock.setName("field1")
-        (fieldMock.annotations.values.first() as JavaAnnotationMock).addParameter("name", "field2")
-        TapestryParameter(null, fieldMock).name shouldBe "field2"
+        TapestryParameter(null, field("field1", attributes = arrayOf("name" to listOf("field2")))).name shouldBe "field2"
     }
 
     "getDescription" {
-        fieldMock.setDocumentation("docs")
-
-        TapestryParameter(null, fieldMock).description shouldBe "docs"
+        TapestryParameter(null, field(javadoc = "docs")).description shouldBe "docs"
     }
 
     "isRequired" {
-        TapestryParameter(null, fieldMock).isRequired shouldBe false
+        TapestryParameter(null, field()).isRequired shouldBe false
     }
 
     "getDefaultPrefix_default" {
-        TapestryParameter(null, fieldMock).defaultPrefix shouldBe "prop"
+        TapestryParameter(null, field()).defaultPrefix shouldBe "prop"
     }
 
     "getDefaultPrefix_configured" {
-        (fieldMock.annotations.values.first() as JavaAnnotationMock).addParameter("defaultPrefix", "myprefix")
-
-        TapestryParameter(null, fieldMock).defaultPrefix shouldBe "myprefix"
+        TapestryParameter(null, field(attributes = arrayOf("defaultPrefix" to listOf("myprefix")))).defaultPrefix shouldBe "myprefix"
     }
 
     "getDefaultValue_default" {
-        TapestryParameter(null, fieldMock).defaultValue.isEmpty() shouldBe true
+        TapestryParameter(null, field()).defaultValue.isEmpty() shouldBe true
     }
 
     "getDefaultValue_configured" {
-        (fieldMock.annotations.values.first() as JavaAnnotationMock).addParameter("value", "myvalue")
-
-        TapestryParameter(null, fieldMock).defaultValue shouldBe "myvalue"
+        TapestryParameter(null, field(attributes = arrayOf("value" to listOf("myvalue")))).defaultValue shouldBe "myvalue"
     }
 
     "compareTo" {
-        fieldMock.setName("name1")
+        val parameter1 = TapestryParameter(null, field("name1"))
+        val parameter2 = TapestryParameter(null, field("name2"))
 
-        val field2Mock = JavaFieldMock("name2", true)
-        field2Mock.addAnnotation(JavaAnnotationMock("org.apache.tapestry5.annotations.Parameter"))
+        parameter1.compareTo(TapestryParameter(null, field("name1"))) shouldBe 0
 
-        TapestryParameter(null, fieldMock).compareTo(TapestryParameter(null, fieldMock)) shouldBe 0
-
-        (TapestryParameter(null, fieldMock).compareTo(TapestryParameter(null, field2Mock)) < 0) shouldBe true
+        (parameter1.compareTo(parameter2) < 0) shouldBe true
     }
 })

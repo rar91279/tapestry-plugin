@@ -1,6 +1,7 @@
 package com.github.rar91279.plugin.tapestry.core.model.externalizable.documentation.generationchain
 
 import com.github.rar91279.plugin.tapestry.core.model.externalizable.documentation.wrapper.PresentationElementDocumentationWrapper
+import com.intellij.openapi.diagnostic.ControlFlowException
 import com.github.rar91279.plugin.tapestry.core.util.ClassLocator
 import com.github.rar91279.plugin.tapestry.core.util.VelocityProcessor
 
@@ -47,13 +48,15 @@ object CoreLibraryDocumentation {
                 val name = location.className
                 val description = try {
                     PresentationElementDocumentationWrapper(location.url).description
-                } catch (ignore: Exception) {
+                } catch (ex: Exception) {
+                    if (ex is ControlFlowException) throw ex
                     // no descriptor detail — list the name alone
                     ""
                 }
                 entries.add(NavPageDocumentation.Entry(name, "core/$kind/$name", NavPageDocumentation.summary(description)))
             }
         } catch (ex: Exception) {
+            if (ex is ControlFlowException) throw ex
             // an unreadable core index degrades to an empty section rather than a broken page
         }
         entries.sortWith { a, b -> String.CASE_INSENSITIVE_ORDER.compare(a.label, b.label) }

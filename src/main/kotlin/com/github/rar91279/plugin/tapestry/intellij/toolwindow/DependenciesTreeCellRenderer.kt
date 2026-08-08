@@ -3,7 +3,7 @@ package com.github.rar91279.plugin.tapestry.intellij.toolwindow
 import com.intellij.icons.AllIcons
 import com.github.rar91279.plugin.tapestry.core.TapestryProject
 import com.github.rar91279.plugin.tapestry.core.model.presentation.PresentationLibraryElement
-import com.github.rar91279.plugin.tapestry.core.resource.IResource
+import com.intellij.psi.PsiFile
 import com.github.rar91279.plugin.tapestry.intellij.toolwindow.nodes.*
 import com.intellij.ui.ColoredTreeCellRenderer
 import com.intellij.ui.SimpleTextAttributes
@@ -81,8 +81,8 @@ class DependenciesTreeCellRenderer : ColoredTreeCellRenderer() {
             // Leaf resource files: differentiate by extension so templates and message catalogs read
             // apart from generic resources at a glance.
             is ResourceLeafNode -> {
-                val resource = value.getUserObject() as IResource
-                return when (resource.extension) {
+                val resource = value.getUserObject() as PsiFile
+                return when (resource.virtualFile?.extension) {
                     "tml" -> TapestryIcons.Tapestry_logo_small
                     "properties" -> AllIcons.Toolwindows.ToolWindowMessages
                     else -> AllIcons.FileTypes.Any_type

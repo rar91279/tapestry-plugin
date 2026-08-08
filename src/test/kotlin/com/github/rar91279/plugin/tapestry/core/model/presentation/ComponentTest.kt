@@ -1,32 +1,28 @@
 package com.github.rar91279.plugin.tapestry.core.model.presentation
 
 import com.github.rar91279.plugin.tapestry.core.TapestryProject
-import com.github.rar91279.plugin.tapestry.core.mocks.JavaClassTypeMock
+import com.github.rar91279.plugin.tapestry.core.mocks.psiClassMock
+import com.intellij.psi.PsiClass
 import com.github.rar91279.plugin.tapestry.core.model.TapestryLibrary
-import com.github.rar91279.plugin.tapestry.core.resource.IResource
+import com.intellij.psi.PsiFile
 import com.github.rar91279.plugin.tapestry.core.resource.IResourceFinder
-import com.github.rar91279.plugin.tapestry.core.resource.TestableResource
+import com.github.rar91279.plugin.tapestry.core.mocks.psiFileMock
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
-import java.io.File
 
 class ComponentTest : FreeSpec({
 
-    lateinit var classInRootComponentsPackageMock: JavaClassTypeMock
+    lateinit var classInRootComponentsPackageMock: PsiClass
     lateinit var tapestryProjectMock: TapestryProject
     lateinit var resourceFinderMock: IResourceFinder
     lateinit var libraryMock: TapestryLibrary
 
     beforeTest {
-        val builderClassFileMock = mockk<File>(relaxed = true)
-        every { builderClassFileMock.lastModified() } returns Long.MAX_VALUE
+        val builderClassResourceMock = psiFileMock("Builder.java", timeStamp = Long.MAX_VALUE)
 
-        val builderClassResourceMock = mockk<IResource>(relaxed = true)
-        every { builderClassResourceMock.file } returns builderClassFileMock
-
-        classInRootComponentsPackageMock = JavaClassTypeMock("com.app.components.SomeClass").setPublic(true).setDefaultConstructor(true).setFile(builderClassResourceMock)
+        classInRootComponentsPackageMock = psiClassMock("com.app.components.SomeClass", isPublic = true, containingFile = builderClassResourceMock)
 
         resourceFinderMock = mockk(relaxed = true)
         tapestryProjectMock = mockk(relaxed = true)
@@ -48,10 +44,10 @@ class ComponentTest : FreeSpec({
     }
 
     "getTemplate_template_in_classpath" {
-        val web1: Collection<IResource> = listOf(TestableResource("SomeClass.tml", "web1.xml"))
+        val web1: Collection<PsiFile> = listOf(psiFileMock("SomeClass.tml"))
         every { resourceFinderMock.findLocalizedClasspathResource("com/app/components/SomeClass.tml", true) } returns web1
 
-        val templates: Collection<IResource> = listOf(TestableResource("SomeClass.tml", "web2.xml"))
+        val templates: Collection<PsiFile> = listOf(psiFileMock("SomeClass.tml"))
         every { resourceFinderMock.findLocalizedContextResource("SomeClass.tml") } returns templates
 
         TapestryComponent(libraryMock, classInRootComponentsPackageMock, tapestryProjectMock).template[0].name shouldBe "SomeClass.tml"

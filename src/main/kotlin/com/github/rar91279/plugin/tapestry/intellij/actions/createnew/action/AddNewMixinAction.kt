@@ -3,7 +3,7 @@ package com.github.rar91279.plugin.tapestry.intellij.actions.createnew.action
 import com.intellij.CommonBundle
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformCoreDataKeys
-import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.ui.DialogBuilder
 import com.intellij.openapi.ui.Messages
 import com.intellij.psi.PsiManager
@@ -65,14 +65,26 @@ class AddNewMixinAction : AddNewElementAction<MixinsNode>(MixinsNode::class.java
 
             TapestryModuleSupportLoader.getInstance(module).state.newMixinsClassesSourceDirectory = dialog.classSourceDirectory.path
 
-            ApplicationManager.getApplication().runWriteAction(Runnable {
-                try {
-                    val classSourceDirectory = PsiManager.getInstance(module.project).findDirectory(dialog.classSourceDirectory) ?: return@Runnable
-                    TapestryUtils.createMixin(module, classSourceDirectory, mixinName, dialog.isReplaceExistingFiles)
-                } catch (ex: IllegalStateException) {
-                    Messages.showWarningDialog(module.project, ex.message, "Error Creating Mixin")
+            // A command, so the new class lands as one undoable unit and one Local History entry.
+            var failure: String? = null
+            WriteCommandAction.writeCommandAction(module.project)
+                .withName("New Tapestry Mixin")
+                .run<RuntimeException> {
+                    val classSourceDirectory =
+                        PsiManager.getInstance(module.project).findDirectory(dialog.classSourceDirectory)
+                    if (classSourceDirectory != null) {
+                        try {
+                            TapestryUtils.createMixin(
+                                module, classSourceDirectory, mixinName, dialog.isReplaceExistingFiles
+                            )
+                        } catch (ex: IllegalStateException) {
+                            failure = ex.message
+                        }
+                    }
                 }
-            })
+
+            // Reported after the write action: showing a modal dialog while holding the write lock is not allowed.
+            failure?.let { Messages.showWarningDialog(module.project, it, "Error Creating Mixin") }
             builder.window.dispose()
         }
 

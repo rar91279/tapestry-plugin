@@ -43,7 +43,7 @@ class TapestryLibrary @JvmOverloads constructor(
      */
     private fun findElements(componentsOrPages: String): Map<String, PresentationLibraryElement> {
         val elements = CollectionFactory.createCaseInsensitiveStringMap<PresentationLibraryElement>()
-        val typeFinder = project?.javaTypeFinder ?: return elements
+        val typeFinder = project ?: return elements
 
         for (type in typeFinder.findTypesInPackageRecursively("$basePackage.$componentsOrPages", true)) {
             try {

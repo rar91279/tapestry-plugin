@@ -6,7 +6,6 @@ import com.intellij.psi.xml.XmlTag
 import com.github.rar91279.plugin.tapestry.core.model.presentation.Mixin
 import com.github.rar91279.plugin.tapestry.core.model.presentation.PresentationLibraryElement
 import com.github.rar91279.plugin.tapestry.core.model.presentation.TapestryComponent
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaClassType
 import com.intellij.xml.XmlAttributeDescriptor
 
 /** Descriptor of a tag that maps to a Tapestry component. */
@@ -21,7 +20,7 @@ class TapestryTagDescriptor(
         this(component, emptyList(), prefix, descriptor)
 
     override fun getDefaultName(): String {
-        val name = StringUtil.toLowerCase(component.name.orEmpty()).replace('/', '.')
+        val name = component.name.orEmpty().lowercase().replace('/', '.')
         val shortName = component.library?.shortName
 
         return getPrefixWithColon() + if (shortName != null) "$shortName.$name" else name
@@ -42,5 +41,5 @@ class TapestryTagDescriptor(
         if (context != null) DescriptorUtil.getAttributeDescriptor(attributeName, context)
         else DescriptorUtil.getAttributeDescriptor(attributeName, component as? TapestryComponent, mixins)
 
-    override fun getDeclaration(): PsiElement? = (component.elementClass as? IntellijJavaClassType)?.psiClass
+    override fun getDeclaration(): PsiElement? = component.elementClass
 }

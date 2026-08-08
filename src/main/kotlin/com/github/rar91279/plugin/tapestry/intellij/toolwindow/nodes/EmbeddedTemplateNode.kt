@@ -1,13 +1,13 @@
 package com.github.rar91279.plugin.tapestry.intellij.toolwindow.nodes
 
 import com.github.rar91279.plugin.tapestry.core.model.presentation.PresentationLibraryElement
-import com.github.rar91279.plugin.tapestry.core.resource.IResource
+import com.intellij.psi.PsiFile
 import javax.swing.tree.DefaultMutableTreeNode
 
-class EmbeddedTemplateNode(resource: IResource, element: PresentationLibraryElement) :
+class EmbeddedTemplateNode(resource: PsiFile, element: PresentationLibraryElement) :
     DefaultMutableTreeNode(resource) {
 
-    private val label = resource.name.split("." + resource.extension)[0]
+    private val label = resource.virtualFile?.nameWithoutExtension ?: resource.name
 
     init {
         if (element.hasClassFile) {

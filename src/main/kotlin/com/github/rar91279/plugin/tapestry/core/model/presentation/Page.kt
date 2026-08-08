@@ -2,11 +2,11 @@ package com.github.rar91279.plugin.tapestry.core.model.presentation
 
 import com.github.rar91279.plugin.tapestry.core.TapestryConstants
 import com.github.rar91279.plugin.tapestry.core.TapestryProject
-import com.github.rar91279.plugin.tapestry.core.java.IJavaClassType
+import com.intellij.psi.PsiClass
 import com.github.rar91279.plugin.tapestry.core.model.TapestryLibrary
 import com.github.rar91279.plugin.tapestry.core.model.externalizable.ExternalizableToTemplate
 import com.github.rar91279.plugin.tapestry.core.model.externalizable.TemplateExternalizer
-import com.github.rar91279.plugin.tapestry.core.resource.IResource
+import com.intellij.psi.PsiFile
 import com.github.rar91279.plugin.tapestry.core.util.PathUtils
 
 /**
@@ -14,19 +14,19 @@ import com.github.rar91279.plugin.tapestry.core.util.PathUtils
  */
 class Page internal constructor(
     library: TapestryLibrary?,
-    pageClass: IJavaClassType,
+    pageClass: PsiClass,
     project: TapestryProject
 ) : PresentationLibraryElement(library, pageClass, project), ExternalizableToTemplate {
 
-    private var templateCache: Array<IResource>? = null
+    private var templateCache: Array<PsiFile>? = null
 
     override fun allowsTemplate(): Boolean = true
 
-    override val template: Array<IResource>
+    override val template: Array<PsiFile>
         get() {
             templateCache?.let { if (checkAllValidResources(it)) return it }
 
-            val fqn = elementClass.fullyQualifiedName!!
+            val fqn = elementClass?.qualifiedName ?: return emptyArray()
             val packageName = fqn.substring(0, fqn.lastIndexOf('.'))
             val templateName = PathUtils.getLastPathElement(name) + "." + TapestryConstants.TEMPLATE_FILE_EXTENSION
 

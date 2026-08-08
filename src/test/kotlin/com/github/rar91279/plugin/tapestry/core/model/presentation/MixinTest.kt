@@ -1,7 +1,8 @@
 package com.github.rar91279.plugin.tapestry.core.model.presentation
 
 import com.github.rar91279.plugin.tapestry.core.TapestryProject
-import com.github.rar91279.plugin.tapestry.core.mocks.JavaClassTypeMock
+import com.github.rar91279.plugin.tapestry.core.mocks.psiClassMock
+import com.intellij.psi.PsiClass
 import com.github.rar91279.plugin.tapestry.core.model.TapestryLibrary
 import com.github.rar91279.plugin.tapestry.core.resource.IResourceFinder
 import io.kotest.core.spec.style.FreeSpec
@@ -11,12 +12,12 @@ import io.mockk.mockk
 
 class MixinTest : FreeSpec({
 
-    lateinit var classInRootPagesPackageMock: JavaClassTypeMock
+    lateinit var classInRootPagesPackageMock: PsiClass
     lateinit var tapestryProjectMock: TapestryProject
     lateinit var libraryMock: TapestryLibrary
 
     beforeTest {
-        classInRootPagesPackageMock = JavaClassTypeMock("com.app.pages.SomeClass").setPublic(true).setDefaultConstructor(true)
+        classInRootPagesPackageMock = psiClassMock("com.app.pages.SomeClass", isPublic = true)
 
         val resourceFinderMock = mockk<IResourceFinder>(relaxed = true)
         tapestryProjectMock = mockk(relaxed = true)

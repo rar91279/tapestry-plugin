@@ -11,7 +11,7 @@ class TapestryUnknownTagDescriptor(
     descriptor: TapestryNamespaceDescriptor?
 ) : BasicTapestryTagDescriptor(namespacePrefix, descriptor) {
 
-    private val qualifiedName: String = getPrefixWithColon() + StringUtil.toLowerCase(componentName)
+    private val qualifiedName: String = getPrefixWithColon() + componentName.lowercase()
 
     override fun getDefaultName(): String = qualifiedName
 

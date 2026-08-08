@@ -1,5 +1,6 @@
 package com.github.rar91279.plugin.tapestry.intellij.util
 
+import com.github.rar91279.plugin.tapestry.core.util.attributeValues
 import com.intellij.facet.FacetManager
 import com.intellij.ide.fileTemplates.FileTemplateManager
 import com.intellij.openapi.diagnostic.Logger
@@ -26,11 +27,12 @@ import com.intellij.psi.xml.XmlFile
 import com.intellij.psi.xml.XmlTag
 import com.github.rar91279.plugin.tapestry.core.TapestryConstants
 import com.github.rar91279.plugin.tapestry.core.TapestryProject
-import com.github.rar91279.plugin.tapestry.core.java.IJavaField
+import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiField
+import com.github.rar91279.plugin.tapestry.core.util.tapestryFields
 import com.github.rar91279.plugin.tapestry.core.model.presentation.TapestryComponent
 import com.github.rar91279.plugin.tapestry.core.util.PathUtils
 import com.github.rar91279.plugin.tapestry.intellij.TapestryModuleSupportLoader
-import com.github.rar91279.plugin.tapestry.intellij.core.java.IntellijJavaClassType
 import com.github.rar91279.plugin.tapestry.intellij.facet.TapestryFacetType
 import com.github.rar91279.plugin.tapestry.intellij.lang.descriptor.TapestryXmlExtension
 import com.github.rar91279.plugin.tapestry.lang.TmlFileType
@@ -177,24 +179,24 @@ object TapestryUtils {
      *
      * @return `true` if the parameter is defined in the class, `false` otherwise.
      */
-    fun parameterDefinedInClass(paramName: String, elementClass: IntellijJavaClassType, tag: XmlTag): Boolean {
+    fun parameterDefinedInClass(paramName: String, elementClass: PsiClass, tag: XmlTag): Boolean {
         val field = findIdentifyingField(elementClass, tag) ?: return false
-        val annotation = field.annotations[TapestryConstants.COMPONENT_ANNOTATION] ?: return false
-        val fieldParameters = annotation.parameters["parameters"] ?: return false
+        val annotation = field.getAnnotation(TapestryConstants.COMPONENT_ANNOTATION) ?: return false
+        val fieldParameters = annotation.attributeValues("parameters")
 
         return fieldParameters.any { it.split("=").let { parts -> parts.size == 2 && parts[0] == paramName } }
     }
 
-    fun getFieldId(field: IJavaField): String? {
-        val annotation = field.annotations[TapestryConstants.COMPONENT_ANNOTATION] ?: return null
+    fun getFieldId(field: PsiField): String? {
+        val annotation = field.getAnnotation(TapestryConstants.COMPONENT_ANNOTATION) ?: return null
 
-        return annotation.parameters["id"]?.firstOrNull()?.ifEmpty { null } ?: field.name
+        return annotation.attributeValues("id").firstOrNull()?.ifEmpty { null } ?: field.name
     }
 
-    fun findIdentifyingField(tag: XmlTag): IJavaField? {
+    fun findIdentifyingField(tag: XmlTag): PsiField? {
         val element = getTapestryProject(tag)?.findElementByTemplate(tag.containingFile) ?: return null
 
-        return findIdentifyingField(element.elementClass as IntellijJavaClassType, tag)
+        return findIdentifyingField(element.elementClass ?: return null, tag)
     }
 
     fun getEmbeddedComponentIds(tag: XmlTag): List<String> {
@@ -203,10 +205,10 @@ object TapestryUtils {
         return element.embeddedComponents.mapNotNull { it.element?.elementId }
     }
 
-    private fun findIdentifyingField(elementClass: IntellijJavaClassType, tag: XmlTag): IJavaField? {
+    private fun findIdentifyingField(elementClass: PsiClass, tag: XmlTag): PsiField? {
         val tagId = tag.getAttributeValue("id", TapestryXmlExtension.getTapestryNamespace(tag)) ?: return null
 
-        return elementClass.getFields(false).values.firstOrNull { tagId == getFieldId(it) }
+        return elementClass.tapestryFields(false).values.firstOrNull { tagId == getFieldId(it) }
     }
 
     fun getTapestryProject(psiElement: PsiElement): TapestryProject? =
@@ -337,7 +339,7 @@ object TapestryUtils {
         }
 
         // element names are delimited by slashes but tag names may not contain slashes
-        return tapestryProject.findComponent(StringUtil.toLowerCase(tag.localName).replace('.', '/'))
+        return tapestryProject.findComponent(tag.localName.lowercase().replace('.', '/'))
     }
 
     /**
@@ -367,7 +369,7 @@ object TapestryUtils {
         val classDirectory =
             IdeaUtils.findOrCreateDirectoryForPackage(sourceDirectory, PathUtils.getFullComponentPackage(basePackage, pageName))
 
-        val fileName = PathUtils.getComponentFileName(pageName)
+        val fileName = PathUtils.getLastPathElement(pageName)
         classDirectory.findFile("$fileName.java")?.let {
             if (!replaceExistingFiles) throw FileAlreadyExistsException()
             it.delete()
@@ -394,7 +396,7 @@ object TapestryUtils {
         val templateDirectory =
             IdeaUtils.findOrCreateDirectoryForPackage(sourceDirectory, PathUtils.getFullComponentPackage(packageName, pageName))
 
-        val fileName = PathUtils.getComponentFileName(pageName) + "." + TapestryConstants.TEMPLATE_FILE_EXTENSION
+        val fileName = PathUtils.getLastPathElement(pageName) + "." + TapestryConstants.TEMPLATE_FILE_EXTENSION
         templateDirectory.findFile(fileName)?.let {
             if (!replaceExistingFiles) throw FileAlreadyExistsException()
             it.delete()

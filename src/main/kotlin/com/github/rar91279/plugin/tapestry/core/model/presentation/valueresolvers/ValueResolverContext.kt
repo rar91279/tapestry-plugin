@@ -1,18 +1,17 @@
 package com.github.rar91279.plugin.tapestry.core.model.presentation.valueresolvers
 
 import com.github.rar91279.plugin.tapestry.core.TapestryProject
-import com.github.rar91279.plugin.tapestry.core.java.IJavaClassType
-import com.github.rar91279.plugin.tapestry.core.java.IJavaType
-import com.github.rar91279.plugin.tapestry.core.util.chain.Context
+import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiType
 
 /** The state shared by the resolvers of a single resolution run. */
 class ValueResolverContext(
     val project: TapestryProject,
-    val contextClass: IJavaClassType?,
+    val contextClass: PsiClass?,
     val value: String?,
     val defaultPrefix: String?
-) : Context {
+) {
 
-    var resultType: IJavaType? = null
+    var resultType: PsiType? = null
     var resultCodeBind: Any? = null
 }

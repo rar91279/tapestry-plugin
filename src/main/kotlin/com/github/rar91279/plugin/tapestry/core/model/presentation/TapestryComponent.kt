@@ -2,11 +2,11 @@ package com.github.rar91279.plugin.tapestry.core.model.presentation
 
 import com.github.rar91279.plugin.tapestry.core.TapestryConstants
 import com.github.rar91279.plugin.tapestry.core.TapestryProject
-import com.github.rar91279.plugin.tapestry.core.java.IJavaClassType
+import com.intellij.psi.PsiClass
 import com.github.rar91279.plugin.tapestry.core.model.TapestryLibrary
 import com.github.rar91279.plugin.tapestry.core.model.externalizable.ExternalizableToTemplate
 import com.github.rar91279.plugin.tapestry.core.model.externalizable.TemplateExternalizer
-import com.github.rar91279.plugin.tapestry.core.resource.IResource
+import com.intellij.psi.PsiFile
 import com.github.rar91279.plugin.tapestry.core.util.PathUtils
 
 /**
@@ -14,21 +14,21 @@ import com.github.rar91279.plugin.tapestry.core.util.PathUtils
  */
 open class TapestryComponent : ParameterReceiverElement, ExternalizableToTemplate {
 
-    private var templateCache: Array<IResource>? = null
+    private var templateCache: Array<PsiFile>? = null
 
-    internal constructor(library: TapestryLibrary?, componentClass: IJavaClassType, project: TapestryProject) :
+    internal constructor(library: TapestryLibrary?, componentClass: PsiClass, project: TapestryProject) :
             super(library, componentClass, project)
 
-    protected constructor(componentClass: IJavaClassType, project: TapestryProject) :
+    protected constructor(componentClass: PsiClass, project: TapestryProject) :
             super(null, componentClass, project)
 
     override fun allowsTemplate(): Boolean = true
 
-    override val template: Array<IResource>
+    override val template: Array<PsiFile>
         get() {
             templateCache?.let { if (checkAllValidResources(it)) return it }
 
-            val fqn = elementClass.fullyQualifiedName!!
+            val fqn = elementClass?.qualifiedName ?: return emptyArray()
             val packageName = fqn.substring(0, fqn.lastIndexOf('.'))
 
             // Search in the classpath
