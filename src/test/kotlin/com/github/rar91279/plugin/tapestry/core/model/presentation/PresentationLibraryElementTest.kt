@@ -133,6 +133,7 @@ class PresentationLibraryElementTest : FreeSpec({
     "getParameters_no_parameters" {
         TestableParameterReceiverElement(libraryMock, classInRootComponentsPackageMock, tapestryProjectMock).parameters.size shouldBe 1
 
+        // @Parameter counts regardless of visibility; an unannotated field never does.
         val publicField = psiFieldMock(
             "publicField", isPrivate = false,
             annotations = listOf(psiAnnotationMock("org.apache.tapestry5.annotations.Parameter"))
@@ -141,7 +142,7 @@ class PresentationLibraryElementTest : FreeSpec({
 
         classInSubComponentsPackageMock.stubFields(publicField, privateField)
 
-        TestableParameterReceiverElement(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).parameters.size shouldBe 1
+        TestableParameterReceiverElement(libraryMock, classInSubComponentsPackageMock, tapestryProjectMock).parameters.size shouldBe 2
     }
 
     "getParameters_with_parameters" {
