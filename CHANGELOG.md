@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+### Added
+
+- New inspection *Public field with Tapestry annotation*, which flags public fields annotated with `@Property`,
+  `@Parameter`, `@Persist`, `@Component` and friends — Tapestry only instruments non-public fields, so those
+  annotations are silently ignored.
+
 ### Fixed
 
 - No longer freezes the IDE after a Maven/Gradle reimport: the Tapestry module scan that
@@ -25,9 +31,16 @@
   picked up instead of keeping the verdict from when the component was first inspected.
 - Values bound to a component parameter declared with an unnamed annotation value (`@Component("id")`) are read
   again; the attribute was previously filed under a key nothing looked up.
+- The embedded `tapestry_5_4.xsd` declared `name` instead of `id` on `extension-point` and `replace`, so valid
+  IoC XML was reported as an error. The embedded 5.1/5.3/5.4 schemas now match the ones published online.
+- TML templates no longer report irrelevant XML inspection warnings (empty tag bodies and the like).
+- `@Parameter` on a protected field is recognized again; only public fields are excluded.
 
 ### Changed
 
+- The release workflow now treats the version tag as the source of truth: pushing `vX.Y.Z` sets
+  `version` in `gradle.properties`, closes the changelog's `[Unreleased]` section, and commits both back
+  to the default branch. The tag must sit at the branch head or the release fails.
 - The per-module persisted state component was renamed from `Loomy` to `TapestrySupport`. The directories last
   used for new pages/components/mixins reset once as a result.
 - Removed the last of the IDE-portability layer the plugin inherited from the standalone Tapestry model: the
