@@ -12,6 +12,7 @@ import com.github.rar91279.plugin.tapestry.intellij.inspections.TelReferencesIns
 import com.intellij.testFramework.ExpectedHighlightingData
 import com.intellij.testFramework.builders.JavaModuleFixtureBuilder
 import com.intellij.util.containers.ContainerUtil
+import com.intellij.xml.util.CheckTagEmptyBodyInspection
 
 /**
  * @author Alexey Chmutov
@@ -49,6 +50,11 @@ class TapestryHighlightingTest : TapestryBaseTestCase() {
 
     fun testHtml5() {
         doTest(true)
+    }
+
+    fun testEmptyTagBody() {
+        // "XML tag has empty body" is suppressed in templates, see TmlInspectionSuppressor
+        doTest(false, CheckTagEmptyBodyInspection())
     }
 
     fun testUnknownTypeOfTag() {

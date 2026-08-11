@@ -106,6 +106,8 @@
     <localInspection language="TEL" shortName="TelReferencesInspection" bundle="messages.TapestryBundle" key="tel.references.inspection"
                      groupKey="tapestry.inspections.group" enabledByDefault="true" level="WARNING"
                      implementationClass="com.github.rar91279.plugin.tapestry.intellij.inspections.TelReferencesInspection"/>
+    <lang.inspectionSuppressor language="TML"
+                               implementationClass="com.github.rar91279.plugin.tapestry.intellij.inspections.TmlInspectionSuppressor"/>
     <moduleService serviceImplementation="com.github.rar91279.plugin.tapestry.intellij.TapestryModuleSupportLoader"/>
     <!-- Registered per project by the activity below rather than through the application-level
          psi.treeChangeListener EP, which fired for every keystroke in every open project. -->
