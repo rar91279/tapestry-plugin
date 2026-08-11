@@ -2,6 +2,9 @@ name: Release
 
 # Publishes a GitHub Release for a pushed version tag (e.g. v1.0.0) with the plugin
 # distribution attached. Marketplace publishing is deliberately not wired up here.
+#
+# The tag is the source of truth: it sets the version and closes the changelog's
+# [Unreleased] section, and both edits are committed back to the default branch.
 on:
   push:
     tags: [ 'v*' ]
@@ -15,7 +18,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Checked out by branch, not by tag: the version bump and patched changelog are
+      # committed back at the end, and a detached tag checkout has nothing to push to.
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
       - name: Set up JDK 25
         uses: actions/setup-java@v5
         with:
@@ -33,14 +41,20 @@ jobs:
           key: plugin-verifier-${{ runner.os }}-${{ hashFiles('build.gradle.kts', 'gradle.properties') }}
           restore-keys: plugin-verifier-${{ runner.os }}-
 
-      - name: Verify the tag matches the project version
+      # Guards against releasing content the tag does not point at: the branch may have
+      # moved on since the tag was pushed, and this job builds the branch.
+      - name: Verify the tag points at the branch head
         run: |
-          tag="${GITHUB_REF_NAME#v}"
-          version=$(grep '^version=' gradle.properties | cut -d= -f2)
-          if [ "$tag" != "$version" ]; then
-            echo "Tag $GITHUB_REF_NAME does not match version=$version in gradle.properties" >&2
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse "$GITHUB_REF_NAME^{commit}")" ]; then
+            echo "$GITHUB_REF_NAME is not at the head of ${{ github.event.repository.default_branch }}" >&2
             exit 1
           fi
+
+      - name: Set the version and close the changelog section
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          sed -i "s/^version=.*/version=$version/" gradle.properties
+          ./gradlew patchChangelog
 
       - name: Build and verify
         run: ./gradlew check buildPlugin verifyPlugin
@@ -55,3 +69,12 @@ jobs:
           name: ${{ github.ref_name }}
           body_path: release-notes.md
           files: build/distributions/*.zip
+
+      # Last, so a failed build leaves no bump behind. Pushed with GITHUB_TOKEN, which by
+      # design does not trigger build.yml for this commit.
+      - name: Commit the bump and patched changelog
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Release ${GITHUB_REF_NAME#v}" gradle.properties CHANGELOG.md
+          git push origin HEAD:${{ github.event.repository.default_branch }}
