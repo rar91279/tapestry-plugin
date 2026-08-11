@@ -14,9 +14,8 @@ import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.JavaPsiFacade
+import com.intellij.psi.JavaDirectoryService
 import com.intellij.psi.PsiArrayType
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassOwner
@@ -116,17 +115,9 @@ object IdeaUtils {
      */
     fun getWebFacet(module: Module): WebFacet? = FacetManager.getInstance(module).getFacetByType(WebFacet.ID)
 
-    fun getPackage(psiElement: PsiElement?): PsiPackage? {
-        if (psiElement is PsiDirectory) {
-            val project = psiElement.project
-            val packageName = ProjectRootManager.getInstance(project).fileIndex
-                .getPackageNameByDirectory(psiElement.virtualFile) ?: return null
-
-            return JavaPsiFacade.getInstance(project).findPackage(packageName)
-        }
-
-        return psiElement as? PsiPackage
-    }
+    fun getPackage(psiElement: PsiElement?): PsiPackage? =
+        if (psiElement is PsiDirectory) JavaDirectoryService.getInstance().getPackage(psiElement)
+        else psiElement as? PsiPackage
 
     fun getNameElement(tag: XmlTag): XmlElement? = tag.firstChild.nextSiblings().filterIsInstance<XmlElement>().firstOrNull()
 

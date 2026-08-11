@@ -46,7 +46,8 @@ internal class ViewMouseListener(private val viewPane: TapestryProjectViewPane) 
     override fun mousePressed(event: MouseEvent) {
         // The cheap checks (node/file type, editor state) still need a read action for PSI access,
         // but none of them touch the index — safe to run synchronously.
-        if (ReadAction.compute<Boolean, RuntimeException> { canStartDrag(event) }) {
+        // computeBlocking, not computeCancellable: the latter asserts a background thread, and this is the EDT.
+        if (ReadAction.computeBlocking<Boolean, RuntimeException> { canStartDrag(event) }) {
             firstMouseEvent = event
             event.consume()
         }

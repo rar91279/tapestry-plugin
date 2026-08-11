@@ -8,9 +8,11 @@ class TapestryResourceProvider : StandardResourceProvider {
 
     override fun registerResources(registrar: ResourceRegistrar) {
         registrar.addIgnoredResource(TapestryConstants.PARAMETERS_NAMESPACE)
-        registrar.addStdResource(TapestryConstants.TEMPLATE_NAMESPACE, "/META-INF/tapestry_5_1_0.xsd", javaClass)
-        registrar.addStdResource(TapestryConstants.TEMPLATE_NAMESPACE2, "/META-INF/tapestry_5_0_0.xsd", javaClass)
-        registrar.addStdResource(TapestryConstants.TEMPLATE_NAMESPACE3, "/META-INF/tapestry_5_3.xsd", javaClass)
-        registrar.addStdResource(TapestryConstants.TEMPLATE_NAMESPACE4, "/META-INF/tapestry_5_4.xsd", javaClass)
+        // Class-loader relative, so no leading slash: ClassLoader.getResource() would not resolve it.
+        val classLoader = javaClass.classLoader
+        registrar.addStdResource(TapestryConstants.TEMPLATE_NAMESPACE, "META-INF/tapestry_5_1_0.xsd", classLoader)
+        registrar.addStdResource(TapestryConstants.TEMPLATE_NAMESPACE2, "META-INF/tapestry_5_0_0.xsd", classLoader)
+        registrar.addStdResource(TapestryConstants.TEMPLATE_NAMESPACE3, "META-INF/tapestry_5_3.xsd", classLoader)
+        registrar.addStdResource(TapestryConstants.TEMPLATE_NAMESPACE4, "META-INF/tapestry_5_4.xsd", classLoader)
     }
 }

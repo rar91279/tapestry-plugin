@@ -17,6 +17,8 @@ import com.github.rar91279.plugin.tapestry.intellij.view.actions.GroupElementFil
 import com.github.rar91279.plugin.tapestry.intellij.view.actions.ShowLibrariesTogleAction
 import com.github.rar91279.plugin.tapestry.intellij.view.actions.StartInBasePackageAction
 import com.github.rar91279.plugin.tapestry.intellij.view.nodes.*
+import com.intellij.ide.CommonActionsManager
+import com.intellij.ide.DefaultTreeExpander
 import com.intellij.ide.PsiCopyPasteManager
 import com.intellij.ide.SelectInTarget
 import com.intellij.ide.projectView.ProjectView
@@ -41,7 +43,6 @@ import com.intellij.ui.TreeSpeedSearch
 import com.intellij.ui.tree.AsyncTreeModel
 import com.intellij.ui.tree.StructureTreeModel
 import com.intellij.ui.treeStructure.SimpleNode
-import com.intellij.ui.treeStructure.actions.CollapseAllAction
 import com.intellij.util.EditSourceOnDoubleClickHandler
 import com.intellij.util.EditSourceOnEnterKeyHandler
 import com.intellij.util.ui.tree.TreeUtil
@@ -74,7 +75,7 @@ class TapestryProjectViewPane(project: Project) :
         private set
     private val moduleListener = object : ModuleListener {
         override fun moduleRemoved(project: Project, module: Module) = reload()
-        override fun moduleAdded(project: Project, module: Module) = reload()
+        override fun modulesAdded(project: Project, modules: List<Module>) = reload()
     }
     // Parented to this pane, so the connection is released even if the pane is discarded without dispose().
     private val messageBusConnection = project.messageBus.connect(this)
@@ -139,7 +140,9 @@ class TapestryProjectViewPane(project: Project) :
                 updateFromRoot(false)
             }
         }).setAsSecondary(true)
-        defaultActionGroup.add(CollapseAllAction(tree))
+        defaultActionGroup.add(
+            CommonActionsManager.getInstance().createCollapseAllAction(DefaultTreeExpander(tree), tree)
+        )
     }
 
     /** Reloads the view pane. */

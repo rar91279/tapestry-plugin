@@ -194,7 +194,7 @@ class TapestryInjectedBeanLineMarkerProvider : RelatedItemLineMarkerProvider() {
             ?.let { GlobalSearchScope.moduleWithDependentsScope(it) }
             ?: GlobalSearchScope.projectScope(anchor.project)
 
-        return ReferencesSearch.search(serviceClass, scope).asIterable()
+        return ReferencesSearch.search(serviceClass, scope)
             .mapNotNull { enclosingVariable(it.element) }
             .filter { injectionPoint(it) != null && PsiUtil.resolveClassInType(it.type) == serviceClass }
             .mapNotNull { it.sourcePsi ?: it.javaPsi }
