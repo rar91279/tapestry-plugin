@@ -2,7 +2,9 @@
 
 # Tapestry Changelog
 
-## [Unreleased]
+## Unreleased
+
+## 1.0.1 - 2026-08-11
 
 ### Added
 
@@ -26,7 +28,6 @@
   characters.
 - `pom.xml` generated for a new Tapestry facet is no longer written twice, with the second (less complete)
   write clobbering the first — it now keeps the file-template output and its real source-root path.
-
 - `@SupportsInformalParameters` is no longer cached without invalidation: adding or removing the annotation is
   picked up instead of keeping the verdict from when the component was first inspected.
 - Values bound to a component parameter declared with an unnamed annotation value (`@Component("id")`) are read
@@ -48,7 +49,7 @@
   (`PsiClass`, `PsiType`, `PsiField`, `PsiMethod`, `PsiAnnotation`) directly. Long-lived model objects now hold
   their class through a `SmartPsiElementPointer` instead of re-resolving it from a stored file URL.
 
-## [1.0.0] - 2026-08-05
+## 1.0.0 - 2026-08-05
 
 First release of the maintained port of the Tapestry plugin JetBrains retired into
 [intellij-obsolete-plugins](https://github.com/JetBrains/intellij-obsolete-plugins/tree/master/tapestry).
