@@ -2,7 +2,6 @@ package com.github.rar91279.plugin.tapestry.core.model.presentation
 
 import com.github.rar91279.plugin.tapestry.core.TapestryProject
 import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiModifier
 import com.github.rar91279.plugin.tapestry.core.util.tapestryFields
 import com.github.rar91279.plugin.tapestry.core.model.TapestryLibrary
 import com.github.rar91279.plugin.tapestry.core.model.presentation.components.DummyTapestryParameter
@@ -32,7 +31,9 @@ abstract class ParameterReceiverElement internal constructor(
             parametersCacheTimestamp = lastModified
 
             for (field in elementClass?.tapestryFields(true).orEmpty().values) {
-                if (field.hasModifierProperty(PsiModifier.PRIVATE) && field.isValid && field.hasAnnotation(PARAMETER_ANNOTATION)) {
+                // Any visibility: Tapestry wants @Parameter fields private, but a protected one in a base
+                // class is still a parameter — dropping it only hides a real parameter from the template.
+                if (field.isValid && field.hasAnnotation(PARAMETER_ANNOTATION)) {
                     val parameter = TapestryParameter(elementClass, field)
                     parameters[parameter.name] = parameter
                 }

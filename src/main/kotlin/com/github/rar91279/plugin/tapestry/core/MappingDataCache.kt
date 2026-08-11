@@ -1,17 +1,15 @@
 package com.github.rar91279.plugin.tapestry.core
 
-import com.intellij.openapi.util.text.StringUtil
-import com.intellij.psi.JavaRecursiveElementVisitor
 import com.intellij.psi.PsiCompiledElement
-import com.intellij.psi.PsiExpression
-import com.intellij.psi.PsiField
 import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiJavaReference
-import com.intellij.psi.PsiLiteralExpression
-import com.intellij.psi.PsiModifier
-import com.intellij.psi.PsiNewExpression
 import com.intellij.psi.util.CachedValuesManager
 import org.jetbrains.annotations.VisibleForTesting
+import org.jetbrains.uast.UCallExpression
+import org.jetbrains.uast.UFile
+import org.jetbrains.uast.UastCallKind
+import org.jetbrains.uast.evaluateString
+import org.jetbrains.uast.toUElementOfType
+import org.jetbrains.uast.visitor.AbstractUastVisitor
 
 /**
  * Caches the library prefix to package mappings declared with `new LibraryMapping(...)`.
@@ -25,22 +23,25 @@ object MappingDataCache {
         CachedValuesManager.getProjectPsiDependentCache(file, ::computeMappingData)
 
     private fun computeMappingData(file: PsiFile): Map<String, String> {
+        // UAST, not Java PSI: module classes are just as often Kotlin, and `new LibraryMapping(...)` and
+        // `LibraryMapping(...)` are the same call expression through it.
+        val uFile = file.sourceFile().toUElementOfType<UFile>() ?: return emptyMap()
         val result = HashMap<String, String>()
 
-        file.sourceFile().accept(object : JavaRecursiveElementVisitor() {
-            override fun visitNewExpression(expression: PsiNewExpression) {
-                if (expression.classReference?.qualifiedName == TAPESTRY_MAPPING_FQN) {
-                    val expressions = expression.argumentList?.expressions
-                    if (expressions != null && expressions.size == 2) {
-                        val prefix = expressions[0].constantStringValue()
-                        val packageName = expressions[1].constantStringValue()
+        uFile.accept(object : AbstractUastVisitor() {
+            override fun visitCallExpression(node: UCallExpression): Boolean {
+                if (node.kind == UastCallKind.CONSTRUCTOR_CALL && node.valueArgumentCount == 2 &&
+                    node.resolve()?.containingClass?.qualifiedName == TAPESTRY_MAPPING_FQN
+                ) {
+                    val prefix = node.valueArguments[0].evaluateString()
+                    val packageName = node.valueArguments[1].evaluateString()
 
-                        if (prefix != null && packageName != null) {
-                            result[prefix] = packageName
-                        }
+                    if (prefix != null && packageName != null) {
+                        result[prefix] = packageName
                     }
                 }
-                super.visitNewExpression(expression)
+
+                return false
             }
         })
 
@@ -55,19 +56,5 @@ object MappingDataCache {
         if (navigationElement !== this && navigationElement is PsiFile) return navigationElement
 
         return mirror as? PsiFile ?: this
-    }
-
-    private fun PsiExpression.constantStringValue(): String? = when (this) {
-        is PsiJavaReference -> {
-            val field = resolve() as? PsiField
-            if (field != null && field.hasModifierProperty(PsiModifier.FINAL) && field.hasInitializer()) {
-                field.computeConstantValue() as? String
-            }
-            else null
-        }
-
-        is PsiLiteralExpression -> StringUtil.unquoteString(text)
-
-        else -> null
     }
 }

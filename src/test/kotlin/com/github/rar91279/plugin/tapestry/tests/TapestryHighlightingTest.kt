@@ -8,6 +8,7 @@ import com.intellij.codeInspection.xml.DeprecatedClassUsageInspection
 import com.intellij.lang.properties.codeInspection.unused.UnusedPropertyInspection
 import com.intellij.openapi.editor.XmlHighlighterColors
 import com.intellij.openapi.vfs.VirtualFile
+import com.github.rar91279.plugin.tapestry.intellij.inspections.PublicInstrumentedFieldInspection
 import com.github.rar91279.plugin.tapestry.intellij.inspections.TelReferencesInspection
 import com.intellij.testFramework.ExpectedHighlightingData
 import com.intellij.testFramework.builders.JavaModuleFixtureBuilder
@@ -50,6 +51,42 @@ class TapestryHighlightingTest : TapestryBaseTestCase() {
 
     fun testHtml5() {
         doTest(true)
+    }
+
+    fun testPropertyParameter() {
+        addAbstractComponentToProject("RibbonBase")
+        addComponentToProject("ui.ribbon.Ribbon")
+        doTest(false)
+    }
+
+    // A library whose mapping is contributed from a Kotlin module class, which the Java stub indexes miss.
+    fun testKotlinLibraryMapping() {
+        myFixture.addFileToProject(
+            "com/testlib/security/components/HasPermission.java",
+            "package com.testlib.security.components; public class HasPermission {}"
+        )
+        myFixture.addFileToProject(
+            "com/testapp/services/SecurityModule.kt",
+            """
+            package com.testapp.services
+
+            import org.apache.tapestry5.ioc.Configuration
+            import org.apache.tapestry5.services.LibraryMapping
+
+            object SecurityModule {
+                fun contributeComponentClassResolver(configuration: Configuration<LibraryMapping>) {
+                    configuration.add(LibraryMapping("security", "com.testlib.security"))
+                }
+            }
+            """.trimIndent()
+        )
+        doTest(false)
+    }
+
+    fun testPublicInstrumentedField() {
+        myFixture.enableInspections(PublicInstrumentedFieldInspection())
+        initByComponent(false)
+        myFixture.checkHighlighting(true, false, true)
     }
 
     fun testEmptyTagBody() {

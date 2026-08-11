@@ -1,0 +1,13 @@
+<html>
+<body>
+Reports public fields carrying an annotation that makes Tapestry instrument them, such as
+<code>@Property</code>, <code>@Parameter</code>, <code>@Persist</code>, <code>@Component</code>,
+<code>@Environmental</code> or <code>@Inject</code>.
+<p>
+  Tapestry replaces access to such a field with generated accessors, which it cannot do for a public field.
+  The page fails to assemble at runtime with
+  <i>Field &lt;name&gt; of class &lt;component&gt; must be instrumented, and may not be public</i>.
+  Make the field private, or protected for a base component.
+</p>
+</body>
+</html>
