@@ -45,7 +45,8 @@ jobs:
       # moved on since the tag was pushed, and this job builds the branch.
       - name: Verify the tag points at the branch head
         run: |
-          if [ "$(git rev-parse HEAD)" != "$(git rev-parse "$GITHUB_REF_NAME^{commit}")" ]; then
+          # github.sha is the tagged commit; the checkout is shallow and has no tags to resolve.
+          if [ "$(git rev-parse HEAD)" != "${{ github.sha }}" ]; then
             echo "$GITHUB_REF_NAME is not at the head of ${{ github.event.repository.default_branch }}" >&2
             exit 1
           fi
