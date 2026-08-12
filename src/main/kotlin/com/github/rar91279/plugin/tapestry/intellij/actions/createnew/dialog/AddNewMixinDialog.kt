@@ -1,4 +1,4 @@
-package com.github.rar91279.plugin.tapestry.intellij.actions.createnew
+package com.github.rar91279.plugin.tapestry.intellij.actions.createnew.dialog
 
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.roots.ModuleRootManager

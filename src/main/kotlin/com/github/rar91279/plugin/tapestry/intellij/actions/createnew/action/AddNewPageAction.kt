@@ -1,4 +1,4 @@
-package com.github.rar91279.plugin.tapestry.intellij.actions.createnew
+package com.github.rar91279.plugin.tapestry.intellij.actions.createnew.action
 
 import com.intellij.CommonBundle
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -9,7 +9,6 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.psi.PsiManager
 import com.github.rar91279.plugin.tapestry.core.TapestryProject
 import com.github.rar91279.plugin.tapestry.intellij.TapestryModuleSupportLoader
-import com.github.rar91279.plugin.tapestry.intellij.actions.createnew.action.AddNewElementAction
 import com.github.rar91279.plugin.tapestry.intellij.actions.createnew.dialog.AddNewComponentDialog
 import com.github.rar91279.plugin.tapestry.intellij.util.TapestryUtils
 import com.github.rar91279.plugin.tapestry.intellij.util.Validators

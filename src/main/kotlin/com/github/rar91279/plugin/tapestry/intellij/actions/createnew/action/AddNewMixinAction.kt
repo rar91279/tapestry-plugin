@@ -9,7 +9,7 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.psi.PsiManager
 import com.github.rar91279.plugin.tapestry.core.TapestryProject
 import com.github.rar91279.plugin.tapestry.intellij.TapestryModuleSupportLoader
-import com.github.rar91279.plugin.tapestry.intellij.actions.createnew.AddNewMixinDialog
+import com.github.rar91279.plugin.tapestry.intellij.actions.createnew.dialog.AddNewMixinDialog
 import com.github.rar91279.plugin.tapestry.intellij.util.TapestryUtils
 import com.github.rar91279.plugin.tapestry.intellij.util.Validators
 import com.github.rar91279.plugin.tapestry.intellij.view.nodes.MixinsNode

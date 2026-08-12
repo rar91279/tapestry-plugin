@@ -4,6 +4,12 @@
 
 ## Unreleased
 
+### Fixed
+
+- *New > Page* no longer fails with a `ClassNotFoundException`: `AddNewPageAction` kept the package it had before
+  actions and dialogs were split into their own packages, so the class was compiled somewhere other than where
+  `plugin.xml` looked for it. `AddNewMixinDialog` had the same leftover package.
+
 ## 1.0.1 - 2026-08-11
 
 ### Added
