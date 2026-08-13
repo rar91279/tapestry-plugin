@@ -42,7 +42,7 @@ private const val INJECT_SERVICE_ANNOTATION = "org.apache.tapestry5.ioc.annotati
  * Annotations marking an injection point. Tapestry 5.9 honours the JSR-330 `@Inject` (both namespaces)
  * next to its own, and `@InjectService` injects by id.
  */
-private val INJECT_ANNOTATIONS = setOf(
+internal val INJECT_ANNOTATIONS = setOf(
     TapestryConstants.CORE_INJECT_ANNOTATION, "org.apache.tapestry5.ioc.annotations.Inject",
     "jakarta.inject.Inject", "javax.inject.Inject", INJECT_SERVICE_ANNOTATION)
 

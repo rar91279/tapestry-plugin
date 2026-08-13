@@ -9,6 +9,9 @@
 - *New > Page* no longer fails with a `ClassNotFoundException`: `AddNewPageAction` kept the package it had before
   actions and dialogs were split into their own packages, so the class was compiled somewhere other than where
   `plugin.xml` looked for it. `AddNewMixinDialog` had the same leftover package.
+- Fields annotated with `@InjectService` or the JSR-330 `@Inject` (`jakarta.inject` / `javax.inject`) are no
+  longer reported as *never assigned*: the implicit usage provider kept its own annotation list, which had
+  drifted from the one the injection gutter icons use. Both now share a single list.
 
 ## 1.0.1 - 2026-08-11
 

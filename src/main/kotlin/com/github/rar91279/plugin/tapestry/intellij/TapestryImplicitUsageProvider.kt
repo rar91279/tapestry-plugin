@@ -27,8 +27,7 @@ private val RENDER_PHASE_NAMES = setOf(
     "afterRenderBody", "afterRenderTemplate", "afterRender", "cleanupRender")
 
 /** Fields set (and read) by the framework, so never "unused" or "unassigned". */
-private val FIELD_ANNOTATIONS = listOf(
-    TapestryConstants.CORE_INJECT_ANNOTATION, IOC_ANNOTATIONS + "Inject",
+private val FIELD_ANNOTATIONS = INJECT_ANNOTATIONS + listOf(
     TapestryConstants.COMPONENT_ANNOTATION, TapestryConstants.PROPERTY_ANNOTATION,
     TapestryConstants.INJECT_PAGE_ANNOTATION, TapestryConstants.MIXIN_ANNOTATION,
     ANNOTATIONS + "Parameter", ANNOTATIONS + "InjectComponent", ANNOTATIONS + "InjectContainer",
