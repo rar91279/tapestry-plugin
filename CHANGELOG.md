@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+## 1.0.2 - 2026-08-13
+
 ### Fixed
 
 - *New > Page* no longer fails with a `ClassNotFoundException`: `AddNewPageAction` kept the package it had before
