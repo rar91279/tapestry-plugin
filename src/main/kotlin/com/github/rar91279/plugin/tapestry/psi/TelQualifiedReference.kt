@@ -100,6 +100,9 @@ abstract class TelQualifiedReference(private val myElement: TelReferenceQualifie
         else -> null
     }
 
+    /** The class the reference is resolved against: the qualifier's class, or the template's element class. */
+    fun getQualifierClass(): PsiClass? = PsiUtil.resolveClassInType(getQualifierClassType())
+
     fun getUnresolvedMessage(resolvedWithError: Boolean): String {
         val referenceName = getReferenceName()
         val typeName = TelPsiUtil.getPresentableText(getQualifierClassType())
