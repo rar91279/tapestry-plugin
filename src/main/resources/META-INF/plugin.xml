@@ -88,6 +88,7 @@
     <implicitUsageProvider implementation="com.github.rar91279.plugin.tapestry.intellij.TapestryImplicitUsageProvider"/>
     <codeInsight.lineMarkerProvider language="JAVA" implementationClass="com.github.rar91279.plugin.tapestry.intellij.TapestryEventHandlerLineMarkerProvider"/>
     <codeInsight.lineMarkerProvider language="UAST" implementationClass="com.github.rar91279.plugin.tapestry.intellij.TapestryInjectedBeanLineMarkerProvider"/>
+    <gotoRelatedProvider implementation="com.github.rar91279.plugin.tapestry.intellij.TapestryGotoRelatedProvider"/>
 
     <lang.commenter language="TML" implementationClass="com.intellij.lang.xml.XmlCommenter"/>
     <lang.foldingBuilder language="TML" implementationClass="com.intellij.lang.xml.XmlFoldingBuilder"/>

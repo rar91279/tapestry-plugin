@@ -55,11 +55,17 @@ Compared to the original:
 
 | Action | Shortcut |
 |--------|----------|
+| *Navigate* → *Related Symbol* | `Ctrl+Alt+Home` |
 | Class ↔ Template navigation | `Ctrl+Shift+G` |
 | Tag → documentation | `Ctrl+Shift+D` |
 | *Go to* → Tapestry Template / Tapestry Class | editor popup |
 | *New* → Tapestry Page / Component / Mixin | project view popup |
 
+- *Related Symbol* lists everything one Tapestry element is made of, from any of its files — the class, its
+  templates, its message catalogs, and the assets it imports, split into stylesheets, javascript and the rest.
+  Each `@Import(stack = …)` gets a group of its own holding the class the IoC contribution names, the files the
+  stack bundles (`@Import` paths, `META-INF/assets`, `META-INF/modules`) and the stacks it includes in turn.
+  Assets living in a webjar are left out; there is no file to open.
 - Safe Delete of a Tapestry element removes its class, templates and message catalogs together.
 
 **Views**

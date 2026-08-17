@@ -4,6 +4,45 @@
 
 ## Unreleased
 
+### Added
+
+- *Navigate | Related Symbol* (`Ctrl+Alt+Home`) hops between the files that make up one Tapestry element,
+  grouped as class, template, message catalogs, stylesheets, javascript, other assets, and one group per
+  imported JavaScript stack. Works from the class, the template and a message catalog.
+- Assets imported with `@Import(stylesheet = …, library = …)` and injected with `@Path` are resolved across the
+  layouts in use: next to the class, `META-INF/assets/<package>/`, the `META-INF/assets/` root, and the web
+  context. `@Import(module = …)` resolves under `META-INF/modules/`.
+- Each stack in `@Import(stack = …)` is resolved to the class the IoC contribution names, the stylesheets,
+  libraries and modules it bundles, and the stacks it includes in turn — however the class passes them along,
+  including constants handed to a base class constructor. Assets inside a webjar are left out: there is no
+  file to open. Contents are read from the string literals a stack declares, so paths computed at runtime are
+  not seen.
+- The Tapestry view pane lists an element's imported assets alongside its class, templates and message
+  catalogs.
+- `IResourceFinder.findRootRelativeResource`, which resolves a path against the module's source and resource
+  roots. Unlike the existing classpath lookup it doesn't go through the package index, so it reaches paths no
+  package can name — `META-INF/assets`, `META-INF/modules`.
+
+### Fixed
+
+- Selecting a node in the Tapestry view pane no longer throws a `ClassCastException`: a tree restoring itself
+  from a cached presentation hands out placeholder nodes, which the pane and the safe-delete provider both
+  cast without checking.
+- The injected-bean gutter marker no longer risks a `PsiInvalidElementAccessException` when *Related Symbol*
+  collection hands it an element from a superseded view provider; it and the related-symbol provider both
+  check validity first.
+
+### Changed
+
+- `@Path` is recognized in both packages it has lived in (`org.apache.tapestry5.ioc.annotations` and
+  `org.apache.tapestry5.annotations`).
+- Discovery of the IoC module classes visible from a module — manifest-declared, the application's `services`
+  package, the framework's own, and everything they pull in with `@ImportModule` — moved out of the
+  injected-bean gutter marker into a shared `TapestryModuleClasses`, which JavaScript stack resolution reads
+  contributions from as well.
+- Asset path resolution moved into a shared `TapestryProject.findAssets`, used both by an element's own
+  imports and by the stacks it imports, so a stack's relative paths resolve against the stack's package.
+
 ## 1.0.2 - 2026-08-13
 
 ### Fixed

@@ -2,6 +2,7 @@ package com.github.rar91279.plugin.tapestry.intellij.core.resource
 
 import com.intellij.javaee.web.WebRoot
 import com.intellij.openapi.module.Module
+import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiManager
@@ -31,6 +32,11 @@ class IntellijResourceFinder(private val module: Module) : IResourceFinder {
             .filter { LocalizationUtils.unlocalizeFileName(it.name) == filename }
             .toList()
     }
+
+    override fun findRootRelativeResource(path: String): Collection<PsiFile> =
+        ModuleRootManager.getInstance(module).getSourceRoots(false)
+            .mapNotNull { it.findFileByRelativePath(path) }
+            .mapNotNull { PsiManager.getInstance(module.project).findFile(it) }
 
     override fun findContextResource(path: String): PsiFile? =
         webRoots().firstNotNullOfOrNull { webRoot ->

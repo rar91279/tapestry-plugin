@@ -6,7 +6,10 @@ import com.github.rar91279.plugin.tapestry.core.mocks.psiAnnotationMock
 import com.github.rar91279.plugin.tapestry.core.mocks.psiClassMock
 import com.github.rar91279.plugin.tapestry.core.mocks.psiFieldMock
 import com.github.rar91279.plugin.tapestry.core.mocks.psiFileMock
+import com.github.rar91279.plugin.tapestry.core.mocks.psiMethodMock
+import com.github.rar91279.plugin.tapestry.core.mocks.stubAnnotations
 import com.github.rar91279.plugin.tapestry.core.mocks.stubFields
+import com.github.rar91279.plugin.tapestry.core.mocks.stubMethods
 import com.github.rar91279.plugin.tapestry.core.model.TapestryLibrary
 import com.github.rar91279.plugin.tapestry.core.resource.IResourceFinder
 import com.intellij.psi.PsiClass
@@ -72,6 +75,12 @@ class PresentationLibraryElementTest : FreeSpec({
         classInSubComponentsPackageMock = classMock("com.app.components.folder1.SomeClass")
 
         resourceFinderMock = mockk(relaxed = true)
+        // "Found nothing" has to be a real empty list: a relaxed Collection is a mock whose isEmpty() answers
+        // false, which reads as a hit to every caller that falls back on an empty result. Per-test stubbings
+        // are declared later and still win.
+        every { resourceFinderMock.findClasspathResource(any(), any()) } returns emptyList()
+        every { resourceFinderMock.findRootRelativeResource(any()) } returns emptyList()
+        every { resourceFinderMock.findContextResource(any()) } returns null
         tapestryProjectMock = mockk(relaxed = true)
         every { tapestryProjectMock.applicationRootPackage } returns "com.app"
         every { tapestryProjectMock.resourceFinder } returns resourceFinderMock
@@ -211,5 +220,104 @@ class PresentationLibraryElementTest : FreeSpec({
         resources1.clear()
 
         Page(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).messageCatalog.size shouldBe 0
+    }
+
+    "getAssets_resolves_every_path_flavour" {
+        val relative = psiFileMock("style.css")
+        val parentRelative = psiFileMock("shared.css")
+        val absolute = psiFileMock("reset.css")
+        val fromContext = psiFileMock("app.js")
+        val fromMethod = psiFileMock("chart.js")
+        val fromPath = psiFileMock("logo.png")
+
+        every { resourceFinderMock.findClasspathResource("com/app/pages/css/style.css", true) } returns listOf(relative)
+        every { resourceFinderMock.findClasspathResource("com/app/css/shared.css", true) } returns listOf(parentRelative)
+        every { resourceFinderMock.findClasspathResource("css/reset.css", true) } returns listOf(absolute)
+        every { resourceFinderMock.findContextResource("js/app.js") } returns fromContext
+        every { resourceFinderMock.findClasspathResource("com/app/pages/js/chart.js", true) } returns listOf(fromMethod)
+        every { resourceFinderMock.findClasspathResource("com/app/pages/images/logo.png", true) } returns listOf(fromPath)
+
+        classInRootPagesPackageMock.stubAnnotations(
+            psiAnnotationMock(
+                "org.apache.tapestry5.annotations.Import",
+                "stylesheet" to listOf("css/style.css", "../css/shared.css", "classpath:css/reset.css"),
+                // Neither a symbol reference nor a webjar has a file behind it.
+                "library" to listOf("context:js/app.js", "webjars:jquery:jquery.js", "\${app.theme}/theme.css")
+            )
+        )
+        classInRootPagesPackageMock.stubMethods(
+            psiMethodMock(
+                "onActivate",
+                annotations = listOf(
+                    psiAnnotationMock("org.apache.tapestry5.annotations.Import", "library" to listOf("js/chart.js"))
+                )
+            )
+        )
+        classInRootPagesPackageMock.stubFields(
+            psiFieldMock(
+                "logo",
+                annotations = listOf(
+                    psiAnnotationMock("org.apache.tapestry5.ioc.annotations.Path", "value" to listOf("images/logo.png"))
+                )
+            )
+        )
+
+        Page(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).assets.toList() shouldBe
+                listOf(relative, parentRelative, absolute, fromContext, fromMethod, fromPath)
+    }
+
+    "getAssets_falls_back_to_meta_inf_assets_per_package" {
+        val asset = psiFileMock("style.css")
+        every { resourceFinderMock.findRootRelativeResource("META-INF/assets/com/app/pages/css/style.css") } returns listOf(asset)
+
+        classInRootPagesPackageMock.stubAnnotations(
+            psiAnnotationMock("org.apache.tapestry5.annotations.Import", "stylesheet" to listOf("css/style.css"))
+        )
+
+        Page(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).assets.toList() shouldBe listOf(asset)
+    }
+
+    "getAssets_falls_back_to_meta_inf_assets_root" {
+        // src/main/resources/META-INF/assets/css/style.css — the asset root, not mirroring the package.
+        val asset = psiFileMock("style.css")
+        every { resourceFinderMock.findRootRelativeResource("META-INF/assets/css/style.css") } returns listOf(asset)
+
+        classInRootPagesPackageMock.stubAnnotations(
+            psiAnnotationMock("org.apache.tapestry5.annotations.Import", "stylesheet" to listOf("css/style.css"))
+        )
+
+        Page(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).assets.toList() shouldBe listOf(asset)
+    }
+
+    "getAssets_falls_back_to_web_context" {
+        // Nothing on the classpath under any layout: the asset lives in the web context, imported without
+        // the `context:` prefix.
+        val asset = psiFileMock("site.css")
+        every { resourceFinderMock.findContextResource("css/site.css") } returns asset
+
+        classInRootPagesPackageMock.stubAnnotations(
+            psiAnnotationMock("org.apache.tapestry5.annotations.Import", "stylesheet" to listOf("css/site.css"))
+        )
+
+        Page(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).assets.toList() shouldBe listOf(asset)
+    }
+
+    "getAssets_resolves_javascript_modules" {
+        // A module is named, not pathed: no prefix, no extension, resolved under the module root.
+        val module = psiFileMock("contextmenu.js")
+        every { resourceFinderMock.findRootRelativeResource("META-INF/modules/BB/ContextMenu/contextmenu.js") } returns listOf(module)
+
+        classInRootPagesPackageMock.stubAnnotations(
+            psiAnnotationMock(
+                "org.apache.tapestry5.annotations.Import",
+                "module" to listOf("BB/ContextMenu/contextmenu", "BB/Missing/nothing")
+            )
+        )
+
+        Page(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).assets.toList() shouldBe listOf(module)
+    }
+
+    "getAssets_no_imports" {
+        Page(libraryMock, classInRootPagesPackageMock, tapestryProjectMock).assets.size shouldBe 0
     }
 })

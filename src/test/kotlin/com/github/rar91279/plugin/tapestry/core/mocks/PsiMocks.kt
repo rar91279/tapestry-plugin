@@ -144,7 +144,7 @@ fun psiClassMock(
         if (hasDefaultConstructor) emptyArray() else arrayOf(psiMethodMock("<init>", parameterCount = 1))
     every { psiClass.project } returns projectMockWithSmartPointers()
 
-    return psiClass.stubFields().stubMethods()
+    return psiClass.stubFields().stubMethods().stubAnnotations()
 }
 
 /** Re-stubs the fields of a [psiClassMock]; both the declared and the inherited view. */
@@ -158,6 +158,14 @@ fun PsiClass.stubFields(vararg fields: PsiField): PsiClass {
 fun PsiClass.stubMethods(vararg methods: PsiMethod): PsiClass {
     every { this@stubMethods.methods } returns arrayOf(*methods)
     every { allMethods } returns arrayOf(*methods)
+    return this
+}
+
+/** Re-stubs the annotations of a [psiClassMock]. */
+fun PsiClass.stubAnnotations(vararg annotations: PsiAnnotation): PsiClass {
+    every { this@stubAnnotations.annotations } returns arrayOf(*annotations)
+    every { getAnnotation(any()) } answers { annotations.firstOrNull { it.qualifiedName == firstArg() } }
+    every { hasAnnotation(any()) } answers { annotations.any { it.qualifiedName == firstArg() } }
     return this
 }
 
@@ -191,10 +199,11 @@ fun psiMethodMock(
     parameterCount: Int = 0,
     isPublic: Boolean = true,
     javadoc: String? = null,
+    annotations: List<PsiAnnotation> = emptyList(),
 ): PsiMethod {
     val modifierList = mockk<PsiModifierList>(relaxed = true)
     every { modifierList.hasExplicitModifier(PsiModifier.PUBLIC) } returns isPublic
-    every { modifierList.annotations } returns emptyArray()
+    every { modifierList.annotations } returns annotations.toTypedArray()
 
     val parameterList = mockk<PsiParameterList>(relaxed = true)
     every { parameterList.isEmpty } returns (parameterCount == 0)
@@ -210,7 +219,9 @@ fun psiMethodMock(
     every { method.containingClass } returns null
     every { method.docComment } returns javadoc?.let(::docCommentMock)
     every { method.navigationElement } returns method
-    every { method.getAnnotation(any()) } returns null
+    every { method.annotations } returns annotations.toTypedArray()
+    every { method.getAnnotation(any()) } answers { annotations.firstOrNull { it.qualifiedName == firstArg() } }
+    every { method.hasAnnotation(any()) } answers { annotations.any { it.qualifiedName == firstArg() } }
 
     return method
 }

@@ -25,6 +25,7 @@ class PageNode(page: PresentationLibraryElement, module: Module) : TapestryNode(
 
         for (template in page.template) children.add(FileNode(template, module))
         for (catalog in page.messageCatalog) children.add(FileNode(catalog, module))
+        for (asset in page.assets) children.add(FileNode(asset, module))
 
         return children.toTypedArray()
     }

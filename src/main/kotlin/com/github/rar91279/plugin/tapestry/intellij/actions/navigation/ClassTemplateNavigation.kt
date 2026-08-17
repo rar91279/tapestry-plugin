@@ -22,10 +22,26 @@ import com.github.rar91279.plugin.tapestry.intellij.util.TapestryUtils
 import com.github.rar91279.plugin.tapestry.lang.TmlFileType
 
 /**
- * Allows navigation from a class to its corresponding template and vice-versa.
+ * Action that enables bidirectional navigation between Tapestry component classes and their corresponding templates.
+ * 
+ * This action allows developers to quickly switch between:
+ * - A Tapestry component class and its template file (.tml)
+ * - A template file (.tml) and its corresponding component class
+ * 
+ * The action is only available in Tapestry-enabled modules and when the current file
+ * is either a valid Tapestry class or template file.
  */
 class ClassTemplateNavigation : AnAction() {
 
+    /**
+     * Updates the presentation state of this action based on the current context.
+     * 
+     * The action is enabled only when:
+     * - The current module has Tapestry support enabled
+     * - The current file is either a Tapestry component class or a template file
+     * 
+     * @param event the action event containing context information
+     */
     override fun update(event: AnActionEvent) {
         val presentation = event.presentation
 
@@ -53,8 +69,21 @@ class ClassTemplateNavigation : AnAction() {
         presentation.setEnabledAndVisible(true)
     }
 
+    /**
+     * Specifies that action updates should run on the Background Thread (BGT).
+     * 
+     * @return [ActionUpdateThread.BGT] to ensure thread-safe execution
+     */
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
+    /**
+     * Performs the navigation action when invoked by the user.
+     * 
+     * Attempts to find and open the corresponding file (class or template) in the editor.
+     * If no corresponding file is found, displays an informational message to the user.
+     * 
+     * @param event the action event containing context information including the current file and module
+     */
     override fun actionPerformed(event: AnActionEvent) {
         val project = event.getData(CommonDataKeys.PROJECT)
         val psiFile = getEventPsiFile(event)
@@ -71,6 +100,18 @@ class ClassTemplateNavigation : AnAction() {
 
     companion object {
 
+        /**
+         * Finds the navigation target file for the given source file.
+         * 
+         * Determines whether to navigate from a class to its template or vice-versa based on
+         * the file type and presentation text. For classes, it looks up the corresponding template
+         * using the Tapestry project model. For templates, it finds the associated component class.
+         * 
+         * @param psiFile the source file from which to navigate
+         * @param module the module containing the file
+         * @param presentationText the action's presentation text, used to determine navigation direction
+         * @return the virtual file to navigate to, or null if no corresponding file exists
+         */
         fun findNavigationTarget(psiFile: PsiFile, module: Module, presentationText: String?): VirtualFile? {
             val project = TapestryModuleSupportLoader.getTapestryProject(module) ?: return null
 
@@ -92,12 +133,24 @@ class ClassTemplateNavigation : AnAction() {
             return null
         }
 
-        /** Finds the PsiFile on which the event occurred, or `null` if it couldn't be determined. */
+        /**
+         * Retrieves the PSI file currently active in the editor when the action event occurred.
+         * 
+         * @param event the action event
+         * @return the current PSI file in the editor, or null if no project context is available
+         *         or no file is currently being edited
+         */
         fun getEventPsiFile(event: AnActionEvent): PsiFile? {
             val project = event.getData(CommonDataKeys.PROJECT) ?: return null
             return currentPsiFileInEditor(project)
         }
 
+        /**
+         * Displays an informational message when navigation to a corresponding file is not possible.
+         * 
+         * This occurs when the current file is not a valid Tapestry component class or template,
+         * or when no corresponding file exists in the project.
+         */
         fun showCantNavigateMessage() {
             Messages.showInfoMessage("Couldn't find a file to navigate to.", "Not Tapestry file")
         }

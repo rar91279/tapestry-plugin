@@ -18,6 +18,14 @@ interface IResourceFinder {
     fun findLocalizedClasspathResource(path: String, includeDependencies: Boolean): Collection<PsiFile>
 
     /**
+     * Looks up a resource by its path relative to a source or resource root.
+     *
+     * Unlike [findClasspathResource] this doesn't go through the package index, so it also reaches paths no
+     * package can name — `META-INF/assets/…`, where Tapestry 5.4 and later keep classpath assets.
+     */
+    fun findRootRelativeResource(path: String): Collection<PsiFile>
+
+    /**
      * Looks up a resource in the web context.
      *
      * @return the resource in the given path, `null` if none is found.

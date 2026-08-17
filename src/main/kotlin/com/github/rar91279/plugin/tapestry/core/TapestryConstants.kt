@@ -57,6 +57,12 @@ object TapestryConstants {
     const val EVENT_ANNOTATION: String = "org.apache.tapestry5.annotations.OnEvent"
     const val INJECT_PAGE_ANNOTATION: String = "org.apache.tapestry5.annotations.InjectPage"
     const val MIXIN_ANNOTATION: String = "org.apache.tapestry5.annotations.Mixin"
+    const val IMPORT_ANNOTATION: String = "org.apache.tapestry5.annotations.Import"
+    /** `@Path` moved package between Tapestry versions; both spellings still occur in the wild. */
+    val PATH_ANNOTATIONS: List<String> = listOf(
+        "org.apache.tapestry5.ioc.annotations.Path",
+        "org.apache.tapestry5.annotations.Path"
+    )
 
     /** The prefix of the default parameter methods. */
     const val DEFAULT_PARAMETER_METHOD_PREFIX: String = "default"

@@ -8,9 +8,7 @@ import com.intellij.java.ultimate.icons.JavaUltimateIcons
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleUtilCore
 import com.intellij.psi.JavaPsiFacade
-import com.intellij.psi.PsiArrayInitializerMemberValue
 import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiClassObjectAccessExpression
 import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
@@ -22,6 +20,7 @@ import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.psi.util.PsiUtil
 import com.intellij.psi.util.TypeConversionUtil
 import com.github.rar91279.plugin.tapestry.core.TapestryConstants
+import com.github.rar91279.plugin.tapestry.intellij.util.TapestryModuleClasses
 import com.github.rar91279.plugin.tapestry.intellij.util.TapestryUtils
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UClassLiteralExpression
@@ -52,25 +51,6 @@ private val QUALIFIER_ANNOTATIONS = setOf(
     "org.apache.tapestry5.ioc.annotations.Service", INJECT_SERVICE_ANNOTATION)
 
 private const val SERVICE_ID_ANNOTATION = "org.apache.tapestry5.ioc.annotations.ServiceId"
-private const val IMPORT_MODULE_ANNOTATION = "org.apache.tapestry5.ioc.annotations.ImportModule"
-
-/**
- * Packages holding the framework's own IoC modules.
- *
- * A third-party library advertises its modules in the manifest — `tapestry-json` declares
- * `Tapestry-Module-Classes`, and [TapestryUtils.getClasspathLibraryModules] picks it up. `tapestry-core`,
- * `tapestry-ioc` and `tapestry-http` advertise nothing at all (their manifests carry only
- * `Automatic-Module-Name`), because Tapestry hardwires those modules in its own bootstrap. Without this
- * list, every service they `bind(...)` — `SelectModelFactory` and the rest of core — has no findable source.
- */
-private val FRAMEWORK_MODULE_PACKAGES = listOf(
-    "org.apache.tapestry5.modules",
-    "org.apache.tapestry5.ioc.modules",
-    "org.apache.tapestry5.http.modules",
-)
-
-/** Where tapestry-core kept its module class before the 5.4 move to `org.apache.tapestry5.modules`. */
-private const val LEGACY_CORE_MODULE_CLASS = "org.apache.tapestry5.services.TapestryModule"
 
 private const val COMMON_RESOURCES_PROVIDER =
     "org.apache.tapestry5.internal.services.CommonResourcesInjectionProvider"
@@ -113,6 +93,12 @@ class TapestryInjectedBeanLineMarkerProvider : RelatedItemLineMarkerProvider() {
         element: PsiElement,
         result: MutableCollection<in RelatedItemLineMarkerInfo<*>>
     ) {
+        // *Navigate | Related Symbol* collects markers through `RelatedItemLineMarkerGotoAdapter`, which has
+        // been observed handing out elements from a superseded view provider — an editor reparse racing the
+        // collection. Touching such an element's file throws, and whichever provider touches it first is the
+        // one blamed for it.
+        if (!element.isValid) return
+
         // Anchor on the name identifier of the declaration (a leaf), per platform guidance.
         val declaration = getUParentForIdentifier(element) ?: return
 
@@ -230,7 +216,7 @@ class TapestryInjectedBeanLineMarkerProvider : RelatedItemLineMarkerProvider() {
         val fieldType = injectionPoint.type as? PsiClassType ?: return emptyList()
         val module = ModuleUtilCore.findModuleForPsiElement(anchor) ?: return emptyList()
         if (!TapestryUtils.isTapestryModule(module)) return emptyList()
-        val moduleClasses = moduleClasses(module)
+        val moduleClasses = TapestryModuleClasses.of(module)
 
         val sources = (buildMethodSources(module, moduleClasses, fieldType) +
                 moduleClasses.flatMap { bindSources(it, fieldType) } +
@@ -363,71 +349,5 @@ class TapestryInjectedBeanLineMarkerProvider : RelatedItemLineMarkerProvider() {
         return PsiShortNamesCache.getInstance(module.project)
             .getMethodsByName(TapestryConstants.SERVICE_BUILDER_METHOD_PREFIX + typeName, scope)
             .filter { it.containingClass?.name?.endsWith(TapestryConstants.MODULE_BUILDER_SUFIX) == true }
-    }
-
-    /**
-     * The IoC module classes visible from a module: those advertised by a `Tapestry-Module-Classes`
-     * manifest (so library services like `Request` resolve too), plus — since an application usually
-     * declares none — the `*Module` classes in its `<applicationRootPackage>.services` package.
-     */
-    private fun moduleClasses(module: Module): List<PsiClass> {
-        val facade = JavaPsiFacade.getInstance(module.project)
-        val scope = module.getModuleWithDependenciesAndLibrariesScope(false)
-
-        val declared = TapestryUtils.getDeclaredModuleClasses(module) +
-                TapestryUtils.getClasspathLibraryModules(module).map { it.moduleClass }
-
-        val rootPackage = TapestryModuleSupportLoader.getTapestryProject(module)?.applicationRootPackage
-        val conventional = rootPackage
-            ?.let { facade.findPackage("$it.${TapestryConstants.SERVICES_PACKAGE}") }
-            ?.getClasses(scope)
-            ?.filter { it.name?.endsWith(TapestryConstants.MODULE_BUILDER_SUFIX) == true }
-            .orEmpty()
-
-        // ponytail: three small package scans per marker pass; cache alongside getClasspathLibraryModules
-        // if it ever shows up in a freeze report.
-        val framework = FRAMEWORK_MODULE_PACKAGES
-            .mapNotNull { facade.findPackage(it) }
-            .flatMap { it.getClasses(scope).asList() }
-            .filter { it.name?.endsWith(TapestryConstants.MODULE_BUILDER_SUFIX) == true } +
-                listOfNotNull(facade.findClass(LEGACY_CORE_MODULE_CLASS, scope))
-
-        return withImportedModules(
-            declared.mapNotNull { facade.findClass(it, scope) } + conventional + framework
-        )
-    }
-
-    /**
-     * [roots] plus every module class they pull in with `@ImportModule`, transitively.
-     *
-     * This is how an application adds a module that is neither named in a manifest nor sitting in
-     * `<applicationRootPackage>.services` — typically `@ImportModule(DAOModule.class)` on `AppModule`.
-     * Without following it, services those modules `bind(...)` have no visible source at all: unlike
-     * `build*` methods, which [byConventionalName] finds through the index whether or not their module class
-     * was discovered, `bind(...)` calls are only ever read out of the module classes collected here.
-     */
-    private fun withImportedModules(roots: List<PsiClass>): List<PsiClass> {
-        val seen = LinkedHashSet<PsiClass>()
-        val pending = ArrayDeque(roots)
-
-        while (pending.isNotEmpty()) {
-            val moduleClass = pending.removeFirst()
-            // The visited set also breaks the cycle two modules importing each other would otherwise form.
-            if (seen.add(moduleClass)) pending.addAll(importedModules(moduleClass))
-        }
-
-        return seen.toList()
-    }
-
-    /** The module classes a module class lists in its `@ImportModule`, one or many. */
-    private fun importedModules(moduleClass: PsiClass): List<PsiClass> {
-        val value = AnnotationUtil.findAnnotation(moduleClass, IMPORT_MODULE_ANNOTATION)
-            ?.findAttributeValue("value") ?: return emptyList()
-
-        val classLiterals = if (value is PsiArrayInitializerMemberValue) value.initializers.asList() else listOf(value)
-
-        return classLiterals.mapNotNull {
-            PsiUtil.resolveClassInType((it as? PsiClassObjectAccessExpression)?.operand?.type)
-        }
     }
 }

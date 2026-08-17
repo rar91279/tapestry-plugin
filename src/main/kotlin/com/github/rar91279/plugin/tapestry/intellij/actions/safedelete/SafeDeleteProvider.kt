@@ -53,8 +53,8 @@ class SafeDeleteProvider : DeleteProvider {
         val totalElementsToDelete = ArrayList<PsiElement>()
         for (treePath in TapestryProjectViewPane.getInstance(project).selectionPaths!!) {
             val elementsList = ArrayList<PsiElement>()
-            var node: DefaultMutableTreeNode? = treePath.lastPathComponent as DefaultMutableTreeNode
-            val element = (node!!.userObject as TapestryNode).getValue()
+            var node: DefaultMutableTreeNode? = IdeaUtils.nodeOf(treePath) ?: continue
+            val element = (node!!.userObject as? TapestryNode)?.getValue()
 
             // The selected node is a file
             if (element is PsiFile) {
@@ -86,9 +86,9 @@ class SafeDeleteProvider : DeleteProvider {
 
                     // Search all the children
                     for (i in 0 until numberChildren) {
-                        val child = node.getChildAt(i) as DefaultMutableTreeNode
+                        val child = node.getChildAt(i) as? DefaultMutableTreeNode ?: continue
                         // The node is a presentation element
-                        if ((child.userObject as TapestryNode).getValue() is PresentationLibraryElement) {
+                        if ((child.userObject as? TapestryNode)?.getValue() is PresentationLibraryElement) {
                             addElementToDelete(child, elementsList)
                         }
                     }
@@ -127,8 +127,8 @@ class SafeDeleteProvider : DeleteProvider {
         }
 
         for (treePath in TapestryProjectViewPane.getInstance(project).selectionPaths!!) {
-            val node = treePath.lastPathComponent as DefaultMutableTreeNode
-            val element = (node.userObject as TapestryNode).getValue()
+            val node = IdeaUtils.nodeOf(treePath) ?: return false
+            val element = (node.userObject as? TapestryNode)?.getValue()
             var canDelete = false
 
             // The element to delete is a presentation element.

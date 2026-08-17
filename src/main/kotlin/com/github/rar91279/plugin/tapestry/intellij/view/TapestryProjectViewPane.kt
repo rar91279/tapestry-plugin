@@ -287,7 +287,7 @@ class TapestryProjectViewPane(project: Project) :
             val newPath = event.newLeadSelectionPath ?: return@addTreeSelectionListener
             val toolWindow = getToolWindow(myProject) ?: return@addTreeSelectionListener
 
-            val selectedNode = (newPath.lastPathComponent as DefaultMutableTreeNode).userObject as? SimpleNode
+            val selectedNode = IdeaUtils.tapestryNodeOf(newPath)
 
             when {
                 selectedNode !is TapestryNode -> toolWindow.update(null, null, emptyList())
@@ -298,10 +298,9 @@ class TapestryProjectViewPane(project: Project) :
                 }
 
                 selectedNode is ClassNode || selectedNode is FileNode -> {
-                    val parentSelectedValue =
-                        ((newPath.lastPathComponent as DefaultMutableTreeNode).parent as DefaultMutableTreeNode)
-                            .let { it.userObject as TapestryNode }
-                            .getValue()
+                    val parentSelectedValue = (IdeaUtils.nodeOf(newPath)?.parent as? DefaultMutableTreeNode)
+                        ?.let { it.userObject as? TapestryNode }
+                        ?.getValue()
 
                     if (parentSelectedValue is PresentationLibraryElement) {
                         // Already resolved by the parent node — nothing to look up.

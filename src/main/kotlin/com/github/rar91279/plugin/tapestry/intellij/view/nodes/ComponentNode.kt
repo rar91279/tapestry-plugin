@@ -25,6 +25,7 @@ class ComponentNode(component: PresentationLibraryElement, module: Module) : Tap
 
         for (template in component.template) children.add(FileNode(template, module))
         for (catalog in component.messageCatalog) children.add(FileNode(catalog, module))
+        for (asset in component.assets) children.add(FileNode(asset, module))
 
         return children.toTypedArray()
     }

@@ -33,7 +33,9 @@ import com.intellij.psi.util.PsiUtil
 import com.intellij.psi.xml.XmlElement
 import com.intellij.psi.xml.XmlTag
 import com.intellij.util.IncorrectOperationException
+import com.intellij.ui.treeStructure.SimpleNode
 import javax.swing.tree.DefaultMutableTreeNode
+import javax.swing.tree.TreePath
 
 /**
  * Utility methods for IDEA.
@@ -100,15 +102,28 @@ object IdeaUtils {
      */
     @Suppress("UNCHECKED_CAST")
     fun <T> findFirstParent(node: DefaultMutableTreeNode?, clazz: Class<T>): T? {
-        var parent = node?.parent as DefaultMutableTreeNode?
+        var parent = node?.parent as? DefaultMutableTreeNode
 
         while (parent != null) {
             if (clazz.isInstance(parent.userObject)) return parent as T
-            parent = parent.parent as DefaultMutableTreeNode?
+            parent = parent.parent as? DefaultMutableTreeNode
         }
 
         return null
     }
+
+    /**
+     * The node a tree path points at, or `null` when the path holds something else.
+     *
+     * Not every component of a platform tree path is a [DefaultMutableTreeNode]: a tree that restores itself
+     * from a cached presentation hands out `CachedTreePresentationNode` placeholders until the real nodes are
+     * built, and those carry no user object at all. Reading a selection therefore has to tolerate a miss —
+     * a hard cast throws a `ClassCastException` on the first selection after startup.
+     */
+    fun nodeOf(path: TreePath?): DefaultMutableTreeNode? = path?.lastPathComponent as? DefaultMutableTreeNode
+
+    /** The Tapestry node a tree path points at, or `null` if the path points at something else. */
+    fun tapestryNodeOf(path: TreePath?): SimpleNode? = nodeOf(path)?.userObject as? SimpleNode
 
     /**
      * @return the web facet of the given module, or `null` if the module doesn't have one.

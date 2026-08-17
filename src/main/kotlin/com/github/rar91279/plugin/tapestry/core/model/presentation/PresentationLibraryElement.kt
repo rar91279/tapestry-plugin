@@ -4,6 +4,7 @@ import com.github.rar91279.plugin.tapestry.core.util.attributeValues
 import com.github.rar91279.plugin.tapestry.core.TapestryConstants
 import com.github.rar91279.plugin.tapestry.core.TapestryProject
 import com.github.rar91279.plugin.tapestry.core.exceptions.NotTapestryElementException
+import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiModifier
@@ -117,6 +118,51 @@ abstract class PresentationLibraryElement internal constructor(
                 .toTypedArray()
                 .also { messageCatalogCache = it }
         }
+
+    /**
+     * The client-side assets this element imports: `@Import(stylesheet = …, library = …)` on the class or
+     * any of its methods, and `@Path` on injected `Asset` fields. Never `null`.
+     *
+     * Paths resolve through [findAssets], and `@Import(module = …)` through [findJavaScriptModule] — a module
+     * is named rather than pathed, but it is still a file worth reaching. `@Import(stack = …)` is reported by
+     * [javaScriptStackNames] instead: a stack is a bundle declared elsewhere, not a file.
+     */
+    val assets: Array<PsiFile>
+        get() {
+            val paths = importAnnotations
+                .flatMap { it.attributeValues("stylesheet") + it.attributeValues("library") + it.attributeValues("value") }
+                .flatMap { project.findAssets(it, packageName) }
+
+            val modules = importAnnotations
+                .flatMap { it.attributeValues("module") }
+                .flatMap { project.findJavaScriptModule(it) }
+
+            return (paths + modules).distinct().toTypedArray()
+        }
+
+    /** The names of the JavaScript stacks this element imports with `@Import(stack = …)`. */
+    val javaScriptStackNames: List<String>
+        get() = importAnnotations.flatMap { it.attributeValues("stack") }.filter { it.isNotEmpty() }.distinct()
+
+    /** `@Import` on the class and its methods, and `@Path` on its fields. */
+    private val importAnnotations: List<PsiAnnotation>
+        get() {
+            val psiClass = elementClass ?: return emptyList()
+
+            val annotations = ArrayList<PsiAnnotation>()
+            psiClass.getAnnotation(TapestryConstants.IMPORT_ANNOTATION)?.let(annotations::add)
+            psiClass.methods.mapNotNullTo(annotations) { it.getAnnotation(TapestryConstants.IMPORT_ANNOTATION) }
+            for (field in psiClass.fields) {
+                TapestryConstants.PATH_ANNOTATIONS.firstNotNullOfOrNull { field.getAnnotation(it) }
+                    ?.let(annotations::add)
+            }
+
+            return annotations
+        }
+
+    /** The element's own package, which an unprefixed asset path is relative to. */
+    private val packageName: String?
+        get() = elementClass?.qualifiedName?.substringBeforeLast(PathUtils.PACKAGE_SEPARATOR, "")
 
     /**
      * The element documentation.
