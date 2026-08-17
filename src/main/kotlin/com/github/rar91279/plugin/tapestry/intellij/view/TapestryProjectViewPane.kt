@@ -15,7 +15,6 @@ import com.github.rar91279.plugin.tapestry.intellij.util.IdeaUtils
 import com.github.rar91279.plugin.tapestry.intellij.util.TapestryUtils
 import com.github.rar91279.plugin.tapestry.intellij.view.actions.GroupElementFilesToggleAction
 import com.github.rar91279.plugin.tapestry.intellij.view.actions.ShowLibrariesTogleAction
-import com.github.rar91279.plugin.tapestry.intellij.view.actions.StartInBasePackageAction
 import com.github.rar91279.plugin.tapestry.intellij.view.nodes.*
 import com.intellij.ide.CommonActionsManager
 import com.intellij.ide.DefaultTreeExpander
@@ -35,8 +34,6 @@ import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.platform.ide.progress.ModalTaskOwner.component
-import com.intellij.platform.ide.progress.ModalTaskOwner.project
 import com.intellij.psi.PsiDirectory
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.TreeSpeedSearch
@@ -62,16 +59,14 @@ import javax.swing.tree.TreeSelectionModel
  * The Tapestry view pane.
  */
 class TapestryProjectViewPane(project: Project) :
-    AbstractProjectViewPane(project), FileSystemListener, TapestryModelChangeListener {
+    AbstractProjectViewPane(project), FileSystemListener, TapestryModelChangeListener, TapestryViewOptions {
 
     private val ideView = TapestryIdeView(this)
     private lateinit var component: JScrollPane
     private var shown = false
-    var isGroupElementFiles = true
+    override var showElementFiles = true
         private set
-    var isShowLibraries = true
-        private set
-    var isFromBasePackage = false
+    override var showLibraries = true
         private set
     private val moduleListener = object : ModuleListener {
         override fun moduleRemoved(project: Project, module: Module) = reload()
@@ -117,26 +112,18 @@ class TapestryProjectViewPane(project: Project) :
             .filterNot { it.templatePresentation.text == "Autoscroll to Source" }
             .onEach { defaultActionGroup.remove(it) }
 
-        defaultActionGroup.addAction(object : StartInBasePackageAction() {
-            override fun isSelected(e: AnActionEvent) = isFromBasePackage
-            override fun setSelected(e: AnActionEvent, state: Boolean) {
-                isFromBasePackage = state
-                updateFromRoot(false)
-            }
-        }).setAsSecondary(true)
-
         defaultActionGroup.addAction(object : GroupElementFilesToggleAction() {
-            override fun isSelected(e: AnActionEvent) = isGroupElementFiles
+            override fun isSelected(e: AnActionEvent) = showElementFiles
             override fun setSelected(e: AnActionEvent, state: Boolean) {
-                isGroupElementFiles = state
+                showElementFiles = state
                 updateFromRoot(false)
             }
         }).setAsSecondary(true)
 
         defaultActionGroup.addAction(object : ShowLibrariesTogleAction() {
-            override fun isSelected(e: AnActionEvent) = isShowLibraries
+            override fun isSelected(e: AnActionEvent) = showLibraries
             override fun setSelected(e: AnActionEvent, state: Boolean) {
-                isShowLibraries = state
+                showLibraries = state
                 updateFromRoot(false)
             }
         }).setAsSecondary(true)
@@ -226,12 +213,18 @@ class TapestryProjectViewPane(project: Project) :
         }
 
         // PSI-derived, so provided lazily rather than computed eagerly on the EDT.
+        //
+        // Every node has to answer this, not just the element nodes: the tree is full of files (templates,
+        // catalogs, stylesheets, modules) and of declarations (a service's build method, a stack's class), and
+        // opening them is the whole point of showing them. `Navigatable` is what the double-click and
+        // Enter handlers installed in initTree() look for; without it a node is simply dead.
         sink.lazy(CommonDataKeys.NAVIGATABLE) {
-            val value = (getSelectedSimpleNode() as? TapestryNode)?.getValue()
-            if (value is PresentationLibraryElement) {
-                value.elementClass?.containingFile
-            } else null
+            NodeNavigation.navigatableOf(getSelectedSimpleNode() as? TapestryNode)
         }
+
+        // Lets *Jump to Source* and the *New >* actions work off the selection too — the latter derive the
+        // package to create in from the selected element.
+        sink.lazy(CommonDataKeys.PSI_ELEMENT) { NodeNavigation.psiElementOf(getSelectedNodeElement()) }
 
         sink[PlatformDataKeys.DELETE_ELEMENT_PROVIDER] = SafeDeleteProvider()
         sink[PlatformCoreDataKeys.SELECTED_ITEM] = getSelectedTreeNode()
@@ -248,7 +241,7 @@ class TapestryProjectViewPane(project: Project) :
     fun getSelectedNodeElement(): Any? = (getSelectedSimpleNode() as? TapestryNode)?.getValue()
 
     private fun initTree() {
-        val treeStructure = TapestryProjectTreeStructure(RootNode(myProject))
+        val treeStructure = TapestryProjectTreeStructure(RootNode(myProject, this))
         val structureTreeModel = StructureTreeModel(treeStructure, this)
         this.structureTreeModel = structureTreeModel
         val asyncTreeModel = AsyncTreeModel(structureTreeModel, this)
@@ -349,7 +342,7 @@ class TapestryProjectViewPane(project: Project) :
 
         return try {
             PresentationLibraryElement.createProjectElementInstance(elementClass, tapestryProject)
-        } catch (ex: NotTapestryElementException) {
+        } catch (_: NotTapestryElementException) {
             // the selection is not a Tapestry element; previously this could escape for a FileNode, which
             // would now fail the coroutine rather than the Swing listener.
             null

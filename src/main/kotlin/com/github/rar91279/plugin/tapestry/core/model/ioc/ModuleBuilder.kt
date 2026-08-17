@@ -47,6 +47,7 @@ class ModuleBuilder(private val moduleBuilderClass: PsiClass) {
             scope = method.getAnnotation(SCOPE_ANNOTATION)?.attributeValues("value")?.firstOrNull().orEmpty(),
             isEagerLoad = method.getAnnotation(EAGERLOAD_ANNOTATION) != null,
             serviceClass = returnClass,
+            declaration = method,
         )
     }
 

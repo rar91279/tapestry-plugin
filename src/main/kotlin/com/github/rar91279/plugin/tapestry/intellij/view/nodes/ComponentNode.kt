@@ -11,13 +11,19 @@ import icons.TapestryIcons
 /**
  * Component node.
  */
-class ComponentNode(component: PresentationLibraryElement, module: Module) : TapestryNode(module) {
+class ComponentNode(
+    component: PresentationLibraryElement,
+    module: Module,
+    private val showFiles: Boolean = true
+) : TapestryNode(module) {
 
     init {
         init(component, PresentationData(component.elementClass?.name, component.elementClass?.name, TapestryIcons.Component, null))
     }
 
     override fun getChildren(): Array<SimpleNode> {
+        if (!showFiles) return NO_CHILDREN
+
         val component = getValue() as TapestryComponent
         val children = ArrayList<SimpleNode>()
 

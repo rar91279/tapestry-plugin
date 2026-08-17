@@ -13,7 +13,7 @@ import com.github.rar91279.plugin.tapestry.core.model.presentation.PresentationL
 import com.github.rar91279.plugin.tapestry.intellij.util.IdeaUtils
 import com.github.rar91279.plugin.tapestry.intellij.view.TapestryProjectViewPane
 import com.github.rar91279.plugin.tapestry.intellij.view.nodes.LibrariesNode
-import com.github.rar91279.plugin.tapestry.intellij.view.nodes.PackageNode
+import com.github.rar91279.plugin.tapestry.intellij.view.nodes.DirectoryNode
 import com.github.rar91279.plugin.tapestry.intellij.view.nodes.TapestryNode
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreePath
@@ -70,16 +70,18 @@ class SafeDeleteProvider : DeleteProvider {
             }
 
             // The selected node is a package
-            if (node.userObject is PackageNode) {
+            if (node.userObject is DirectoryNode) {
                 val tree = TapestryProjectViewPane.getInstance(project).tree
                 val expanded = tree.isExpanded(TreePath(node.path))
                 val starterNode = node
 
-                totalElementsToDelete.add((node.userObject as TapestryNode).getValue() as PsiElement)
+                // A category whose package resolves to no directory has nothing of its own to delete; its
+                // elements are still collected below.
+                ((node.userObject as TapestryNode).getValue() as? PsiElement)?.let { totalElementsToDelete.add(it) }
 
                 // Exist nodes
                 while (node != null &&
-                    (node.userObject is PackageNode || (node.userObject as TapestryNode).getValue() is PresentationLibraryElement)) {
+                    (node.userObject is DirectoryNode || (node.userObject as TapestryNode).getValue() is PresentationLibraryElement)) {
                     val numberChildren = (node.userObject as TapestryNode).children.size
 
                     tree.expandPath(TreePath(node.path))
@@ -143,7 +145,7 @@ class SafeDeleteProvider : DeleteProvider {
             }
 
             // The element to delete is a folder node
-            if (node.userObject is PackageNode && IdeaUtils.findFirstParent(node, LibrariesNode::class.java) == null) {
+            if (node.userObject is DirectoryNode && IdeaUtils.findFirstParent(node, LibrariesNode::class.java) == null) {
                 canDelete = true
             }
 

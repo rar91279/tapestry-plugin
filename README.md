@@ -30,7 +30,7 @@ Compared to the original:
 **Templates (`.tml`)**
 
 - TML file type with XHTML-based highlighting, formatting, folding, commenting, structure view and parameter info.
-- Tag and attribute completion driven by the actual component classes: components, pages, mixins, their parameters,
+- Tag and attribute completion are driven by the actual component classes: components, pages, mixins, their parameters,
   required parameters and informal parameters.
 - References from `t:type`, `t:id`, `t:mixins` and `page` attributes to the corresponding class, component instance
   field or page, with rename support.
@@ -70,7 +70,30 @@ Compared to the original:
 
 **Views**
 
-- **Tapestry project view pane** — pages, components, mixins and libraries as a Tapestry-shaped tree.
+- **Tapestry project view pane** — each Tapestry module as the set of things it holds, and nothing else: no
+  plain packages, no plain classes, no loose files. A branch with nothing in it is left out, so a module
+  providing only IoC services shows only *Services*.
+
+  ```
+  ▾ comp-web
+     ├▾ Services            IoC services, opening the build* method that declares each
+     ├▾ Pages               nested by subpackage; an element expands to its class, templates,
+     ├▾ Components          message catalogs and imported assets
+     ├▾ Mixins
+     ├▾ Assets
+     │    ├ StyleSheets     from META-INF/assets, META-INF/modules and the web context roots
+     │    ├ Javascripts
+     │    ├ Modules
+     │    └▾ JavaScriptStacks
+     │         └▾ bb-scheduler   → the contributed stack class
+     │              ├ Css        the stylesheets, libraries and modules the stack bundles
+     │              ├ JS
+     │              └ Modules
+     └▾ Libraries           the Tapestry libraries the module depends on
+  ```
+
+  Clicking a leaf opens it; categories and folders expand. *New → Page/Component/Mixin* works on a module node
+  and on the matching category or subpackage; Safe Delete works on an element or a folder.
 - **Tapestry tool window** (facet-bound, bottom):
   - *Documentation* — live documentation rendered in an embedded browser: project modules and their IoC services, the
     Tapestry core library, and the selected element's own documentation.
@@ -168,3 +191,9 @@ affiliated with, sponsored by, or endorsed by the ASF or the Apache Tapestry pro
 The plugin icon and the icons used for `.tml` files and the tool window depict the Apache Tapestry logo, solely to
 identify the framework this plugin supports. The Apache License 2.0 covering this project's code does not grant rights
 to ASF trademarks (see section 6 of the license).
+
+override fun uiDataSnapshot(sink: DataSink) {
+    sink.lazy(PlatformCoreDataKeys.SELECTED_ITEMS) { 
+        selectedItems // Diese Berechnung erfolgt nicht auf EDT
+    }
+}

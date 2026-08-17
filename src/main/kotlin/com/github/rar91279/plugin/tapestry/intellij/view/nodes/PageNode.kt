@@ -11,13 +11,19 @@ import icons.TapestryIcons
 /**
  * Page node.
  */
-class PageNode(page: PresentationLibraryElement, module: Module) : TapestryNode(module) {
+class PageNode(
+    page: PresentationLibraryElement,
+    module: Module,
+    private val showFiles: Boolean = true
+) : TapestryNode(module) {
 
     init {
         init(page, PresentationData(page.elementClass?.name, page.name, TapestryIcons.Page, null))
     }
 
     override fun getChildren(): Array<SimpleNode> {
+        if (!showFiles) return NO_CHILDREN
+
         val page = getValue() as Page
         val children = ArrayList<SimpleNode>()
 

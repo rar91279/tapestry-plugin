@@ -2,7 +2,9 @@ package com.github.rar91279.plugin.tapestry.intellij
 
 import com.github.rar91279.plugin.tapestry.core.TapestryConstants
 import com.github.rar91279.plugin.tapestry.core.TapestryProject
+import com.github.rar91279.plugin.tapestry.core.model.presentation.AssetKind
 import com.github.rar91279.plugin.tapestry.core.model.presentation.PresentationLibraryElement
+import com.github.rar91279.plugin.tapestry.core.model.presentation.assetKind
 import com.github.rar91279.plugin.tapestry.core.util.LocalizationUtils
 import com.github.rar91279.plugin.tapestry.intellij.util.TapestryUtils
 import com.intellij.navigation.GotoRelatedItem
@@ -93,10 +95,10 @@ class TapestryGotoRelatedProvider : GotoRelatedProvider() {
     private fun JavaScriptStack.group(): String = STACK_GROUP_PREFIX + name
 
     /** Stylesheets and scripts are listed apart: a page's css and its js are looked for separately. */
-    private fun PsiFile.assetGroup(): String = when (virtualFile?.extension?.lowercase()) {
-        "css", "less", "scss" -> STYLESHEETS_GROUP
-        "js", "mjs", "coffee" -> JAVASCRIPT_GROUP
-        else -> ASSETS_GROUP
+    private fun PsiFile.assetGroup(): String = when (assetKind()) {
+        AssetKind.STYLESHEET -> STYLESHEETS_GROUP
+        AssetKind.SCRIPT -> JAVASCRIPT_GROUP
+        AssetKind.OTHER -> ASSETS_GROUP
     }
 
     private fun findElement(file: PsiFile, project: TapestryProject): PresentationLibraryElement? {

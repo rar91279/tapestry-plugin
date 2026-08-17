@@ -17,7 +17,14 @@
   including constants handed to a base class constructor. Assets inside a webjar are left out: there is no
   file to open. Contents are read from the string literals a stack declares, so paths computed at runtime are
   not seen.
-- The Tapestry view pane lists an element's imported assets alongside its class, templates and message
+- The Tapestry view pane has a **Services** branch — the IoC services the module declares, each opening the
+  `build*` method that declares it rather than the service interface. Services bound with `bind(...)` are not
+  listed yet.
+- The Tapestry view pane has an **Assets** branch: StyleSheets, Javascripts, Modules and JavaScriptStacks,
+  filled from where Tapestry loads them — `META-INF/assets` and `META-INF/modules` on every source and resource
+  root, plus the web context roots — so an asset that no element imports yet is visible too. Each stack lists
+  the Css, JS and Modules it bundles.
+- An element in the Tapestry view pane lists its imported assets alongside its class, templates and message
   catalogs.
 - `IResourceFinder.findRootRelativeResource`, which resolves a path against the module's source and resource
   roots. Unlike the existing classpath lookup it doesn't go through the package index, so it reaches paths no
@@ -25,15 +32,31 @@
 
 ### Fixed
 
-- Selecting a node in the Tapestry view pane no longer throws a `ClassCastException`: a tree restoring itself
-  from a cached presentation hands out placeholder nodes, which the pane and the safe-delete provider both
-  cast without checking.
+- Selecting a node in the Tapestry view pane, dragging one, or deleting one no longer throws a
+  `ClassCastException`: a tree restoring itself from a cached presentation hands out placeholder nodes, which
+  the pane, the mouse listener, the transfer handler and the safe-delete provider all cast without checking.
+- Every node in the Tapestry view pane that stands for a file now opens it. Only elements used to, so an
+  element's class, template, message catalogs and assets were all dead on click.
 - The injected-bean gutter marker no longer risks a `PsiInvalidElementAccessException` when *Related Symbol*
   collection hands it an element from a superseded view provider; it and the related-symbol provider both
   check validity first.
 
 ### Changed
 
+- The Tapestry view pane shows Tapestry entities only. It used to mirror the package hierarchy of each module,
+  which put pages and components among plain packages and plain classes; a module is now presented as the fixed
+  set of things it holds — Services, Pages, Components, Mixins, Assets, Libraries — with pages, components and
+  mixins nested by subpackage. A branch that holds nothing is left out entirely, so a module providing only IoC
+  services shows only Services.
+- *New > Tapestry Page/Component/Mixin* is enabled on a module node in the Tapestry view, creating at the
+  element root package. That is how the first page of a module is created now that an empty Pages branch is not
+  shown.
+- Clicking in the Tapestry view opens something only where there is something to open: the leaves — files, a
+  service's build method, a stack's class. Categories, subpackage folders and an element listing its files
+  expand instead, and a folder no longer jumps out to the Project view.
+- *Group Element Files* now toggles whether an element expands to the files it is made of; with plain files gone
+  from the tree it had nothing else left to switch. *Show From Base Package* is gone: the categories are derived
+  from the application base package, so the tree always starts there.
 - `@Path` is recognized in both packages it has lived in (`org.apache.tapestry5.ioc.annotations` and
   `org.apache.tapestry5.annotations`).
 - Discovery of the IoC module classes visible from a module — manifest-declared, the application's `services`

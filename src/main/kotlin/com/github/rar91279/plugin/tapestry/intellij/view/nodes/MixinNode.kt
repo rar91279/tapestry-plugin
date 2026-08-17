@@ -11,13 +11,19 @@ import icons.TapestryIcons
 /**
  * A Mixin node.
  */
-class MixinNode(mixin: PresentationLibraryElement, module: Module) : TapestryNode(module) {
+class MixinNode(
+    mixin: PresentationLibraryElement,
+    module: Module,
+    private val showFiles: Boolean = true
+) : TapestryNode(module) {
 
     init {
         init(mixin, PresentationData(mixin.name, mixin.name, TapestryIcons.Mixin, null))
     }
 
     override fun getChildren(): Array<SimpleNode> {
+        if (!showFiles) return NO_CHILDREN
+
         val mixin = getValue() as Mixin
         val classFile = mixin.elementClass?.containingFile as? PsiClassOwner ?: return emptyArray()
         return arrayOf(ClassNode(classFile, module))

@@ -1,17 +1,19 @@
 package com.github.rar91279.plugin.tapestry.intellij.view.nodes
 
-import com.intellij.ide.projectView.PresentationData
+import com.github.rar91279.plugin.tapestry.core.model.presentation.PresentationLibraryElement
 import com.intellij.openapi.module.Module
 import com.intellij.psi.PsiDirectory
-import com.github.rar91279.plugin.tapestry.core.model.TapestryLibrary
+import com.intellij.ui.treeStructure.SimpleNode
 import icons.TapestryIcons
 
-class ComponentsNode : PackageNode {
-    constructor(library: TapestryLibrary, psiDirectory: PsiDirectory, module: Module) : super(library, psiDirectory, module) {
-        init(psiDirectory, PresentationData(psiDirectory.name, psiDirectory.name, TapestryIcons.Components, null))
-    }
+/** The components of a module. */
+class ComponentsNode(
+    module: Module,
+    directories: List<PsiDirectory>,
+    elements: Collection<PresentationLibraryElement>,
+    showElementFiles: Boolean = true
+) : ElementCategoryNode("Components", TapestryIcons.Components, module, directories, elements, showElementFiles) {
 
-    constructor(psiDirectory: PsiDirectory, module: Module) : super(psiDirectory, module) {
-        init(psiDirectory, PresentationData(psiDirectory.name, psiDirectory.name, TapestryIcons.Components, null))
-    }
+    override fun elementNode(element: PresentationLibraryElement, module: Module): SimpleNode =
+        ComponentNode(element, module, showElementFiles)
 }

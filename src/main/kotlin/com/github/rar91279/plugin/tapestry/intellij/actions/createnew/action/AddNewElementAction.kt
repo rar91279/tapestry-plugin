@@ -12,8 +12,9 @@ import com.github.rar91279.plugin.tapestry.core.util.PathUtils
 import com.github.rar91279.plugin.tapestry.intellij.TapestryModuleSupportLoader
 import com.github.rar91279.plugin.tapestry.intellij.util.IdeaUtils
 import com.github.rar91279.plugin.tapestry.intellij.util.TapestryUtils
+import com.github.rar91279.plugin.tapestry.intellij.view.nodes.AbstractModuleNode
 import com.github.rar91279.plugin.tapestry.intellij.view.nodes.LibrariesNode
-import com.github.rar91279.plugin.tapestry.intellij.view.nodes.PackageNode
+import com.github.rar91279.plugin.tapestry.intellij.view.nodes.DirectoryNode
 import java.io.File
 import javax.swing.tree.DefaultMutableTreeNode
 
@@ -30,10 +31,10 @@ import javax.swing.tree.DefaultMutableTreeNode
  * Subclasses must implement [getElementsRootPackage] to specify where their particular element type
  * (pages, components, or mixins) should be created.
  *
- * @param T the type of [PackageNode] this action works with (e.g., PagesNode, ComponentsNode, MixinsNode)
+ * @param T the type of [DirectoryNode] this action works with (e.g., PagesNode, ComponentsNode, MixinsNode)
  * @param nodeClass the class object for the node type, used to identify valid selection contexts
  */
-abstract class AddNewElementAction<T : PackageNode>(private val nodeClass: Class<T>) : AnAction() {
+abstract class AddNewElementAction<T : DirectoryNode>(private val nodeClass: Class<T>) : AnAction() {
 
     /**
      * Updates the presentation state of this action based on the current context.
@@ -97,8 +98,13 @@ abstract class AddNewElementAction<T : PackageNode>(private val nodeClass: Class
                 }
             }
         }
+        // it's the Tapestry view | the module itself. An empty category isn't shown, so the module node is
+        // where the first page, component or mixin of a module gets created — at the element root package.
+        else if (element.userObject is AbstractModuleNode) {
+            enabled = true
+        }
         // it's the Tapestry view | folder
-        else if (element.userObject is PackageNode) {
+        else if (element.userObject is DirectoryNode) {
             val session = event.updateSession
             if (session.compute(this, "findParent", ActionUpdateThread.EDT) {
                     (IdeaUtils.findFirstParent(element, nodeClass) != null || nodeClass.isInstance(element.userObject)) &&

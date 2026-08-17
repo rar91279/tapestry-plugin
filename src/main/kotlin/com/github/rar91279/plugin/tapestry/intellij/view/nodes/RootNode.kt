@@ -7,7 +7,10 @@ import com.intellij.ui.treeStructure.SimpleNode
 /**
  * Tapestry view root node.
  */
-class RootNode(project: Project) : SimpleNode(project) {
+class RootNode(
+    project: Project,
+    private val options: TapestryViewOptions = TapestryViewOptions.DEFAULT
+) : SimpleNode(project) {
 
     // Used only for getEqualityObjects() (node-identity diffing across tree refreshes). The root has
     // no backing domain object; getElement() is intentionally left at the SimpleNode default (`this`)
@@ -15,7 +18,7 @@ class RootNode(project: Project) : SimpleNode(project) {
     private val id = "ROOT"
 
     override fun getChildren(): Array<SimpleNode> =
-        TapestryUtils.getAllTapestryModules(myProject).map { ModuleNode(it) as SimpleNode }.toTypedArray()
+        TapestryUtils.getAllTapestryModules(myProject).map { ModuleNode(it, options) as SimpleNode }.toTypedArray()
 
     override fun getEqualityObjects(): Array<Any> = arrayOf(id)
 }
