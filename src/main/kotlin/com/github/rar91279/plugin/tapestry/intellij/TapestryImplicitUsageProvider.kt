@@ -26,14 +26,27 @@ private val RENDER_PHASE_NAMES = setOf(
     "setupRender", "beginRender", "beforeRenderTemplate", "beginRenderBody",
     "afterRenderBody", "afterRenderTemplate", "afterRender", "cleanupRender")
 
-/** Fields set (and read) by the framework, so never "unused" or "unassigned". */
-private val FIELD_ANNOTATIONS = INJECT_ANNOTATIONS + listOf(
-    TapestryConstants.COMPONENT_ANNOTATION, TapestryConstants.PROPERTY_ANNOTATION,
-    TapestryConstants.INJECT_PAGE_ANNOTATION, TapestryConstants.MIXIN_ANNOTATION,
-    ANNOTATIONS + "Parameter", ANNOTATIONS + "InjectComponent", ANNOTATIONS + "InjectContainer",
-    ANNOTATIONS + "Environmental", ANNOTATIONS + "Persist", ANNOTATIONS + "PageActivationContext",
+/**
+ * Fields the framework reads as well as writes: their value goes somewhere — into the rendered page, the
+ * session, the URL — without any code reading the field, so "assigned but never accessed" never applies.
+ */
+private val FRAMEWORK_READ_FIELD_ANNOTATIONS = listOf(
+    TapestryConstants.PROPERTY_ANNOTATION, TapestryConstants.COMPONENT_ANNOTATION,
+    TapestryConstants.MIXIN_ANNOTATION,
+    ANNOTATIONS + "Parameter", ANNOTATIONS + "Persist", ANNOTATIONS + "PageActivationContext",
     ANNOTATIONS + "SessionState", ANNOTATIONS + "ApplicationState", ANNOTATIONS + "SessionAttribute",
     ANNOTATIONS + "ActivationRequestParameter")
+
+/**
+ * Fields the framework writes and the code is expected to read — an injection exists to be used, so leaving
+ * "never accessed" in place for these is a genuine finding rather than noise.
+ */
+private val INJECTED_FIELD_ANNOTATIONS = INJECT_ANNOTATIONS + listOf(
+    TapestryConstants.INJECT_PAGE_ANNOTATION,
+    ANNOTATIONS + "InjectComponent", ANNOTATIONS + "InjectContainer", ANNOTATIONS + "Environmental")
+
+/** Fields set by the framework, so never "unused" or "unassigned". */
+private val FIELD_ANNOTATIONS = FRAMEWORK_READ_FIELD_ANNOTATIONS + INJECTED_FIELD_ANNOTATIONS
 
 /** IoC module method annotations (invoked reflectively by the registry). */
 private val IOC_METHOD_ANNOTATIONS = listOf(
@@ -57,7 +70,8 @@ class TapestryImplicitUsageProvider : ImplicitUsageProvider {
         else -> false
     }
 
-    override fun isImplicitRead(element: PsiElement) = false
+    override fun isImplicitRead(element: PsiElement) =
+        element is PsiField && AnnotationUtil.isAnnotated(element, FRAMEWORK_READ_FIELD_ANNOTATIONS, 0)
 
     override fun isImplicitWrite(element: PsiElement) = element is PsiField && isFrameworkField(element)
 

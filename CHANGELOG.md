@@ -37,6 +37,16 @@
   the pane, the mouse listener, the transfer handler and the safe-delete provider all cast without checking.
 - Every node in the Tapestry view pane that stands for a file now opens it. Only elements used to, so an
   element's class, template, message catalogs and assets were all dead on click.
+- Template usages of a private page/component/mixin member are found again: *Find Usages*, *Show Usages*, the
+  usage-count hint and the in-file usage highlight all list the `.tml` occurrences. The references resolved to
+  the member all along, but Java restricts the search of a private member to its own file, so nothing ever
+  looked at the templates — they are added back to the member's use scope now.
+- A `@Property` field is no longer reported as *assigned but never accessed*. Its write was already known to be
+  implicit; its read was not, and Tapestry reads the field to render it. The same goes for `@Component`,
+  `@Mixin`, `@Parameter`, `@Persist`, `@PageActivationContext`, `@SessionState`, `@ApplicationState`,
+  `@SessionAttribute` and `@ActivationRequestParameter`. Injected fields (`@Inject`, `@InjectService`,
+  `@InjectPage`, `@InjectComponent`, `@InjectContainer`, `@Environmental`) keep the report: an injection nothing
+  reads is worth knowing about.
 - The injected-bean gutter marker no longer risks a `PsiInvalidElementAccessException` when *Related Symbol*
   collection hands it an element from a superseded view provider; it and the related-symbol provider both
   check validity first.
