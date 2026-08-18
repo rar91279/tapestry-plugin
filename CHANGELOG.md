@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+## 1.0.3 - 2026-08-18
+
 ### Added
 
 - *Navigate | Related Symbol* (`Ctrl+Alt+Home`) hops between the files that make up one Tapestry element,
