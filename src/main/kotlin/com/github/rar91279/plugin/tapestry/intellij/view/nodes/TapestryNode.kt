@@ -46,6 +46,4 @@ abstract class TapestryNode(val module: Module) : SimpleNode(module.project) {
 
     /** Override this to change presentation data. */
     protected open fun updatePresentation(presentation: ItemPresentation): ItemPresentation = presentation
-
-    override fun expandOnDoubleClick(): Boolean = false
 }

@@ -226,6 +226,25 @@ class TapestryProjectViewTest : TapestryBaseTestCase() {
         Assert.assertEquals("Index.java", NodeNavigation.navigatableOf(index)?.let { (it as PsiFile).name })
     }
 
+    /**
+     * A double-click on anything with children toggles its subtree.
+     *
+     * The platform asks the node this only once it knows the node is not a leaf, so a container answering
+     * "navigate" is answering for a click that has nowhere to go: the edit-source handler consumes it and
+     * nothing happens at all, leaving the row expander as the only way to open Services, Pages or Components.
+     */
+    fun testContainersExpandOnDoubleClick() {
+        initApplication()
+
+        val root = ModuleNode(myModule!!, options(showLibraries = false, showElementFiles = true))
+
+        val stuck = nodes(root).filter { it.children.isNotEmpty() }
+            .filterNot { it.expandOnDoubleClick() }
+            .map { it.getPresentableText() }
+
+        Assert.assertEquals("containers that do not expand on double-click", emptyList<String>(), stuck)
+    }
+
     private fun nodes(node: SimpleNode): List<TapestryNode> =
         listOfNotNull(node as? TapestryNode) + node.children.flatMap { nodes(it) }
 
